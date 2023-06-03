@@ -119,30 +119,13 @@ namespace UnityEngine.ResourceManagement
         public static Action<AsyncOperationHandle, Exception> ExceptionHandler { get; set; }
 
         /// <summary>
-        /// Functor to transform internal ids before being used by the providers.
-        /// </summary>
-        /// <remarks>
-        /// Used to assign a function to the [ResourceManager](xref:UnityEngine.ResourceManagement.ResourceManager)  that replaces location identifiers used at runtime.
-        /// This is useful when you want to load assets from a different location than the one specified in the content catalog,
-        /// for example downloading a remote AssetBundle from a different URL.
-        ///
-        /// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
-        /// 
-        /// The example below instantiates a GameObject from a local AssetBundle. The location identifier of the bundle is replaced with a file URI, and so the bundle is loaded via UnityWebRequest. 
-        /// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingInternalIdTransformFunc.cs" region="SAMPLE"/>/// 
-        /// </remarks>
-        /// <value>A function taking an [IResourceLocation](xref:UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation) and returning a transformed string location.</value>
-        /// <seealso href="xref:addressables-api-transform-internal-id">Transforming resource URLs</seealso>
-        public Func<IResourceLocation, string> InternalIdTransformFunc { get; set; }
-
-        /// <summary>
         /// Checks for an internal id transform function and uses it to modify the internal id value.
         /// </summary>
         /// <param name="location">The location to transform the internal id of.</param>
         /// <returns>If a transform func is set, use it to pull the local id; otherwise, the InternalId property of the location is used.</returns>
         public string TransformInternalId(IResourceLocation location)
         {
-            return InternalIdTransformFunc == null ? location.InternalId : InternalIdTransformFunc(location);
+            return location.InternalId;
         }
 
         /// <summary>

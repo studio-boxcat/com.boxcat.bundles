@@ -85,18 +85,6 @@ namespace UnityEngine.AddressableAssets
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
         }
 
-        public Func<IResourceLocation, string> InternalIdTransformFunc
-        {
-            get { return ResourceManager.InternalIdTransformFunc; }
-            set { ResourceManager.InternalIdTransformFunc = value; }
-        }
-
-        public Action<UnityWebRequest> WebRequestOverride
-        {
-            get { return ResourceManager.WebRequestOverride; }
-            set { ResourceManager.WebRequestOverride = value; }
-        }
-
         public AsyncOperationHandle ChainOperation
         {
             get

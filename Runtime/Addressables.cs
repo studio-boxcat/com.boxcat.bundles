@@ -475,14 +475,6 @@ namespace UnityEngine.AddressableAssets
             return m_Addressables.ResolveInternalId(id);
         }
 
-        /// <inheritdoc cref="ResourceManager.InternalIdTransformFunc"/>
-        static public Func<IResourceLocation, string> InternalIdTransformFunc
-        {
-            get { return m_Addressables.InternalIdTransformFunc; }
-            set { m_Addressables.InternalIdTransformFunc = value; }
-        }
-
-
         /// <summary>
         /// Options for merging the results of requests.
         /// If keys (A, B) mapped to results ([1,2,4],[3,4,5])...
