@@ -130,22 +130,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     /// </summary>
     public class AssetBundleResource : IAssetBundleResource
     {
-        /// <summary>
-        /// Options for where an AssetBundle can be loaded from.
-        /// </summary>
-        public enum LoadType
-        {
-            /// <summary>
-            /// Cannot determine where the AssetBundle is located.
-            /// </summary>
-            None,
-
-            /// <summary>
-            /// Load the AssetBundle from a local file location.
-            /// </summary>
-            Local,
-        }
-
         AssetBundle m_AssetBundle;
         AsyncOperation m_RequestOperation;
         internal ProvideHandle m_ProvideHandle;
@@ -155,7 +139,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         bool m_RequestCompletedCallbackCalled = false;
 
         int m_Retries;
-        BundleSource m_Source = BundleSource.None;
         bool m_Completed = false;
 #if UNLOAD_BUNDLE_ASYNC
         AssetBundleUnloadOperation m_UnloadOperation;
@@ -283,7 +266,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 return false;
             }
 
-            if (!m_Completed && m_Source == BundleSource.Local) {
+            if (!m_Completed) {
 
                 // we don't have to check for done with local files as calling
                 // m_requestOperation.assetBundle is blocking and will wait for the file to load
@@ -317,37 +300,32 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <param name="handle">The container for AssetBundle loading information.</param>
         /// <param name="loadType">Specifies where an AssetBundle can be loaded from.</param>
         /// <param name="path">The file path or url where the AssetBundle is located.</param>
-        public static void GetLoadInfo(ProvideHandle handle, out LoadType loadType, out string path)
+        public static void GetLoadInfo(ProvideHandle handle, out string path)
         {
-            GetLoadInfo(handle.Location, handle.ResourceManager, out loadType, out path);
+            GetLoadInfo(handle.Location, handle.ResourceManager, out path);
         }
 
-        internal static void GetLoadInfo(IResourceLocation location, ResourceManager resourceManager, out LoadType loadType, out string path)
+        internal static void GetLoadInfo(IResourceLocation location, ResourceManager resourceManager, out string path)
         {
             var options = location?.Data as AssetBundleRequestOptions;
             if (options == null)
             {
-                loadType = LoadType.None;
                 path = null;
                 return;
             }
 
             path = resourceManager.TransformInternalId(location);
             if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:", StringComparison.Ordinal))
-                loadType = LoadType.Local;
-            else if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
+                return;
+            if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
                 throw new NotSupportedException();
-            else
-                loadType = LoadType.Local;
         }
 
         private void BeginOperation()
         {
-            GetLoadInfo(m_ProvideHandle, out LoadType loadType, out m_TransformedInternalId);
+            GetLoadInfo(m_ProvideHandle, out m_TransformedInternalId);
 
-            if (loadType == LoadType.Local)
             {
-                m_Source = BundleSource.Local;
 #if !UNITY_2021_1_OR_NEWER
                 if (AsyncOperationHandle.IsWaitingForCompletion)
                     CompleteBundleLoad(AssetBundle.LoadFromFile(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc));
@@ -360,14 +338,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #endif
                     AddCallbackInvokeIfDone(m_RequestOperation, LocalRequestOperationCompleted);
                 }
-            }
-            else
-            {
-                m_Source = BundleSource.None;
-                m_RequestOperation = null;
-                m_ProvideHandle.Complete<AssetBundleResource>(null, false,
-                    new RemoteProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
-                m_Completed = true;
             }
         }
 
