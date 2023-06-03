@@ -51,12 +51,6 @@ namespace UnityEditor.AddressableAssets.Build
 #else
             "catalog.json";
 #endif
-        /// <summary>
-        /// The asset content state of a previous build.  This allows detection of deltas with the current build content state.  This will be
-        /// null in standard builds.  This is only set during content update builds.
-        /// </summary>
-        public AddressablesContentState PreviousContentState { get; set; }
-
 
         /// <summary>
         /// Creates a default context object with values taken from the AddressableAssetSettings parameter.
@@ -77,7 +71,6 @@ namespace UnityEditor.AddressableAssets.Build
             Target = buildTarget;
             ProfilerEventsEnabled = ProjectConfigData.PostProfilerEvents;
             Registry = new FileRegistry();
-            PreviousContentState = null;
         }
 
         internal bool IsBuildAndRelease = false;

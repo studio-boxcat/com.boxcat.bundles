@@ -122,7 +122,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         private TResult CreateErrorResult<TResult>(string errorString, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext) where TResult : IDataBuilderResult
         {
-            BuildLayoutGenerationTask.GenerateErrorReport(errorString, aaContext, builderInput.PreviousContentState);
+            BuildLayoutGenerationTask.GenerateErrorReport(errorString, aaContext);
             return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errorString);
         }
 
@@ -324,19 +324,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 using (m_Log.ScopedStep(LogLevel.Info, "Process Catalog Entries"))
                 {
                     Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap = BuildLocationIdToCatalogEntryMap(aaContext.locations);
-                    if (builderInput.PreviousContentState != null)
-                    {
-                        contentUpdateContext = new ContentUpdateContext()
-                        {
-                            BundleToInternalBundleIdMap = m_BundleToInternalId,
-                            GuidToPreviousAssetStateMap = BuildGuidToCachedAssetStateMap(builderInput.PreviousContentState),
-                            IdToCatalogDataEntryMap = locationIdToCatalogEntryMap,
-                            WriteData = extractData.WriteData,
-                            ContentState = builderInput.PreviousContentState,
-                            Registry = builderInput.Registry,
-                            PreviousAssetStateCarryOver = carryOverCachedState
-                        };
-                    }
                     ProcessCatalogEntriesForBuild(aaContext, groups, builderInput, extractData.WriteData,
                         contentUpdateContext, m_BundleToInternalId, locationIdToCatalogEntryMap);
                     foreach (var postUpdateCatalogCallback in postCatalogUpdateCallbacks)
@@ -446,7 +433,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             using (m_Log.ScopedStep(LogLevel.Info, "Generate Settings"))
                 WriteFile(settingsPath, JsonUtility.ToJson(aaContext.runtimeData), builderInput.Registry);
 
-            if (extractData.BuildCache != null && builderInput.PreviousContentState == null)
+            if (extractData.BuildCache != null)
             {
                 using (m_Log.ScopedStep(LogLevel.Info, "Generate Content Update State"))
                 {
@@ -497,9 +484,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
-            if (addrResult != null)
-                addrResult.IsUpdateContentBuild = builderInput.PreviousContentState != null;
-
             genericResult.LocationCount = aaContext.locations.Count;
             genericResult.OutputPath = settingsPath;
 
@@ -514,8 +498,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         var buildLayoutTask = new BuildLayoutGenerationTask();
                         buildLayoutTask.m_BundleNameRemap = bundleRenameMap;
                         buildLayoutTask.m_ContentCatalogData = contentCatalog;
-                        if (contentUpdateContext.ContentState != null)
-                            buildLayoutTask.m_AddressablesInput = builderInput;
                         tasks.Add(buildLayoutTask);
                         BuildTasksRunner.Run(tasks, extractData.m_BuildContext);
                     }
@@ -532,15 +514,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             using (var progressTracker = new UnityEditor.Build.Pipeline.Utilities.ProgressTracker())
             {
                 progressTracker.UpdateTask("Post Processing Catalog Entries");
-                if (builderInput.PreviousContentState != null)
-                {
-                    RevertUnchangedAssetsToPreviousAssetState.Run(aaContext, contentUpdateContext);
-                }
-                else
-                {
-                    foreach (var assetGroup in validGroups)
-                        SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(assetGroup.entries, bundleToInternalId, writeData, locationIdToCatalogEntryMap);
-                }
+                foreach (var assetGroup in validGroups)
+                    SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(assetGroup.entries, bundleToInternalId, writeData, locationIdToCatalogEntryMap);
             }
 
             bundleToInternalId.Clear();
@@ -555,14 +530,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return locationIdToCatalogEntryMap;
         }
 
-        private static Dictionary<string, CachedAssetState> BuildGuidToCachedAssetStateMap(AddressablesContentState contentState)
-        {
-            Dictionary<string, CachedAssetState> addressableEntryToCachedStateMap = new Dictionary<string, CachedAssetState>();
-            foreach (var cachedInfo in contentState.cachedInfos)
-                addressableEntryToCachedStateMap[cachedInfo.asset.guid.ToString()] = cachedInfo;
-
-            return addressableEntryToCachedStateMap;
-        }
 #if ENABLE_BINARY_CATALOG
         internal bool CreateCatalogFiles(byte[] data, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext)
         {

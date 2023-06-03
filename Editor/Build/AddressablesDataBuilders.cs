@@ -112,11 +112,6 @@ namespace UnityEditor.AddressableAssets.Build
         }
 
         /// <summary>
-        /// True if the build was doing an update to a previous build, else false.
-        /// </summary>
-        public bool IsUpdateContentBuild { get; internal set; }
-
-        /// <summary>
         /// Build results for AssetBundles created during the build.
         /// </summary>
         public List<BundleBuildResult> AssetBundleBuildResults => m_AssetBundleBuildResults;

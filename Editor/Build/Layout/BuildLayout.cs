@@ -52,19 +52,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
 
             /// <summary>
-            /// If the build was a new build or an update for a previous build
-            /// </summary>
-            public BuildType BuildType
-            {
-                get
-                {
-                    if (m_BuildLayout == null)
-                        return BuildType.NewBuild;
-                    return m_BuildLayout.BuildType;
-                }
-            }
-
-            /// <summary>
             /// DateTime at the start of building Addressables
             /// </summary>
             public DateTime BuildStart
@@ -130,11 +117,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Hash of the build results
         /// </summary>
         public string BuildResultHash;
-
-        /// <summary>
-        /// If the build was a new build or an update for a previous build
-        /// </summary>
-        public BuildType BuildType;
 
         /// <summary>
         /// DateTime at the start of building Addressables
@@ -250,7 +232,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         {
             public BuildTarget BuildTarget;
             public string BuildResultHash;
-            public BuildType BuildType;
             public string BuildStartTime;
             public double Duration;
             public string BuildError;
@@ -303,7 +284,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 {
                     BuildTarget = this.BuildTarget,
                     BuildResultHash = this.BuildResultHash,
-                    BuildType = this.BuildType,
                     BuildStartTime = this.BuildStartTime,
                     Duration = this.Duration,
                     BuildError = this.BuildError

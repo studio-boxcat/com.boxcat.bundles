@@ -188,11 +188,6 @@ namespace UnityEditor.AddressableAssets.Build
             public IBundleWriteData WriteData;
 
             /// <summary>
-            /// Stores the cached build data.
-            /// </summary>
-            public AddressablesContentState ContentState;
-
-            /// <summary>
             /// Stores the paths of the files created during a build.
             /// </summary>
             public FileRegistry Registry;
@@ -267,14 +262,6 @@ namespace UnityEditor.AddressableAssets.Build
             return true;
         }
 
-        static bool HasAssetOrDependencyChanged(CachedAssetState cachedInfo)
-        {
-            CachedAssetState newCachedInfo;
-            if (!GetCachedAssetStateForData(cachedInfo.asset.guid, cachedInfo.bundleFileId, cachedInfo.groupGuid, cachedInfo.data, cachedInfo.dependencies.Select(x => x.guid), out newCachedInfo))
-                return true;
-            return !cachedInfo.Equals(newCachedInfo);
-        }
-
         /// <summary>
         /// Save the content update information for a set of AddressableAssetEntry objects.
         /// </summary>
@@ -283,7 +270,6 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
         /// <param name="entries">The entries to save.</param>
         /// <param name="dependencyData">The raw dependency information generated from the build.</param>
-        /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
         /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
         /// <returns>True if the file is saved, false otherwise.</returns>
         internal static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData,
@@ -379,16 +365,6 @@ namespace UnityEditor.AddressableAssets.Build
             }
         }
 
-        /// <summary>
-        /// Gets the path of the cache data from a selected build.
-        /// </summary>
-        /// <param name="browse">If true, the user is allowed to browse for a specific file.</param>
-        /// <returns>The path of the previous state .bin file used to detect changes from the previous build to the content update build.</returns>
-        public static string GetContentStateDataPath(bool browse)
-        {
-            return GetContentStateDataPath(browse, null);
-        }
-
         internal static string GetContentStateDataPath(bool browse, AddressableAssetSettings settings)
         {
             if (settings == null)
@@ -447,137 +423,8 @@ namespace UnityEditor.AddressableAssets.Build
             return path;
         }
 
-        /// <summary>
-        /// Downloads the content state bin to a temporary directory
-        /// </summary>
-        /// <param name="url">The url of the bin file</param>
-        /// <returns>The temp path the bin file was downloaded to.</returns>
-        internal static string DownloadBinFileToTempLocation(string url)
-        {
-            if (!Directory.Exists(ContentUpdateScript.PreviousContentStateFileCachePath))
-                Directory.CreateDirectory(Path.GetDirectoryName(ContentUpdateScript.PreviousContentStateFileCachePath));
-            else if (File.Exists(ContentUpdateScript.PreviousContentStateFileCachePath))
-                File.Delete(ContentUpdateScript.PreviousContentStateFileCachePath);
-
-            try
-            {
-                var bytes = new WebClient().DownloadData(url);
-                File.WriteAllBytes(ContentUpdateScript.PreviousContentStateFileCachePath, bytes);
-            }
-            catch
-            {
-                //Do nothing, nothing will get downloaded and the users can select a file manually if they want.
-            }
-
-            return ContentUpdateScript.PreviousContentStateFileCachePath;
-        }
-
-        /// <summary>
-        /// Loads cache data from a specific location
-        /// </summary>
-        /// <param name="contentStateDataPath"></param>
-        /// <returns>The ContentState object.</returns>
-        public static AddressablesContentState LoadContentState(string contentStateDataPath)
-        {
-            if (string.IsNullOrEmpty(contentStateDataPath))
-            {
-                Debug.LogErrorFormat("Unable to load cache data from {0}.", contentStateDataPath);
-                return null;
-            }
-
-            var stream = new FileStream(contentStateDataPath, FileMode.Open, FileAccess.Read);
-            var formatter = new BinaryFormatter();
-            var cacheData = formatter.Deserialize(stream) as AddressablesContentState;
-            if (cacheData == null)
-            {
-                Addressables.LogError(
-                    "Invalid hash data file.  This file is usually named addressables_content_state.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
-                return null;
-            }
-
-            stream.Dispose();
-            return cacheData;
-        }
-
         static bool s_StreamingAssetsExists;
         static string kStreamingAssetsPath = "Assets/StreamingAssets";
-
-        internal static void GatherExplicitModifiedEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap,
-            AddressablesContentState cacheData)
-        {
-            List<string> noBundledAssetGroupSchema = new List<string>();
-            List<string> noStaticContent = new List<string>();
-
-            var allEntries = new List<AddressableAssetEntry>();
-            settings.GetAllAssets(allEntries, false, g =>
-            {
-                if (g == null)
-                    return false;
-
-                if (!g.HasSchema<BundledAssetGroupSchema>())
-                {
-                    noBundledAssetGroupSchema.Add(g.Name);
-                    return false;
-                }
-
-                if (!g.HasSchema<ContentUpdateGroupSchema>())
-                {
-                    noStaticContent.Add(g.Name);
-                    return false;
-                }
-
-                if (!g.GetSchema<ContentUpdateGroupSchema>().StaticContent)
-                {
-                    noStaticContent.Add(g.Name);
-                    return false;
-                }
-
-                g.FlaggedDuringContentUpdateRestriction = false;
-                return true;
-            });
-
-            StringBuilder builder = new StringBuilder();
-            builder.AppendFormat("Skipping Prepare for Content Update on {0} group(s):\n\n",
-                noBundledAssetGroupSchema.Count + noStaticContent.Count);
-
-
-            AddInvalidGroupsToLogMessage(builder, noBundledAssetGroupSchema, "Group Did Not Contain BundledAssetGroupSchema");
-            AddInvalidGroupsToLogMessage(builder, noStaticContent, "Static Content Not Enabled In Schemas");
-
-            Debug.Log(builder.ToString());
-
-            var entryToCacheInfo = new Dictionary<string, CachedAssetState>();
-            foreach (var cacheInfo in cacheData.cachedInfos)
-                if (cacheInfo != null)
-                    entryToCacheInfo[cacheInfo.asset.guid.ToString()] = cacheInfo;
-            var modifiedEntries = new List<AddressableAssetEntry>();
-            foreach (var entry in allEntries)
-            {
-                if (!entryToCacheInfo.TryGetValue(entry.guid, out CachedAssetState cachedInfo) || HasAssetOrDependencyChanged(cachedInfo))
-                {
-                    Type mainType = AddressableAssetUtility.MapEditorTypeToRuntimeType(entry.MainAssetType, false);
-                    if ((mainType == null || mainType == typeof(DefaultAsset)) && !entry.IsInResources)
-                    {
-                        entry.FlaggedDuringContentUpdateRestriction = false;
-                    }
-                    else
-                    {
-                        modifiedEntries.Add(entry);
-                        entry.FlaggedDuringContentUpdateRestriction = true;
-                        entry.parentGroup.FlaggedDuringContentUpdateRestriction = true;
-                    }
-                }
-                else
-                    entry.FlaggedDuringContentUpdateRestriction = false;
-            }
-
-            AddAllDependentScenesFromModifiedEntries(modifiedEntries);
-            foreach (var entry in modifiedEntries)
-            {
-                if (!dependencyMap.ContainsKey(entry))
-                    dependencyMap.Add(entry, new List<AddressableAssetEntry>());
-            }
-        }
 
         internal static void ClearContentUpdateNotifications(AddressableAssetGroup assetGroup)
         {
@@ -604,26 +451,6 @@ namespace UnityEditor.AddressableAssets.Build
                     ClearContentUpdateFlagForEntries(folderEntries);
                 }
             }
-        }
-
-        /// <summary>
-        /// Get a Dictionary of all modified values and their dependencies.  Dependencies will be Addressable and part of a group
-        /// with static content enabled.
-        /// </summary>
-        /// <param name="settings">Addressable asset settings.</param>
-        /// <param name="cachePath">The cache data path.</param>
-        /// <returns>A dictionary mapping explicit changed entries to their dependencies.</returns>
-        public static Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> GatherModifiedEntriesWithDependencies(AddressableAssetSettings settings, string cachePath)
-        {
-            var modifiedData = new Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>>();
-            AddressablesContentState cacheData = LoadContentState(cachePath);
-            if (cacheData == null)
-                return modifiedData;
-
-            GatherExplicitModifiedEntries(settings, ref modifiedData, cacheData);
-            GetStaticContentDependenciesForEntries(settings, ref modifiedData, GetGroupGuidToCacheBundleNameMap(cacheData));
-            GetEntriesDependentOnModifiedEntries(settings, ref modifiedData);
-            return modifiedData;
         }
 
         internal static void GetEntriesDependentOnModifiedEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap)
@@ -680,25 +507,6 @@ namespace UnityEditor.AddressableAssets.Build
             }
 
             return staticGroups;
-        }
-
-        internal static Dictionary<string, string> GetGroupGuidToCacheBundleNameMap(AddressablesContentState cacheData)
-        {
-            var bundleIdToCacheInfo = new Dictionary<string, string>();
-            foreach (CachedBundleState bundleInfo in cacheData.cachedBundles)
-            {
-                if (bundleInfo != null && bundleInfo.data is AssetBundleRequestOptions options)
-                    bundleIdToCacheInfo[bundleInfo.bundleFileId] = options.BundleName;
-            }
-
-            var groupGuidToCacheBundleName = new Dictionary<string, string>();
-            foreach (CachedAssetState cacheInfo in cacheData.cachedInfos)
-            {
-                if (cacheInfo != null && bundleIdToCacheInfo.TryGetValue(cacheInfo.bundleFileId, out string bundleName))
-                    groupGuidToCacheBundleName[cacheInfo.groupGuid] = bundleName;
-            }
-
-            return groupGuidToCacheBundleName;
         }
 
         internal static HashSet<string> GetGroupGuidsWithUnchangedBundleName(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap,

@@ -231,22 +231,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     }
 
     /// <summary>
-    /// Type of Addressables build
-    /// </summary>
-    public enum BuildType
-    {
-        /// <summary>
-        /// Was made with an Addressables build made for new Player builds
-        /// </summary>
-        NewBuild = 0,
-
-        /// <summary>
-        /// Was made with an Addressables update build, for a previous new build
-        /// </summary>
-        UpdateBuild
-    }
-
-    /// <summary>
     /// Bundle status after an update build
     /// </summary>
     public enum BundleBuildStatus

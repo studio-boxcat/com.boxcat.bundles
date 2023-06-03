@@ -73,10 +73,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 #pragma warning restore 649
 
         internal Dictionary<string, string> m_BundleNameRemap;
-        internal AddressablesDataBuilderInput m_AddressablesInput;
         internal ContentCatalogData m_ContentCatalogData;
-
-        private bool IsContentUpdateBuild => m_AddressablesInput != null && m_AddressablesInput.PreviousContentState != null;
 
         internal static string m_LayoutFileName = "buildlayout";
         internal static string m_LayoutFilePath = $"{Addressables.LibraryPath}{m_LayoutFileName}";
@@ -695,11 +692,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 layout.AddressablesRuntimeSettings = GetAddressableRuntimeSettings(aaContext, m_ContentCatalogData);
             }
 
-            if (IsContentUpdateBuild)
-                layout.BuildType = BuildType.UpdateBuild;
-            else
-                layout.BuildType = BuildType.NewBuild;
-
             // Map from GUID to AddrssableAssetEntry
             lookup.GuidToEntry = aaContext.assetEntries.ToDictionary(x => x.guid, x => x);
 
@@ -755,15 +747,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     lookup.BundleNameToRequestOptions.Add(options.BundleName, options);
                     lookup.BundleNameToCatalogEntry.Add(options.BundleName, entry);
-                }
-            }
-
-            if (IsContentUpdateBuild)
-            {
-                foreach (CachedBundleState prevState in m_AddressablesInput.PreviousContentState.cachedBundles)
-                {
-                    if (prevState.data is AssetBundleRequestOptions options)
-                        lookup.BundleNameToPreviousRequestOptions.Add(options.BundleName, options);
                 }
             }
 
@@ -1200,8 +1183,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// </summary>
         /// <param name="error">Build error string</param>
         /// <param name="aaContext">The current build context</param>
-        /// <param name="previousContentState">Previous content state, used to determine whether a new or build update was performed.</param>
-        public static void GenerateErrorReport(string error, AddressableAssetsBuildContext aaContext, AddressablesContentState previousContentState)
+        public static void GenerateErrorReport(string error, AddressableAssetsBuildContext aaContext)
         {
             if (aaContext == null)
                 return;
@@ -1214,11 +1196,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             layout.BuildError = error;
             SetLayoutMetaData(layout, aaSettings);
             layout.AddressablesEditorSettings = GetAddressableEditorSettings(aaSettings);
-
-            if (previousContentState != null)
-                layout.BuildType = BuildType.UpdateBuild;
-            else
-                layout.BuildType = BuildType.NewBuild;
 
             string destinationPath = TimeStampedReportPath(layout.BuildStart);
             layout.WriteToFile(destinationPath, k_PrettyPrint);
