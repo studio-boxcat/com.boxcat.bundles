@@ -220,11 +220,6 @@ namespace UnityEngine.ResourceManagement
         }
 
         /// <summary>
-        /// The CertificateHandler instance object.
-        /// </summary>
-        public CertificateHandler CertificateHandlerInstance { get; set; }
-
-        /// <summary>
         /// Constructor for the resource manager.
         /// </summary>
         /// <param name="alloc">The allocation strategy to use.</param>

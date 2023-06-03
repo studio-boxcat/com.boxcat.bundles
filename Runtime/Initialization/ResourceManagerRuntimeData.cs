@@ -106,18 +106,6 @@ namespace UnityEngine.AddressableAssets.Initialization
         }
 
         [SerializeField]
-        SerializedType m_CertificateHandlerType;
-
-        /// <summary>
-        /// The type of CertificateHandler to use for this provider.
-        /// </summary>
-        public Type CertificateHandlerType
-        {
-            get { return m_CertificateHandlerType.Value; }
-            set { m_CertificateHandlerType.Value = value; }
-        }
-
-        [SerializeField]
         string m_AddressablesVersion;
 
         /// <summary>

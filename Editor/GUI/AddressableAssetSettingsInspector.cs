@@ -31,8 +31,6 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_DataBuildersHeader;
         static FoldoutSessionStateValue GroupTemplateObjectsFoldout = new FoldoutSessionStateValue("Addressables.GroupTemplateObjectsFoldout");
         GUIContent m_GroupTemplateObjectsHeader;
-        static FoldoutSessionStateValue InitObjectsFoldout = new FoldoutSessionStateValue("Addressables.InitObjectsFoldout");
-        GUIContent m_InitObjectsHeader;
 #if UNITY_2019_4_OR_NEWER
         static FoldoutSessionStateValue CCDEnabledFoldout = new FoldoutSessionStateValue("Addressables.CCDEnabledFoldout");
         GUIContent m_CCDEnabledHeader;
@@ -53,10 +51,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         [SerializeField]
         ReorderableList m_GroupTemplateObjectsRl;
-
-        [FormerlySerializedAs("m_initObjectsRL")]
-        [SerializeField]
-        ReorderableList m_InitObjectsRl;
 
         [FormerlySerializedAs("m_currentProfileIndex")]
         [SerializeField]
@@ -89,12 +83,6 @@ namespace UnityEditor.AddressableAssets.GUI
             m_GroupTemplateObjectsRl.onAddDropdownCallback = OnAddGroupTemplateObject;
             m_GroupTemplateObjectsRl.onRemoveCallback = OnRemoveGroupTemplateObject;
 
-            m_InitObjectsRl = new ReorderableList(m_AasTarget.InitializationObjects, typeof(ScriptableObject), true, true, true, true);
-            m_InitObjectsRl.drawElementCallback = DrawInitializationObjectCallback;
-            m_InitObjectsRl.headerHeight = 0;
-            m_InitObjectsRl.onAddDropdownCallback = OnAddInitializationObject;
-            m_InitObjectsRl.onRemoveCallback = OnRemoveInitializationObject;
-
             m_ProfilesHeader = new GUIContent("Profiles", "Settings affect profiles.");
             m_DiagnosticsHeader = new GUIContent("Diagnostics", "Settings affect profiles.");
             m_CatalogsHeader = new GUIContent("Catalog", "Settings affect profiles.");
@@ -102,7 +90,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             m_DataBuildersHeader = new GUIContent("Build and Play Mode Scripts", "Settings affect profiles.");
             m_GroupTemplateObjectsHeader = new GUIContent("Asset Group Templates", "Settings affect profiles.");
-            m_InitObjectsHeader = new GUIContent("Initialization Objects", "Settings affect profiles.");
 #if UNITY_2019_4_OR_NEWER
             m_CCDEnabledHeader = new GUIContent("Cloud Content Delivery", "Settings affect profiles.");
 #endif
@@ -410,19 +397,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             EditorGUI.EndFoldoutHeaderGroup();
 
-            InitObjectsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(InitObjectsFoldout.IsActive, m_InitObjectsHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#initialization-object-list");
-                Application.OpenURL(url);
-            });
-            if (InitObjectsFoldout.IsActive)
-            {
-                m_InitObjectsRl.DoLayoutList();
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
-
 #if UNITY_2019_4_OR_NEWER
             CCDEnabledFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(CCDEnabledFoldout.IsActive, m_CCDEnabledHeader, () =>
             {
@@ -585,34 +559,5 @@ namespace UnityEditor.AddressableAssets.GUI
             m_AasTarget.AddGroupTemplateObject(templateObj as IGroupTemplate);
         }
 
-        void DrawInitializationObjectCallback(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            var so = m_AasTarget.InitializationObjects[index];
-            var initObj = so as IObjectInitializationDataProvider;
-            var label = initObj == null ? "" : initObj.Name;
-            var nb = EditorGUI.ObjectField(rect, label, so, typeof(ScriptableObject), false) as ScriptableObject;
-            if (nb != so)
-                m_AasTarget.SetInitializationObjectAtIndex(index, nb as IObjectInitializationDataProvider);
-        }
-
-        void OnRemoveInitializationObject(ReorderableList list)
-        {
-            m_AasTarget.RemoveInitializationObject(list.index);
-        }
-
-        void OnAddInitializationObject(Rect buttonRect, ReorderableList list)
-        {
-            var assetPath = EditorUtility.OpenFilePanelWithFilters("Initialization Object", "Assets", new[] {"Initialization Object", "asset"});
-            if (string.IsNullOrEmpty(assetPath))
-                return;
-            var initObj = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath.Substring(assetPath.IndexOf("Assets/", StringComparison.Ordinal)));
-            if (!typeof(IObjectInitializationDataProvider).IsAssignableFrom(initObj.GetType()))
-            {
-                Debug.LogWarningFormat("Asset at {0} does not implement the IObjectInitializationDataProvider interface.", assetPath);
-                return;
-            }
-
-            m_AasTarget.AddInitializationObject(initObj as IObjectInitializationDataProvider);
-        }
     }
 }

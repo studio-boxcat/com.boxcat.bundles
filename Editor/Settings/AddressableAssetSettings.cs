@@ -314,16 +314,6 @@ namespace UnityEditor.AddressableAssets.Settings
             DataBuilderRemoved,
 
             /// <summary>
-            /// Use to indicate a new initialization object was added to the settings object.
-            /// </summary>
-            InitializationObjectAdded,
-
-            /// <summary>
-            /// Use to indicate a initialization object was removed from the settings object.
-            /// </summary>
-            InitializationObjectRemoved,
-
-            /// <summary>
             /// Use to indicate that a new script is being used as the active playmode data builder.
             /// </summary>
             ActivePlayModeScriptChanged,
@@ -334,19 +324,9 @@ namespace UnityEditor.AddressableAssets.Settings
             BatchModification,
 
             /// <summary>
-            /// Use to indicate that the hosting services manager was modified.
-            /// </summary>
-            HostingServicesManagerModified,
-
-            /// <summary>
             /// Use to indicate that a group changed its order placement within the list of groups in the settings object.
             /// </summary>
             GroupMoved,
-
-            /// <summary>
-            /// Use to indicate that a new certificate handler is being used for the initialization object provider.
-            /// </summary>
-            CertificateHandlerChanged
         }
 
         private string m_CachedAssetPath;
@@ -949,124 +929,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_GroupTemplateObjects[index] = so;
             SetDirty(ModificationEvent.GroupTemplateAdded, so, postEvent, true);
             return true;
-        }
-
-        [FormerlySerializedAs("m_initializationObjects")]
-        [SerializeField]
-        List<ScriptableObject> m_InitializationObjects = new List<ScriptableObject>();
-
-        /// <summary>
-        /// List of ScriptableObjects that implement the IObjectInitializationDataProvider interface for providing runtime initialization.
-        /// </summary>
-        public List<ScriptableObject> InitializationObjects
-        {
-            get { return m_InitializationObjects; }
-        }
-
-        /// <summary>
-        /// Get the IObjectInitializationDataProvider at a specifc index.
-        /// </summary>
-        /// <param name="index">The index of the initialization object.</param>
-        /// <returns>The initialization object at the specified index.</returns>
-        public IObjectInitializationDataProvider GetInitializationObject(int index)
-        {
-            if (m_InitializationObjects.Count == 0)
-                return null;
-            if (index < 0 || index >= m_InitializationObjects.Count)
-            {
-                Debug.LogWarningFormat("Invalid index for data builder: {0}.", index);
-                return null;
-            }
-
-            return m_InitializationObjects[Mathf.Clamp(index, 0, m_InitializationObjects.Count)] as IObjectInitializationDataProvider;
-        }
-
-        /// <summary>
-        /// Adds an initialization object.
-        /// </summary>
-        /// <param name="initObject">The initialization object to add.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the initialization object was added.</returns>
-        public bool AddInitializationObject(IObjectInitializationDataProvider initObject, bool postEvent = true)
-        {
-            if (initObject == null)
-            {
-                Debug.LogWarning("Cannot add null IObjectInitializationDataProvider");
-                return false;
-            }
-
-            var so = initObject as ScriptableObject;
-            if (so == null)
-            {
-                Debug.LogWarning("Initialization objects must inherit from ScriptableObject.");
-                return false;
-            }
-
-            m_InitializationObjects.Add(so);
-            SetDirty(ModificationEvent.InitializationObjectAdded, so, postEvent, true);
-            return true;
-        }
-
-        /// <summary>
-        /// Remove the initialization object at the specified index.
-        /// </summary>
-        /// <param name="index">The index to remove.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the initialization object was removed.</returns>
-        public bool RemoveInitializationObject(int index, bool postEvent = true)
-        {
-            if (m_InitializationObjects.Count <= index)
-                return false;
-            var so = m_InitializationObjects[index];
-            m_InitializationObjects.RemoveAt(index);
-            SetDirty(ModificationEvent.InitializationObjectRemoved, so, postEvent, true);
-            return true;
-        }
-
-        /// <summary>
-        /// Sets the initialization object at the specified index.
-        /// </summary>
-        /// <param name="index">The index to set the initialization object.</param>
-        /// <param name="initObject">The initialization object to set.  This must be a valid scriptable object that implements the IInitializationObject interface.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the initialization object was set, false otherwise.</returns>
-        public bool SetInitializationObjectAtIndex(int index, IObjectInitializationDataProvider initObject, bool postEvent = true)
-        {
-            if (m_InitializationObjects.Count <= index)
-                return false;
-            if (initObject == null)
-            {
-                Debug.LogWarning("Cannot add null IObjectInitializationDataProvider");
-                return false;
-            }
-
-            var so = initObject as ScriptableObject;
-            if (so == null)
-            {
-                Debug.LogWarning("Initialization objects must inherit from ScriptableObject.");
-                return false;
-            }
-
-            m_InitializationObjects[index] = so;
-            SetDirty(ModificationEvent.InitializationObjectAdded, so, postEvent, true);
-            return true;
-        }
-
-        [SerializeField]
-        [SerializedTypeRestriction(type = typeof(UnityEngine.Networking.CertificateHandler))]
-        SerializedType m_CertificateHandlerType;
-
-        /// <summary>
-        /// The type of CertificateHandler to use for this provider.
-        /// </summary>
-        public Type CertificateHandlerType
-        {
-            get { return m_CertificateHandlerType.Value; }
-            set
-            {
-                m_CertificateHandlerType.Value = value;
-                SetDirty(ModificationEvent.CertificateHandlerChanged, value, true, true);
-            }
         }
 
         [FormerlySerializedAs("m_activePlayerDataBuilderIndex")]
@@ -2221,8 +2083,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 //  this can lead to orphaned schema files.
                 if (groups.Remove(null) ||
                     DataBuilders.Remove(null) ||
-                    GroupTemplateObjects.Remove(null) ||
-                    InitializationObjects.Remove(null))
+                    GroupTemplateObjects.Remove(null))
                 {
                     relatedAssetChanged = true;
                 }

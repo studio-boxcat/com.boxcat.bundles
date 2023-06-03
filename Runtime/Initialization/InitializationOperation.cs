@@ -105,8 +105,6 @@ namespace UnityEngine.AddressableAssets.Initialization
             m_Addressables.ResourceManager.postProfilerEvents = rtd.ProfileEvents;
 
             m_Addressables.Release(m_rtdOp);
-            if (rtd.CertificateHandlerType != null)
-                m_Addressables.ResourceManager.CertificateHandlerInstance = Activator.CreateInstance(rtd.CertificateHandlerType) as CertificateHandler;
 
 #if UNITY_EDITOR
             if (UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString() != rtd.BuildTarget)

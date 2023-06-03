@@ -137,7 +137,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var runtimeData = new ResourceManagerRuntimeData
             {
                 SettingsHash = aaSettings.currentHash.ToString(),
-                CertificateHandlerType = aaSettings.CertificateHandlerType,
                 BuildTarget = builderInput.Target.ToString(),
 #if ENABLE_CCD
                 CcdManagedData = aaSettings.m_CcdManagedData,
@@ -151,7 +150,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             };
             m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
             m_Linker.AddAssemblies(new[] {typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly});
-            m_Linker.AddTypes(runtimeData.CertificateHandlerType);
 
             m_ResourceProviderData = new List<ObjectInitializationData>();
             aaContext = new AddressableAssetsBuildContext
@@ -437,18 +435,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 m_Linker.AddTypes(contentCatalog.InstanceProviderData.GetRuntimeTypes());
                 m_Linker.AddTypes(contentCatalog.SceneProviderData.ObjectType.Value);
                 m_Linker.AddTypes(contentCatalog.SceneProviderData.GetRuntimeTypes());
-
-                foreach (var io in aaContext.Settings.InitializationObjects)
-                {
-                    var provider = io as IObjectInitializationDataProvider;
-                    if (provider != null)
-                    {
-                        var id = provider.CreateObjectInitializationData();
-                        aaContext.runtimeData.InitializationObjects.Add(id);
-                        m_Linker.AddTypes(id.ObjectType.Value);
-                        m_Linker.AddTypes(id.GetRuntimeTypes());
-                    }
-                }
 
                 m_Linker.AddTypes(typeof(Addressables));
                 Directory.CreateDirectory(Addressables.BuildPath + "/AddressablesLink/");

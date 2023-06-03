@@ -263,12 +263,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #endif
 
 
-            foreach (var io in aaSettings.InitializationObjects)
-            {
-                if (io is IObjectInitializationDataProvider)
-                    aaContext.runtimeData.InitializationObjects.Add((io as IObjectInitializationDataProvider).CreateObjectInitializationData());
-            }
-
             var settingsPath = GetSettingsPath();
             WriteFile(settingsPath, JsonUtility.ToJson(aaContext.runtimeData), builderInput.Registry);
 

@@ -34,23 +34,6 @@ namespace UnityEngine.ResourceManagement.Util
 
 
     /// <summary>
-    /// Interface for objects that can create object initialization data.
-    /// </summary>
-    public interface IObjectInitializationDataProvider
-    {
-        /// <summary>
-        /// The name used in the GUI for this provider
-        /// </summary>
-        string Name { get; }
-
-        /// <summary>
-        /// Construct initialization data for runtime.
-        /// </summary>
-        /// <returns>Init data that will be deserialized at runtime.</returns>
-        ObjectInitializationData CreateObjectInitializationData();
-    }
-
-    /// <summary>
     /// Allocation strategy for managing heap allocations
     /// </summary>
     public interface IAllocationStrategy

@@ -98,31 +98,7 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(m_addressables.ResourceManager));
 
-            if (m_settings.InitializationObjects.Count == 0)
-            {
-                Complete(locator, true, null);
-            }
-            else
-            {
-                List<AsyncOperationHandle> initOperations = new List<AsyncOperationHandle>();
-                foreach (var io in m_settings.InitializationObjects)
-                {
-                    if (io is IObjectInitializationDataProvider)
-                    {
-                        var ioData = (io as IObjectInitializationDataProvider).CreateObjectInitializationData();
-                        var h = ioData.GetAsyncInitHandle(m_addressables.ResourceManager);
-                        initOperations.Add(h);
-                    }
-                }
-
-                groupOp = m_addressables.ResourceManager.CreateGenericGroupOperation(initOperations, true);
-                groupOp.Completed += op =>
-                {
-                    bool success = op.Status == AsyncOperationStatus.Succeeded;
-                    Complete(locator, success, success ? "" : $"{op.DebugName}, status={op.Status}, result={op.Result} failed initialization.");
-                    m_addressables.Release(op);
-                };
-            }
+            Complete(locator, true, null);
         }
     }
 }
