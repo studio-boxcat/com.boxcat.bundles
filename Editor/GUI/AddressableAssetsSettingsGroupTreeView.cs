@@ -649,15 +649,6 @@ namespace UnityEditor.AddressableAssets.GUI
             retVal[counter].headerTextAlignment = TextAlignment.Left;
             retVal[counter].canSort = true;
             retVal[counter].autoResize = true;
-            counter++;
-
-            retVal[counter].headerContent = new GUIContent("Labels", "Assets can have multiple labels");
-            retVal[counter].minWidth = 20;
-            retVal[counter].width = 160;
-            retVal[counter].maxWidth = 1000;
-            retVal[counter].headerTextAlignment = TextAlignment.Left;
-            retVal[counter].canSort = true;
-            retVal[counter].autoResize = true;
 
             return retVal;
         }

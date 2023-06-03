@@ -79,7 +79,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             "AssetBundles",
             "Assets",
-            "Labels",
             "Groups"
         };
 
