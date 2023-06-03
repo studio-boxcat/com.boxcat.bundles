@@ -257,7 +257,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             AddressablesPlayerBuildResult addrResult = genericResult as AddressablesPlayerBuildResult;
 
             ExtractDataTask extractData = new ExtractDataTask();
-            ContentUpdateContext contentUpdateContext = default;
             List<CachedAssetState> carryOverCachedState = new List<CachedAssetState>();
             var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
 
@@ -325,7 +324,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 {
                     Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap = BuildLocationIdToCatalogEntryMap(aaContext.locations);
                     ProcessCatalogEntriesForBuild(aaContext, groups, builderInput, extractData.WriteData,
-                        contentUpdateContext, m_BundleToInternalId, locationIdToCatalogEntryMap);
+                        m_BundleToInternalId, locationIdToCatalogEntryMap);
                     foreach (var postUpdateCatalogCallback in postCatalogUpdateCallbacks)
                         postUpdateCatalogCallback.Invoke();
 
@@ -441,9 +440,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     using (m_Log.ScopedStep(LogLevel.Info, "Get Assets"))
                         aaContext.Settings.GetAllAssets(allEntries, false, ContentUpdateScript.GroupFilter);
 
-                    if (ContentUpdateScript.SaveContentState(aaContext.locations, aaContext.GuidToCatalogLocation, tempPath, allEntries,
-                            extractData.DependencyData,
-                            carryOverCachedState))
                     {
                         string contentStatePath = ContentUpdateScript.GetContentStateDataPath(false, aaContext.Settings);
                         if (ResourceManagerConfig.ShouldPathUseWebRequest(contentStatePath))
@@ -509,7 +505,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         private static void ProcessCatalogEntriesForBuild(AddressableAssetsBuildContext aaContext,
             IEnumerable<AddressableAssetGroup> validGroups, AddressablesDataBuilderInput builderInput, IBundleWriteData writeData,
-            ContentUpdateContext contentUpdateContext, Dictionary<string, string> bundleToInternalId, Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap)
+            Dictionary<string, string> bundleToInternalId, Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap)
         {
             using (var progressTracker = new UnityEditor.Build.Pipeline.Utilities.ProgressTracker())
             {
