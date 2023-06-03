@@ -112,32 +112,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             }
         }
 
-        /// <summary>
-        /// Options for internal id of assets in bundles.
-        /// </summary>
-        public enum AssetNamingMode
-        {
-            /// <summary>
-            /// Use to identify assets by their full path.
-            /// </summary>
-            FullPath,
-
-            /// <summary>
-            /// Use to identify assets by their filename only.  There is a risk of collisions when assets in different folders have the same filename.
-            /// </summary>
-            Filename,
-
-            /// <summary>
-            /// Use to identify assets by their asset guid.  This will save space over using the full path and will be stable if assets move in the project.
-            /// </summary>
-            GUID,
-
-            /// <summary>
-            /// This method attempts to use the smallest identifier for internal asset ids.  For asset bundles with very few items, this can save a significant amount of space in the content catalog.
-            /// </summary>
-            Dynamic
-        }
-
         [SerializeField]
         bool m_IncludeAddressInCatalog = true;
 
@@ -156,24 +130,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 }
             }
         }
-
-        /// <summary>
-        /// Internal Id mode for assets in bundles.
-        /// </summary>
-        public AssetNamingMode InternalIdNamingMode
-        {
-            get => m_InternalIdNamingMode;
-            set
-            {
-                m_InternalIdNamingMode = value;
-                SetDirty(true);
-            }
-        }
-
-        [SerializeField]
-        [Tooltip("Indicates how the internal asset name will be generated.")]
-        AssetNamingMode m_InternalIdNamingMode = AssetNamingMode.FullPath;
-
 
         /// <summary>
         /// Gets the build compression settings for bundles in this group.
@@ -395,28 +351,17 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 m_BundledAssetProviderType.Value = typeof(BundledAssetProvider);
         }
 
-        internal string GetAssetLoadPath(string assetPath, HashSet<string> otherLoadPaths, Func<string, string> pathToGUIDFunc)
+        internal string GetAssetLoadPath(string assetPath, string guid, HashSet<string> otherLoadPaths)
         {
-            switch (InternalIdNamingMode)
-            {
-                case AssetNamingMode.FullPath: return assetPath;
-                case AssetNamingMode.Filename: return assetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase) ? System.IO.Path.GetFileNameWithoutExtension(assetPath) : System.IO.Path.GetFileName(assetPath);
-                case AssetNamingMode.GUID: return pathToGUIDFunc(assetPath);
-                case AssetNamingMode.Dynamic:
-                {
-                    var g = pathToGUIDFunc(assetPath);
-                    if (otherLoadPaths == null)
-                        return g;
-                    var len = 1;
-                    var p = g.Substring(0, len);
-                    while (otherLoadPaths.Contains(p))
-                        p = g.Substring(0, ++len);
-                    otherLoadPaths.Add(p);
-                    return p;
-                }
-            }
-
-            return assetPath;
+            var g = guid;
+            if (otherLoadPaths == null)
+                return g;
+            var len = 1;
+            var p = g.Substring(0, len);
+            while (otherLoadPaths.Contains(p))
+                p = g.Substring(0, ++len);
+            otherLoadPaths.Add(p);
+            return p;
         }
 
         /// <summary>
@@ -670,9 +615,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         GUIContent m_IncludeAddressInCatalogContent = new GUIContent("Include Addresses in Catalog",
             "If disabled, addresses from this group will not be included in the catalog.  This is useful for reducing the size of the catalog if addresses are not needed.");
 
-        GUIContent m_InternalIdNamingModeContent = new GUIContent("Internal Asset Naming Mode",
-            "Mode for naming assets internally in bundles.  This can reduce the size of the catalog by replacing long paths with shorter strings.");
-
         GUIContent m_InternalBundleIdModeContent = new GUIContent("Internal Bundle Id Mode",
             $"Specifies how the internal id of the bundle is generated.  This must be set to {BundleInternalIdMode.GroupGuid} or {BundleInternalIdMode.GroupGuidProjectIdHash} to ensure proper caching on device.");
 
@@ -693,7 +635,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInBuild)), m_IncludeInBuildContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ForceUniqueProvider)), m_ForceUniqueProviderContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeAddressInCatalog)), m_IncludeAddressInCatalogContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_InternalIdNamingMode)), m_InternalIdNamingModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_InternalBundleIdMode)), m_InternalBundleIdModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundleMode)), m_BundleModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundleNaming)), m_BundleNamingContent, true);
@@ -711,8 +652,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 (src, dst) => dst.ForceUniqueProvider = src.ForceUniqueProvider, ref m_ForceUniqueProvider);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeAddressInCatalog), m_IncludeAddressInCatalogContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog, ref m_IncludeAddressInCatalog);
-            ShowSelectedPropertyMulti(so, nameof(m_InternalIdNamingMode), m_InternalIdNamingModeContent, otherBundledSchemas, ref queuedChanges,
-                (src, dst) => dst.InternalIdNamingMode = src.InternalIdNamingMode, ref m_InternalIdNamingMode);
             ShowSelectedPropertyMulti(so, nameof(m_InternalBundleIdMode), m_InternalBundleIdModeContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.InternalBundleIdMode = src.InternalBundleIdMode, ref m_InternalBundleIdMode);
             ShowSelectedPropertyMulti(so, nameof(m_BundleMode), m_BundleModeContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.BundleMode = src.BundleMode, ref m_BundleMode);
