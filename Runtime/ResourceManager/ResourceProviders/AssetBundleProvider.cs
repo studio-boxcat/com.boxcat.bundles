@@ -3,14 +3,9 @@
 #endif
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using UnityEngine.Networking;
-using UnityEngine.Profiling;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
@@ -19,13 +14,6 @@ using UnityEngine.Serialization;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
-    internal class DownloadOnlyLocation : LocationWrapper
-    {
-        public DownloadOnlyLocation(IResourceLocation location) : base(location)
-        {
-        }
-    }
-
     /// <summary>
     /// Used to indication how Assets are loaded from the AssetBundle on the first load request.
     /// </summary>
@@ -314,7 +302,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 return;
             }
 
-            path = resourceManager.TransformInternalId(location);
+            path = location.InternalId;
             if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:", StringComparison.Ordinal))
                 return;
             if (ResourceManagerConfig.ShouldPathUseWebRequest(path))

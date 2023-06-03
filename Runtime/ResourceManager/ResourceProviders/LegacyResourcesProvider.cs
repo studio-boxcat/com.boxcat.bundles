@@ -22,7 +22,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_ProvideHandle = provideHandle;
 
                 provideHandle.SetWaitForCompletionCallback(WaitForCompletionHandler);
-                m_RequestOperation = Resources.LoadAsync(m_ProvideHandle.ResourceManager.TransformInternalId(m_ProvideHandle.Location), m_ProvideHandle.Type);
+                m_RequestOperation = Resources.LoadAsync(m_ProvideHandle.Location.InternalId, m_ProvideHandle.Type);
                 m_RequestOperation.completed += AsyncOperationCompleted;
             }
 
@@ -53,7 +53,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             Type t = pi.Type;
             bool isList = t.IsGenericType && typeof(IList<>) == t.GetGenericTypeDefinition();
-            var internalId = pi.ResourceManager.TransformInternalId(pi.Location);
+            var internalId = pi.Location.InternalId;
             if (t.IsArray || isList)
             {
                 object result = null;

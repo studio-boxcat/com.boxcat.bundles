@@ -75,7 +75,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             //   int m_StartFrame;
             string m_LocalDataPath;
-            internal string m_LocalHashValue;
             ProvideHandle m_ProviderInterface;
             internal ContentCatalogData m_ContentCatalogData;
             AsyncOperationHandle<ContentCatalogData> m_ContentCatalogDataLoadOp;
@@ -92,7 +91,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                 List<object> deps = new List<object>(); // TODO: garbage. need to pass actual count and reuse the list
                 m_ProviderInterface.GetDependencies(deps);
-                string idToLoad = DetermineIdToLoad(m_ProviderInterface.Location, deps);
+                string idToLoad = DetermineIdToLoad(m_ProviderInterface.Location);
 
                 Addressables.LogFormat("Addressables - Using content catalog from {0}.", idToLoad);
 
@@ -290,9 +289,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
             string GetTransformedInternalId(IResourceLocation loc)
             {
-                if (m_ProviderInterface.ResourceManager == null)
-                    return loc.InternalId;
-                return m_ProviderInterface.ResourceManager.TransformInternalId(loc);
+                return loc.InternalId;
             }
 
             const string kCatalogExt =
@@ -302,35 +299,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             ".json";
 #endif
 
-            internal string DetermineIdToLoad(IResourceLocation location, IList<object> dependencyObjects)
+            internal string DetermineIdToLoad(IResourceLocation location)
             {
                 //default to load actual local source catalog
-                string idToLoad = GetTransformedInternalId(location);
-                if (dependencyObjects != null &&
-                    location.Dependencies != null &&
-                    dependencyObjects.Count == (int)DependencyHashIndex.Count &&
-                    location.Dependencies.Count == (int)DependencyHashIndex.Count)
-                {
-                    m_LocalHashValue = dependencyObjects[(int)DependencyHashIndex.Cache] as string;
-                    Addressables.LogFormat("Addressables - ContentCatalogProvider CachedHash = {0}.", m_LocalHashValue);
-
-                    {
-#if ENABLE_CACHING
-                        if (!string.IsNullOrEmpty(m_LocalHashValue) && !m_Retried && !string.IsNullOrEmpty(Application.persistentDataPath)) //cache exists and not forcing a retry state
-                        {
-                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", kCatalogExt);
-                        }
-                        else
-                        {
-                            m_LocalHashValue = Hash128.Compute(idToLoad).ToString();
-                        }
-#else
-                        m_LocalHashValue = Hash128.Compute(idToLoad).ToString();
-#endif
-                    }
-                }
-
-                return idToLoad;
+                return GetTransformedInternalId(location);
             }
 
             private void OnCatalogLoaded(ContentCatalogData ccd)
@@ -342,7 +314,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.m_BuildResultHash));
 #endif
                     ccd.location = m_ProviderInterface.Location;
-                    ccd.localHash = m_LocalHashValue;
 #if ENABLE_CACHING
                     if (string.IsNullOrEmpty(m_LocalDataPath) && string.IsNullOrEmpty(Application.persistentDataPath))
                     {

@@ -118,16 +118,6 @@ namespace UnityEngine.ResourceManagement
         /// </example>
         public static Action<AsyncOperationHandle, Exception> ExceptionHandler { get; set; }
 
-        /// <summary>
-        /// Checks for an internal id transform function and uses it to modify the internal id value.
-        /// </summary>
-        /// <param name="location">The location to transform the internal id of.</param>
-        /// <returns>If a transform func is set, use it to pull the local id; otherwise, the InternalId property of the location is used.</returns>
-        public string TransformInternalId(IResourceLocation location)
-        {
-            return location.InternalId;
-        }
-
         internal bool CallbackHooksEnabled = true; // tests might need to disable the callback hooks to manually pump updating
 
         ListWithEvents<IResourceProvider> m_ResourceProviders = new ListWithEvents<IResourceProvider>();
@@ -485,7 +475,7 @@ namespace UnityEngine.ResourceManagement
             //If the location uses the AssetBundleProvider, we need to transform the ID first
             //so we don't try and load the same bundle twice if the user is manipulating the path at runtime.
             if (isAssetBundleProvider)
-                key = new IdCacheKey(TransformInternalId(location));
+                key = new IdCacheKey(location.InternalId);
             else
                 key = new LocationCacheKey(location, desiredType);
 

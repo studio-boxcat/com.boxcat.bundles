@@ -229,7 +229,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                     data.location.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = remoteHashLocation;
 
                 IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
-                addressables.AddResourceLocator(locMap, data.localHash, data.location);
+                addressables.AddResourceLocator(locMap, data.location);
                 addressables.AddResourceLocator(new DynamicResourceLocator(addressables));
                 return addressables.ResourceManager.CreateCompletedOperation<IResourceLocator>(locMap, string.Empty);
             }
@@ -268,7 +268,7 @@ namespace UnityEngine.AddressableAssets.Initialization
         //Attempts to load each catalog in order, stopping at first success.
         internal AsyncOperationHandle<IResourceLocator> LoadContentCatalogInternal(IList<IResourceLocation> catalogs, int index, ResourceLocationMap locMap, IResourceLocation remoteHashLocation)
         {
-            Addressables.LogFormat("Addressables - loading content catalog from {0}.", m_Addressables.ResourceManager.TransformInternalId(catalogs[index]));
+            Addressables.LogFormat("Addressables - loading content catalog from {0}.", catalogs[index].InternalId);
             var loadOp = LoadContentCatalog(catalogs[index], m_ProviderSuffix, remoteHashLocation);
             if (loadOp.IsDone)
                 LoadOpComplete(loadOp, catalogs, locMap, index, remoteHashLocation);

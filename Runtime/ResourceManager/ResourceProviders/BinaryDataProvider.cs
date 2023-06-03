@@ -39,7 +39,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     m_IgnoreFailures = rawProvider.IgnoreFailures;
                 }
 
-                var path = m_PI.ResourceManager.TransformInternalId(m_PI.Location);
+                var path = m_PI.Location.InternalId;
                 if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
                 {
                     throw new NotSupportedException();

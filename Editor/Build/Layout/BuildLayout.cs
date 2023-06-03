@@ -538,11 +538,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Runtime setting value set for catalogs to load (First catalog found in the list is used)
             /// </summary>
             public List<string> CatalogLoadPaths = new List<string>();
-
-            /// <summary>
-            /// Hash of the build catalog
-            /// </summary>
-            public string CatalogHash;
         }
 
         /// <summary>

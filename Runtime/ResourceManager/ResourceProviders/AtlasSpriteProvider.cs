@@ -20,7 +20,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 return;
             }
 
-            var key = providerInterface.ResourceManager.TransformInternalId(providerInterface.Location);
+            var key = providerInterface.Location.InternalId;
             ResourceManagerConfig.ExtractKeyAndSubKey(key, out string mainKey, out string subKey);
             string spriteKey = string.IsNullOrEmpty(subKey) ? mainKey : subKey;
             var sprite = atlas.GetSprite(spriteKey);

@@ -96,7 +96,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 if (m_Loaded)
                     return;
                 m_Loaded = true;
-                string assetPath = m_ProvideHandle.ResourceManager.TransformInternalId(m_ProvideHandle.Location);
+                string assetPath = m_ProvideHandle.Location.InternalId;
                 object result = null;
                 if (m_ProvideHandle.Type.IsArray)
                     result = ResourceManagerConfig.CreateArrayResult(m_ProvideHandle.Type, LoadAssetsWithSubAssets(assetPath));

@@ -1156,8 +1156,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             runtimeSettings.CatalogLoadPaths = new List<string>();
             foreach (ResourceLocationData catalogLocation in aaContext.runtimeData.CatalogLocations)
                 runtimeSettings.CatalogLoadPaths.Add(catalogLocation.InternalId);
-            if (contentCatalog != null)
-                runtimeSettings.CatalogHash = contentCatalog.localHash;
 
             return runtimeSettings;
         }

@@ -331,7 +331,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         contentUpdateContext = new ContentUpdateContext()
                         {
                             BundleToInternalBundleIdMap = m_BundleToInternalId,
-                            GuidToPreviousAssetStateMap = BuildGuidToCachedAssetStateMap(builderInput.PreviousContentState, aaContext.Settings),
+                            GuidToPreviousAssetStateMap = BuildGuidToCachedAssetStateMap(builderInput.PreviousContentState),
                             IdToCatalogDataEntryMap = locationIdToCatalogEntryMap,
                             WriteData = extractData.WriteData,
                             ContentState = builderInput.PreviousContentState,
@@ -382,12 +382,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                 contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList());//, aaContext.Settings.OptimizeCatalogSize);
                 var bytes = contentCatalog.SerializeToByteArray();
-                var contentHash = HashingMethods.Calculate(bytes);
 
-                if (ProjectConfigData.GenerateBuildLayout)
-                    contentCatalog.localHash = contentHash.ToString();
-
-                CreateCatalogFiles(bytes, builderInput, aaContext, contentHash.ToString());
+                CreateCatalogFiles(bytes, builderInput, aaContext);
             }
 #else
             using (m_Log.ScopedStep(LogLevel.Info, "Generate JSON Catalog"))
@@ -573,7 +569,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return locationIdToCatalogEntryMap;
         }
 
-        private static Dictionary<string, CachedAssetState> BuildGuidToCachedAssetStateMap(AddressablesContentState contentState, AddressableAssetSettings settings)
+        private static Dictionary<string, CachedAssetState> BuildGuidToCachedAssetStateMap(AddressablesContentState contentState)
         {
             Dictionary<string, CachedAssetState> addressableEntryToCachedStateMap = new Dictionary<string, CachedAssetState>();
             foreach (var cachedInfo in contentState.cachedInfos)
@@ -582,7 +578,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return addressableEntryToCachedStateMap;
         }
 #if ENABLE_BINARY_CATALOG
-        internal bool CreateCatalogFiles(byte[] data, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash = null)
+        internal bool CreateCatalogFiles(byte[] data, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext)
         {
             if (data == null || data.Length == 0 || builderInput == null || aaContext == null)
             {

@@ -31,12 +31,6 @@ namespace UnityEngine.AddressableAssets
         public IResourceLocator Locator { get; private set; }
 
         /// <summary>
-        /// The local hash for this Resource Locator.  If a remote content catalog is updated and the remote hash changes,
-        /// this locator info is used to determine if a new content catalog needs to be updated.
-        /// </summary>
-        public string LocalHash { get; private set; }
-
-        /// <summary>
         /// The Content Catalog location this Resource Locator was loaded from.  Catalog locations typically contain
         /// exactly two dependencies.  The first dependency is the remote location of the content catalog hash file, the 
         /// second is the local path of the hash file.
@@ -47,37 +41,12 @@ namespace UnityEngine.AddressableAssets
         /// Contstruct a ResourceLocatorInfo for a given Resource Locator.
         /// </summary>
         /// <param name="loc">The IResourceLocator to track.</param>
-        /// <param name="localHash">The local hash of the content catalog.</param>
-        /// <param name="remoteCatalogLocation">The location for the remote catalog.  Typically this location contains exactly two dependeices, 
+        /// <param name="remoteCatalogLocation">The location for the remote catalog.  Typically this location contains exactly two dependeices,
         /// the first one pointing to the remote hash file.  The second dependency pointing to the local hash file.</param>
-        public ResourceLocatorInfo(IResourceLocator loc, string localHash, IResourceLocation remoteCatalogLocation)
+        public ResourceLocatorInfo(IResourceLocator loc, IResourceLocation remoteCatalogLocation)
         {
             Locator = loc;
-            LocalHash = localHash;
             CatalogLocation = remoteCatalogLocation;
-        }
-
-        /// <summary>
-        /// The remote hash location of the content catalog used by the resource locator
-        /// </summary>
-        public IResourceLocation HashLocation
-        {
-            get { return CatalogLocation.Dependencies[0]; }
-        }
-
-        /// <summary>
-        /// Checks to see if the provided CatalogLocation contains the expected amount of dependencies to check for catalog updates
-        /// </summary>
-        public bool CanUpdateContent
-        {
-            get { return !string.IsNullOrEmpty(LocalHash) && CatalogLocation != null && CatalogLocation.HasDependencies && CatalogLocation.Dependencies.Count == 2; }
-        }
-
-        internal void UpdateContent(IResourceLocator locator, string hash, IResourceLocation loc)
-        {
-            LocalHash = hash;
-            CatalogLocation = loc;
-            Locator = locator;
         }
     }
 
@@ -1696,7 +1665,7 @@ namespace UnityEngine.AddressableAssets
         /// <returns>The operation handle for the request.</returns>
         /// <seealso cref="Addressables.LoadSceneAsync(object, LoadSceneMode, bool, int)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadSceneAsync(*)", true)]
-        [Obsolete]        
+        [Obsolete]
         public static AsyncOperationHandle<SceneInstance> LoadScene(object key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
             return LoadSceneAsync(key, loadMode, activateOnLoad, priority);
@@ -1903,98 +1872,6 @@ namespace UnityEngine.AddressableAssets
         public static AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle, bool autoReleaseHandle = true)
         {
             return m_Addressables.UnloadSceneAsync(handle, UnloadSceneOptions.None, autoReleaseHandle);
-        }
-
-        /// <summary>
-        /// Adds a ResourceLocator to the Addressables runtime.
-        /// </summary>
-        /// <remarks>
-        /// Adds a ResourceLocator to the Addressables runtime.
-        ///
-        /// After adding the resource locator to Addressables it can then be used to locate Locations via Addressables loading APIs.
-        ///
-        /// Adding new resource locators can be used to add locations and manage asset files outside of the Addressables build system.
-        ///
-        /// In the following example we have a folder in the root folder called "dataFiles" containing some json files.
-        /// 
-        /// These json files are then loaded using TextDataProvider, which is a ResourceProvider used to load text files.
-        /// </remarks>
-        /// <param name="locator">The locator object.</param>
-        /// <param name="localCatalogHash">The hash of the local catalog. This can be null if the catalog cannot be updated.</param>
-        /// <param name="remoteCatalogLocation">The location of the remote catalog. This can be null if the catalog cannot be updated.</param>
-        /// <example>
-        /// This example code creates ResourceLocationBase and adds it to the locator for each file.
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAddResourceLocator.cs" region="SAMPLE_ADDLOCATOR"/>
-        /// </example>
-        /// <example>
-        /// Using Addressables API to load "dataFiles/settings.json" after adding the locator:
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAddResourceLocator.cs" region="SAMPLE_LOADING"/>
-        /// </example>
-        public static void AddResourceLocator(IResourceLocator locator, string localCatalogHash = null, IResourceLocation remoteCatalogLocation = null)
-        {
-            m_Addressables.AddResourceLocator(locator, localCatalogHash, remoteCatalogLocation);
-        }
-
-        /// <summary>
-        /// Remove a locator;
-        /// </summary>
-        /// <param name="locator">The locator to remove.</param>
-        public static void RemoveResourceLocator(IResourceLocator locator)
-        {
-            m_Addressables.RemoveResourceLocator(locator);
-        }
-
-        /// <summary>
-        /// Remove all locators.
-        /// </summary>
-        public static void ClearResourceLocators()
-        {
-            m_Addressables.ClearResourceLocators();
-        }
-
-        /// <summary>
-        /// Given a location path that points to a remote content catalog, create a location with the assumed dependencies
-        /// that point to remote, and local, hash files respectively.  The first dependency, remote, assumes that the .hash file
-        /// is located beside the provided location of the .json catalog file.  The second dependency, local, points to a location
-        /// inside the Addressables local cache data folder.  The Addressables local cache data folder is meant for content catalogs
-        /// and is not the same cache location for AssetBundles.
-        /// </summary>
-        /// <typeparam name="T">The type of provider you want to load your given catalog.  By default, Addressables uses the ContentCatalogProvider.</typeparam>
-        /// <param name="remoteCatalogPath">The path of the remote content catalog.</param>
-        /// <returns>A resource location with exactly 2 dependencies.  The first points to the assumed remote hash file location.  The second points to the local hash file location.</returns>
-        public static ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string remoteCatalogPath) where T : IResourceProvider
-        {
-            return m_Addressables.CreateCatalogLocationWithHashDependencies<T>(remoteCatalogPath);
-        }
-
-        /// <summary>
-        /// Given a location path that points to a remote content catalog, create a location with the assumed dependencies
-        /// that point to remote, and local, hash files respectively.  The first dependency, remote, assumes that the .hash file
-        /// is located beside the provided location of the .json catalog file.  The second dependency, local, points to a location
-        /// inside the Addressables local cache data folder.  The Addressables local cache data folder is meant for content catalogs
-        /// and is not the same cache location for AssetBundles.
-        /// </summary>
-        /// <typeparam name="T">The type of provider you want to load your given catalog.  By default, Addressables uses the ContentCatalogProvider.</typeparam>
-        /// <param name="remoteCatalogLocation">A resource location that points to the remote content catalog file.</param>
-        /// <returns>A resource location with exactly 2 dependencies.  The first points to the assumed remote hash file location.  The second points to the local hash file location.</returns>
-        public static ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(IResourceLocation remoteCatalogLocation) where T : IResourceProvider
-        {
-            return m_Addressables.CreateCatalogLocationWithHashDependencies<T>(remoteCatalogLocation);
-        }
-
-        /// <summary>
-        /// Given a location path that points to a remote content catalog and its corresponding remote hash file, create a location with the dependencies
-        /// that point to remote, and local, hash files respectively.  The first dependency, remote, uses the provided remote hash location.  
-        /// The second dependency, local, points to a location inside the Addressables local cache data folder.  The Addressables local cache data folder is meant for content catalogs
-        /// and is not the same cache location for AssetBundles. 
-        /// </summary>
-        /// <typeparam name="T">The type of provider you want to load your given catalog.  By default, Addressables uses the ContentCatalogProvider.</typeparam>
-        /// <param name="remoteCatalogPath">The path of the remote content catalog.</param>
-        /// <param name="remoteHashPath">The path of the remote catalog .hash file.</param>
-        /// <returns>A resource location with exactly 2 dependencies.  The first points to the assumed remote hash file location.  The second points to the local hash file location.</returns>
-        public static ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string remoteCatalogPath, string remoteHashPath) where T : IResourceProvider
-        {
-            return m_Addressables.CreateCatalogLocationWithHashDependencies<T>(remoteCatalogPath, remoteHashPath);
         }
     }
 }

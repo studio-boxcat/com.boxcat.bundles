@@ -227,9 +227,9 @@ namespace UnityEngine.AddressableAssets
             get { return m_ResourceLocators.Select(l => l.Locator); }
         }
 
-        public void AddResourceLocator(IResourceLocator loc, string localCatalogHash = null, IResourceLocation remoteCatalogLocation = null)
+        public void AddResourceLocator(IResourceLocator loc, IResourceLocation remoteCatalogLocation = null)
         {
-            m_ResourceLocators.Add(new ResourceLocatorInfo(loc, localCatalogHash, remoteCatalogLocation));
+            m_ResourceLocators.Add(new ResourceLocatorInfo(loc, remoteCatalogLocation));
         }
 
         public void RemoveResourceLocator(IResourceLocator loc)

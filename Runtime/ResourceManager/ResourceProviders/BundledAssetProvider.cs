@@ -84,7 +84,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 }
                 else
                 {
-                    var assetPath = m_ProvideHandle.ResourceManager.TransformInternalId(m_ProvideHandle.Location);
+                    var assetPath = m_ProvideHandle.Location.InternalId;
                     if (m_ProvideHandle.Type.IsArray)
                     {
 #if !UNITY_2021_1_OR_NEWER

@@ -79,9 +79,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         const int kVersion = 1;
 
         [NonSerialized]
-        internal string localHash;
-
-        [NonSerialized]
         internal IResourceLocation location;
 
         [SerializeField]

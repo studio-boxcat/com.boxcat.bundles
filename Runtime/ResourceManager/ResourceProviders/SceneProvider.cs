@@ -88,7 +88,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             protected override string DebugName
             {
-                get { return string.Format("Scene({0})", m_Location == null ? "Invalid" : ShortenPath(m_ResourceManager.TransformInternalId(m_Location), false)); }
+                get { return string.Format("Scene({0})", m_Location == null ? "Invalid" : ShortenPath(m_Location.InternalId, false)); }
             }
 
             protected override void Execute()
@@ -119,7 +119,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             internal SceneInstance InternalLoadScene(IResourceLocation location, bool loadingFromBundle, LoadSceneParameters loadSceneParameters, bool activateOnLoad, int priority)
             {
-                var internalId = m_ResourceManager.TransformInternalId(location);
+                var internalId = location.InternalId;
                 var op = InternalLoad(internalId, loadingFromBundle, loadSceneParameters);
                 op.allowSceneActivation = activateOnLoad;
                 op.priority = priority;
