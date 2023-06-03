@@ -24,10 +24,6 @@ namespace UnityEditor.AddressableAssets.Settings
             [SerializeField]
             internal long localLoadSpeedInternal = 1024 * 1024 * 10;
 
-            [FormerlySerializedAs("m_remoteLoadSpeed")]
-            [SerializeField]
-            internal long remoteLoadSpeedInternal = 1024 * 1024 * 1;
-
             [FormerlySerializedAs("m_hierarchicalSearch")]
             [SerializeField]
             internal bool hierarchicalSearchInternal = true;
@@ -279,24 +275,6 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 ValidateData();
                 s_Data.localLoadSpeedInternal = value;
-                SaveData();
-            }
-        }
-
-        /// <summary>
-        /// The remote bundle loading speed used in the Simulate Groups (advanced) playmode.
-        /// </summary>
-        public static long RemoteLoadSpeed
-        {
-            get
-            {
-                ValidateData();
-                return s_Data.remoteLoadSpeedInternal;
-            }
-            set
-            {
-                ValidateData();
-                s_Data.remoteLoadSpeedInternal = value;
                 SaveData();
             }
         }

@@ -233,12 +233,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         [SerializeField]
         internal string LocalCatalogBuildPath;
 
-        /// <summary>
-        /// The build path of the remote content catalog, if one was built
-        /// </summary>
-        [SerializeField]
-        internal string RemoteCatalogBuildPath;
-
         internal string m_FilePath;
 
         private bool m_HeaderRead = false;
@@ -478,16 +472,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public Profile ActiveProfile;
 
             /// <summary>
-            /// Addressables setting value set for building the remote catalog
-            /// </summary>
-            public bool BuildRemoteCatalog;
-
-            /// <summary>
-            /// Load path for the remote catalog if enabled
-            /// </summary>
-            public string RemoteCatalogLoadPath;
-
-            /// <summary>
             /// Addressables setting value set for bundling the local catalog
             /// </summary>
             public bool BundleLocalCatalog;
@@ -496,21 +480,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Addressables setting value set for optimising the catalog size
             /// </summary>
             public bool OptimizeCatalogSize;
-
-            /// <summary>
-            /// Addressables setting value set for time out when downloading catalogs
-            /// </summary>
-            public int CatalogRequestsTimeout;
-
-            /// <summary>
-            /// Runtime setting value set for the maximum number of concurrent web requests
-            /// </summary>
-            public int MaxConcurrentWebRequests;
-
-            /// <summary>
-            /// Addressables setting value set for is to update the remote catalog on startup
-            /// </summary>
-            public bool DisableCatalogUpdateOnStartup;
 
             /// <summary>
             /// Addressables setting value set for if the build created unique bundle ids

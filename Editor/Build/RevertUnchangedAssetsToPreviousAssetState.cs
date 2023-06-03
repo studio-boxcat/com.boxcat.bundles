@@ -114,7 +114,6 @@ public class RevertUnchangedAssetsToPreviousAssetState
         currentLocation.InternalId = previousBundleCache.bundleFileId;
         var currentOptions = currentLocation.Data as AssetBundleRequestOptions;
         var prevOptions = previousBundleCache.data as AssetBundleRequestOptions;
-        currentOptions.Crc = prevOptions.Crc;
         currentOptions.Hash = prevOptions.Hash;
         currentOptions.BundleSize = prevOptions.BundleSize;
         currentOptions.BundleName = prevOptions.BundleName;

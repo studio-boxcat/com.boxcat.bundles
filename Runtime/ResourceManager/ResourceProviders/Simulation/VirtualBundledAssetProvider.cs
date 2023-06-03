@@ -2,10 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
-using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
 {
@@ -18,10 +15,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         /// <inheritdoc/>
         public override long ComputeSize(IResourceLocation location, ResourceManager resourceManager)
         {
-            var id = resourceManager == null ? location.InternalId : resourceManager.TransformInternalId(location);
-            if (!ResourceManagerConfig.IsPathRemote(id))
-                return 0;
-            return BundleSize;
+            return 0;
         }
     }
 
@@ -61,11 +55,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             {
                 bool success = (obj.Result != null && m_PI.Type.IsAssignableFrom(obj.Result.GetType())) && obj.OperationException == null;
                 m_PI.Complete(obj.Result, success, obj.OperationException);
-            }
-
-            public float GetPercentComplete()
-            {
-                return m_RequestOperation != null ? m_RequestOperation.PercentComplete : 0.0f;
             }
         }
 

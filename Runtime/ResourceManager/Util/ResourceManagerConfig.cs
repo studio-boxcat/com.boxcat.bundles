@@ -578,33 +578,6 @@ namespace UnityEngine.ResourceManagement.Util
         }
 
         /// <summary>
-        /// Check to see if a path is remote or not.
-        /// </summary>
-        /// <param name="path">The path to check.</param>
-        /// <returns>Returns true if path is remote.</returns>
-        public static bool IsPathRemote(string path)
-        {
-            return path != null && path.StartsWith("http", StringComparison.Ordinal);
-        }
-
-        /// <summary>
-        /// Strips the query parameters of an url.
-        /// </summary>
-        /// <param name="path">The path to check.</param>
-        /// <returns>Returns the path without query parameters.</returns>
-        public static string StripQueryParameters(string path)
-        {
-            if (path != null)
-            {
-                var idx = path.IndexOf('?');
-                if (idx >= 0)
-                    return path.Substring(0, idx);
-            }
-
-            return path;
-        }
-
-        /// <summary>
         /// Check if path should use WebRequest.  A path should use WebRequest for remote paths and platforms that require WebRequest to load locally.
         /// </summary>
         /// <param name="path">The path to check.</param>

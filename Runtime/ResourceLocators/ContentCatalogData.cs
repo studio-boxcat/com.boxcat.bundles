@@ -1029,9 +1029,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 //since this data is likely to be duplicated, save it separately to allow the serialization system to dedupe
                 public struct Common
                 {
-                    public short timeout;
-                    public byte redirectLimit;
-                    public byte retryCount;
                     public int flags;
 
                     public AssetLoadMode assetLoadMode
@@ -1039,32 +1036,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         get => (flags & 1) == 1 ? AssetLoadMode.AllPackedAssetsAndDependencies : AssetLoadMode.RequestedAssetAndDependencies;
                         set => flags = (flags & ~1) | (int)value;
                     }
-
-                    public bool chunkedTransfer
-                    {
-                        get => (flags & 2) == 2;
-                        set => flags = (flags & ~2) | (int)(value ? 2 : 0);
-                    }
-                    public bool useCrcForCachedBundle
-                    {
-                        get => (flags & 4) == 4;
-                        set => flags = (flags & ~4) | (int)(value ? 4 : 0);
-                    }
-                    public bool useUnityWebRequestForLocalBundles
-                    {
-                        get => (flags & 8) == 8;
-                        set => flags = (flags & ~8) | (int)(value ? 8 : 0);
-                    }
-                    public bool clearOtherCachedVersionsWhenLoaded
-                    {
-                        get => (flags & 16) == 16;
-                        set => flags = (flags & ~16) | (int)(value ? 16 : 0);
-                    }
                 }
 
                 public uint hashId;
                 public uint bundleNameId;
-                public uint crc;
                 public uint bundleSize;
                 public uint commonId;
             }
@@ -1080,16 +1055,8 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 {
                     Hash = reader.ReadValue<Hash128>(sd.hashId).ToString(),
                     BundleName = reader.ReadString(sd.bundleNameId, '_'),
-                    Crc = sd.crc,
                     BundleSize = sd.bundleSize,
-                    Timeout = com.timeout,
-                    RetryCount = com.retryCount,
-                    RedirectLimit = com.redirectLimit,
                     AssetLoadMode = com.assetLoadMode,
-                    ChunkedTransfer = com.chunkedTransfer,
-                    UseUnityWebRequestForLocalBundles = com.useUnityWebRequestForLocalBundles,
-                    UseCrcForCachedBundle = com.useCrcForCachedBundle,
-                    ClearOtherCachedVersionsWhenLoaded = com.clearOtherCachedVersionsWhenLoaded
                 };
             }
 
@@ -1101,18 +1068,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 {
                     hashId = writer.Write(hash),
                     bundleNameId = writer.WriteString(options.BundleName, '_'),
-                    crc = options.Crc,
                     bundleSize = (uint)options.BundleSize,
                     commonId = writer.Write(new SerializedData.Common
                     {
-                        timeout = (short)options.Timeout,
-                        redirectLimit = (byte)options.RedirectLimit,
-                        retryCount = (byte)options.RetryCount,
                         assetLoadMode = options.AssetLoadMode,
-                        chunkedTransfer = options.ChunkedTransfer,
-                        clearOtherCachedVersionsWhenLoaded = options.ClearOtherCachedVersionsWhenLoaded,
-                        useCrcForCachedBundle = options.UseCrcForCachedBundle,
-                        useUnityWebRequestForLocalBundles = options.UseUnityWebRequestForLocalBundles
                     })
                 };
                 return writer.Write(sd);

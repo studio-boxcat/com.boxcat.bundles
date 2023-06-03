@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
 
@@ -22,7 +21,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 m_ProvideHandle = provideHandle;
 
-                provideHandle.SetProgressCallback(PercentComplete);
                 provideHandle.SetWaitForCompletionCallback(WaitForCompletionHandler);
                 m_RequestOperation = Resources.LoadAsync(m_ProvideHandle.ResourceManager.TransformInternalId(m_ProvideHandle.Location), m_ProvideHandle.Type);
                 m_RequestOperation.completed += AsyncOperationCompleted;
@@ -47,11 +45,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 result = result != null && m_ProvideHandle.Type.IsAssignableFrom(result.GetType()) ? result : null;
                 m_ProvideHandle.Complete(result, result != null,
                     result == null ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.") : null);
-            }
-
-            public float PercentComplete()
-            {
-                return m_RequestOperation != null ? m_RequestOperation.progress : 0.0f;
             }
         }
 

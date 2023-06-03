@@ -683,7 +683,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             layout.BuildStart = aaContext.buildStartTime;
 
             layout.LocalCatalogBuildPath = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(aaContext.Settings);
-            layout.RemoteCatalogBuildPath = aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings);
 
             AddressableAssetSettings aaSettings = aaContext.Settings;
             if (m_ContentCatalogData != null)
@@ -1099,7 +1098,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             editorSettings.SettingsHash = aaSettings.currentHash.ToString();
 
             editorSettings.DisableSubAssetRepresentations = aaSettings.DisableVisibleSubAssetRepresentations;
-            editorSettings.MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests;
             editorSettings.NonRecursiveBuilding = aaSettings.NonRecursiveBuilding;
             editorSettings.ContiguousBundles = aaSettings.ContiguousBundles;
             editorSettings.UniqueBundleIds = aaSettings.UniqueBundleIds;
@@ -1114,13 +1112,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 editorSettings.MonoScriptBundleNaming = aaSettings.MonoScriptBundleNaming.ToString();
             editorSettings.StripUnityVersionFromBundleBuild = aaSettings.StripUnityVersionFromBundleBuild;
 
-            editorSettings.BuildRemoteCatalog = aaSettings.BuildRemoteCatalog;
-            if (aaSettings.BuildRemoteCatalog)
-                editorSettings.RemoteCatalogLoadPath = aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings);
-            editorSettings.CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout;
             editorSettings.BundleLocalCatalog = aaSettings.BundleLocalCatalog;
             editorSettings.OptimizeCatalogSize = aaSettings.OptimizeCatalogSize;
-            editorSettings.DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup;
 
             var profile = aaSettings.profileSettings.GetProfile(aaSettings.activeProfileId);
             editorSettings.ActiveProfile = new BuildLayout.Profile()

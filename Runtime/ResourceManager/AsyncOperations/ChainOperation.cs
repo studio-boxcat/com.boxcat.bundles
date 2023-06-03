@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Exceptions;
-using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEngine.ResourceManagement
 {
@@ -10,8 +9,6 @@ namespace UnityEngine.ResourceManagement
     {
         AsyncOperationHandle<TObjectDependency> m_DepOp;
         AsyncOperationHandle<TObject> m_WrappedOp;
-        DownloadStatus m_depStatus = default;
-        DownloadStatus m_wrapStatus = default;
         Func<AsyncOperationHandle<TObjectDependency>, AsyncOperationHandle<TObject>> m_Callback;
         Action<AsyncOperationHandle<TObject>> m_CachedOnWrappedCompleted;
         bool m_ReleaseDependenciesOnFailure = true;
@@ -39,7 +36,6 @@ namespace UnityEngine.ResourceManagement
             m_DepOp.Acquire();
             m_Callback = callback;
             m_ReleaseDependenciesOnFailure = releaseDependenciesOnFailure;
-            RefreshDownloadStatus();
         }
 
         ///<inheritdoc />
@@ -91,51 +87,12 @@ namespace UnityEngine.ResourceManagement
             if (m_DepOp.IsValid())
                 m_DepOp.Release();
         }
-
-        internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
-        {
-            RefreshDownloadStatus(visited);
-            return new DownloadStatus() {DownloadedBytes = m_depStatus.DownloadedBytes + m_wrapStatus.DownloadedBytes, TotalBytes = m_depStatus.TotalBytes + m_wrapStatus.TotalBytes, IsDone = IsDone};
-        }
-
-        void RefreshDownloadStatus(HashSet<object> visited = default)
-        {
-            m_depStatus = m_DepOp.IsValid() ? m_DepOp.InternalGetDownloadStatus(visited) : m_depStatus;
-            m_wrapStatus = m_WrappedOp.IsValid() ? m_WrappedOp.InternalGetDownloadStatus(visited) : m_wrapStatus;
-        }
-
-        protected override float Progress
-        {
-            get
-            {
-                DownloadStatus downloadStatus = GetDownloadStatus(new HashSet<object>());
-                if (!downloadStatus.IsDone && downloadStatus.DownloadedBytes == 0)
-                    return 0.0f;
-
-                float total = 0f;
-                int numberOfOps = 2;
-
-                if (m_DepOp.IsValid())
-                    total += m_DepOp.PercentComplete;
-                else
-                    total++;
-
-                if (m_WrappedOp.IsValid())
-                    total += m_WrappedOp.PercentComplete;
-                else
-                    total++;
-
-                return total / numberOfOps;
-            }
-        }
     }
 
     class ChainOperationTypelessDepedency<TObject> : AsyncOperationBase<TObject>
     {
         AsyncOperationHandle m_DepOp;
         AsyncOperationHandle<TObject> m_WrappedOp;
-        DownloadStatus m_depStatus = default;
-        DownloadStatus m_wrapStatus = default;
         Func<AsyncOperationHandle, AsyncOperationHandle<TObject>> m_Callback;
         Action<AsyncOperationHandle<TObject>> m_CachedOnWrappedCompleted;
         bool m_ReleaseDependenciesOnFailure = true;
@@ -165,7 +122,6 @@ namespace UnityEngine.ResourceManagement
             m_DepOp.Acquire();
             m_Callback = callback;
             m_ReleaseDependenciesOnFailure = releaseDependenciesOnFailure;
-            RefreshDownloadStatus();
         }
 
         ///<inheritdoc />
@@ -216,43 +172,6 @@ namespace UnityEngine.ResourceManagement
         {
             if (m_DepOp.IsValid())
                 m_DepOp.Release();
-        }
-
-        internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
-        {
-            RefreshDownloadStatus(visited);
-            return new DownloadStatus() {DownloadedBytes = m_depStatus.DownloadedBytes + m_wrapStatus.DownloadedBytes, TotalBytes = m_depStatus.TotalBytes + m_wrapStatus.TotalBytes, IsDone = IsDone};
-        }
-
-        void RefreshDownloadStatus(HashSet<object> visited = default)
-        {
-            m_depStatus = m_DepOp.IsValid() ? m_DepOp.InternalGetDownloadStatus(visited) : m_depStatus;
-            m_wrapStatus = m_WrappedOp.IsValid() ? m_WrappedOp.InternalGetDownloadStatus(visited) : m_wrapStatus;
-        }
-
-        protected override float Progress
-        {
-            get
-            {
-                DownloadStatus downloadStatus = GetDownloadStatus(new HashSet<object>());
-                if (!downloadStatus.IsDone && downloadStatus.DownloadedBytes == 0)
-                    return 0.0f;
-
-                float total = 0f;
-                int numberOfOps = 2;
-
-                if (m_DepOp.IsValid())
-                    total += m_DepOp.PercentComplete;
-                else
-                    total++;
-
-                if (m_WrappedOp.IsValid())
-                    total += m_WrappedOp.PercentComplete;
-                else
-                    total++;
-
-                return total / numberOfOps;
-            }
         }
     }
 }

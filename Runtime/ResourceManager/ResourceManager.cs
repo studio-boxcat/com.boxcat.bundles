@@ -986,11 +986,6 @@ namespace UnityEngine.ResourceManagement
                 m_scene = default(Scene);
             }
 
-            internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
-            {
-                return m_dependency.IsValid() ? m_dependency.InternalGetDownloadStatus(visited) : new DownloadStatus() { IsDone = IsDone };
-            }
-
             /// <inheritdoc />
             public override void GetDependencies(List<AsyncOperationHandle> deps)
             {
@@ -1012,11 +1007,6 @@ namespace UnityEngine.ResourceManagement
             protected override void Destroy()
             {
                 m_instanceProvider.ReleaseInstance(m_RM, m_instance);
-            }
-
-            protected override float Progress
-            {
-                get { return m_dependency.PercentComplete; }
             }
 
             ///<inheritdoc />

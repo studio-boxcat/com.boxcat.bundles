@@ -23,7 +23,6 @@ namespace UnityEngine.AddressableAssets
     {
         ResourceManager m_ResourceManager;
         IInstanceProvider m_InstanceProvider;
-        int m_CatalogRequestsTimeout;
 
         internal const string kCacheDataFolder = "{UnityEngine.Application.persistentDataPath}/com.unity.addressables/";
 
@@ -51,12 +50,6 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
-        public int CatalogRequestsTimeout
-        {
-            get { return m_CatalogRequestsTimeout; }
-            set { m_CatalogRequestsTimeout = value; }
-        }
-
         internal List<ResourceLocatorInfo> m_ResourceLocators = new List<ResourceLocatorInfo>();
         AsyncOperationHandle<IResourceLocator> m_InitializationOperation;
         AsyncOperationHandle<List<string>> m_ActiveCheckUpdateOperation;
@@ -68,8 +61,6 @@ namespace UnityEngine.AddressableAssets
         Action<AsyncOperationHandle> m_OnHandleDestroyedAction;
         Dictionary<object, AsyncOperationHandle> m_resultToHandle = new Dictionary<object, AsyncOperationHandle>();
         internal HashSet<AsyncOperationHandle> m_SceneInstances = new HashSet<AsyncOperationHandle>();
-
-        AsyncOperationHandle<bool> m_ActiveCleanBundleCacheOperation;
 
         internal int SceneOperationCount
         {
@@ -472,7 +463,6 @@ namespace UnityEngine.AddressableAssets
             catalogLoc.Data = new ProviderLoadRequestOptions()
             {
                 IgnoreFailures = false,
-                WebRequestTimeout = CatalogRequestsTimeout
             };
 
             if (!string.IsNullOrEmpty(hashFilePath))
@@ -480,14 +470,9 @@ namespace UnityEngine.AddressableAssets
                 ProviderLoadRequestOptions hashOptions = new ProviderLoadRequestOptions()
                 {
                     IgnoreFailures = true,
-                    WebRequestTimeout = CatalogRequestsTimeout
                 };
 
                 string tmpPath = hashFilePath;
-                if (ResourceManagerConfig.IsPathRemote(hashFilePath))
-                {
-                    tmpPath = ResourceManagerConfig.StripQueryParameters(hashFilePath);
-                }
 #if UNITY_SWITCH
                 string cacheHashFilePath = hashFilePath; // ResourceLocationBase does not allow empty string id
 #else
@@ -835,148 +820,6 @@ namespace UnityEngine.AddressableAssets
             m_ResourceManager.Release(handle);
         }
 
-        AsyncOperationHandle<long> GetDownloadSizeWithChain(AsyncOperationHandle dep, object key)
-        {
-            return ResourceManager.CreateChainOperation(dep, op => GetDownloadSizeAsync(key));
-        }
-
-        AsyncOperationHandle<long> ComputeCatalogSizeWithChain(IResourceLocation catalogLoc)
-        {
-            if (!catalogLoc.HasDependencies)
-                return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header size of a content catalog, " +
-                                                                         $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
-                                                                         $"be setup using CreateCatalogLocationWithHashDependencies");
-
-            AsyncOperationHandle dep = ResourceManager.ProvideResource<string>(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote]);
-            return ResourceManager.CreateChainOperation(dep, op =>
-            {
-                try
-                {
-                    var remoteHash = Hash128.Parse(op.Result.ToString());
-                    if (!IsCatalogCached(catalogLoc, remoteHash))
-                        return GetRemoteCatalogHeaderSize(catalogLoc);
-                }
-                catch (Exception e)
-                {
-                    return ResourceManager.CreateCompletedOperation<long>(0, $"Fetching the remote catalog size failed. {e}");
-                }
-
-                return ResourceManager.CreateCompletedOperation<long>(0, string.Empty);
-            });
-        }
-
-        internal bool IsCatalogCached(IResourceLocation catalogLoc, Hash128 remoteHash)
-        {
-            //If local hash exists, check if they're equal or not
-            if (!catalogLoc.HasDependencies
-                || catalogLoc.Dependencies.Count != 2
-                || !File.Exists(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache].InternalId)
-                || remoteHash != Hash128.Parse(File.ReadAllText(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache].InternalId)))
-                return false;
-
-            return true;
-        }
-
-        internal AsyncOperationHandle<long> GetRemoteCatalogHeaderSize(IResourceLocation catalogLoc)
-        {
-            if (!catalogLoc.HasDependencies)
-                return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header size of a content catalog, " +
-                                                                         $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
-                                                                         $"be setup using CreateCatalogLocationWithHashDependencies");
-
-            var internalIdHash = catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote].InternalId;
-#if ENABLE_BINARY_CATALOG
-            var internalIdCat = internalIdHash.Replace(".hash", ".bin");
-#else
-            var internalIdCat = internalIdHash.Replace(".hash", ".json");
-#endif
-            var uwr = new UnityWebRequest(internalIdCat, UnityWebRequest.kHttpVerbHEAD);
-            AsyncOperationBase<UnityWebRequest> uwrAsyncOp = new UnityWebRequestOperation(uwr);
-
-            return ResourceManager.CreateChainOperation(ResourceManager.StartOperation(uwrAsyncOp, default(AsyncOperationHandle))
-                , getOp =>
-                {
-                    var response = (getOp.Result as UnityWebRequest)?.GetResponseHeader("Content-Length");
-                    if (response != null && long.TryParse(response, out long result))
-                        return ResourceManager.CreateCompletedOperation(result, "");
-                    else
-                        return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header of a catalog failed.");
-                });
-        }
-
-        AsyncOperationHandle<long> GetDownloadSizeWithChain(AsyncOperationHandle dep, IEnumerable keys)
-        {
-            return ResourceManager.CreateChainOperation(dep, op => GetDownloadSizeAsync(keys));
-        }
-
-        public AsyncOperationHandle<long> GetDownloadSizeAsync(object key)
-        {
-            QueueEditorUpdateIfNeeded();
-
-            return GetDownloadSizeAsync(new object[] {key});
-        }
-
-        public AsyncOperationHandle<long> GetDownloadSizeAsync(IEnumerable keys)
-        {
-            QueueEditorUpdateIfNeeded();
-
-            if (ShouldChainRequest)
-                return TrackHandle(GetDownloadSizeWithChain(ChainOperation, keys));
-
-            List<IResourceLocation> allLocations = new List<IResourceLocation>();
-            foreach (object key in keys)
-            {
-                IList<IResourceLocation> locations;
-                if (key is IList<IResourceLocation>)
-                    locations = key as IList<IResourceLocation>;
-                else if (key is IResourceLocation)
-                {
-                    foreach (var locator in m_ResourceLocators)
-                    {
-                        if (locator.CatalogLocation == key as IResourceLocation)
-                            return ComputeCatalogSizeWithChain(key as IResourceLocation);
-                    }
-
-                    locations = new List<IResourceLocation>(1)
-                    {
-                        key as IResourceLocation
-                    };
-                }
-                else if (!GetResourceLocations(key, typeof(object), out locations))
-                    return ResourceManager.CreateCompletedOperationWithException<long>(0, new InvalidKeyException(key, typeof(object), this));
-
-                foreach (var loc in locations)
-                {
-                    if (loc.HasDependencies)
-                        allLocations.AddRange(loc.Dependencies);
-                }
-            }
-
-            long size = 0;
-            foreach (IResourceLocation location in allLocations.Distinct())
-            {
-                var sizeData = location.Data as ILocationSizeData;
-                if (sizeData != null)
-                    size += sizeData.ComputeSize(location, ResourceManager);
-            }
-
-            return ResourceManager.CreateCompletedOperation<long>(size, string.Empty);
-        }
-
-        AsyncOperationHandle DownloadDependenciesAsyncWithChain(AsyncOperationHandle dep, object key, bool autoReleaseHandle)
-        {
-            var handle = ResourceManager.CreateChainOperation(dep, op => DownloadDependenciesAsync(key).Convert<IList<IAssetBundleResource>>());
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(handle);
-            return handle;
-        }
-
-        internal static void WrapAsDownloadLocations(List<IResourceLocation> locations)
-        {
-            for (int i = 0; i < locations.Count; i++)
-                locations[i] = new DownloadOnlyLocation(locations[i]);
-        }
-
         static List<IResourceLocation> GatherDependenciesFromLocations(IList<IResourceLocation> locations)
         {
             var locHash = new HashSet<IResourceLocation>();
@@ -996,130 +839,6 @@ namespace UnityEngine.AddressableAssets
             }
 
             return new List<IResourceLocation>(locHash);
-        }
-
-        public AsyncOperationHandle DownloadDependenciesAsync(object key, bool autoReleaseHandle = false)
-        {
-            QueueEditorUpdateIfNeeded();
-
-            if (ShouldChainRequest)
-                return DownloadDependenciesAsyncWithChain(ChainOperation, key, autoReleaseHandle);
-
-            IList<IResourceLocation> locations;
-            if (!GetResourceLocations(key, typeof(object), out locations))
-            {
-                var handle = ResourceManager.CreateCompletedOperationWithException<IList<IAssetBundleResource>>(null, new InvalidKeyException(key, typeof(object), this));
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(handle);
-                return handle;
-            }
-            else
-            {
-                List<IResourceLocation> dlLocations = GatherDependenciesFromLocations(locations);
-                WrapAsDownloadLocations(dlLocations);
-                var handle = LoadAssetsAsync<IAssetBundleResource>(dlLocations, null, true);
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(handle);
-                return handle;
-            }
-        }
-
-        AsyncOperationHandle DownloadDependenciesAsyncWithChain(AsyncOperationHandle dep, IList<IResourceLocation> locations, bool autoReleaseHandle)
-        {
-            var handle = ResourceManager.CreateChainOperation(dep, op => DownloadDependenciesAsync(locations).Convert<IList<IAssetBundleResource>>());
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(handle);
-            return handle;
-        }
-
-        public AsyncOperationHandle DownloadDependenciesAsync(IList<IResourceLocation> locations, bool autoReleaseHandle = false)
-        {
-            QueueEditorUpdateIfNeeded();
-            if (ShouldChainRequest)
-                return DownloadDependenciesAsyncWithChain(ChainOperation, locations, autoReleaseHandle);
-
-            List<IResourceLocation> dlLocations = GatherDependenciesFromLocations(locations);
-            WrapAsDownloadLocations(dlLocations);
-            var handle = LoadAssetsAsync<IAssetBundleResource>(dlLocations, null, true);
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(handle);
-            return handle;
-        }
-
-        AsyncOperationHandle DownloadDependenciesAsyncWithChain(AsyncOperationHandle dep, IEnumerable keys, Addressables.MergeMode mode, bool autoReleaseHandle)
-        {
-            var handle = ResourceManager.CreateChainOperation(dep, op => DownloadDependenciesAsync(keys, mode).Convert<IList<IAssetBundleResource>>());
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(handle);
-            return handle;
-        }
-
-        public AsyncOperationHandle DownloadDependenciesAsync(IEnumerable keys, Addressables.MergeMode mode, bool autoReleaseHandle = false)
-        {
-            QueueEditorUpdateIfNeeded();
-            if (ShouldChainRequest)
-                return DownloadDependenciesAsyncWithChain(ChainOperation, keys, mode, autoReleaseHandle);
-
-            IList<IResourceLocation> locations;
-            if (!GetResourceLocations(keys, typeof(object), mode, out locations))
-            {
-                var handle = ResourceManager.CreateCompletedOperationWithException<IList<IAssetBundleResource>>(null, new InvalidKeyException(keys, typeof(object), mode, this));
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(handle);
-                return handle;
-            }
-            else
-            {
-                List<IResourceLocation> dlLocations = GatherDependenciesFromLocations(locations);
-                WrapAsDownloadLocations(dlLocations);
-                var handle = LoadAssetsAsync<IAssetBundleResource>(dlLocations, null, true);
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(handle);
-                return handle;
-            }
-        }
-
-        internal bool ClearDependencyCacheForKey(object key)
-        {
-            bool result = true;
-#if ENABLE_CACHING
-            IList<IResourceLocation> bundleLocations = null;
-
-            if (key is IResourceLocation && (key as IResourceLocation).HasDependencies)
-            {
-                bundleLocations = GatherDependenciesFromLocations((key as IResourceLocation).Dependencies);
-            }
-            else if (GetResourceLocations(key, typeof(object), out IList<IResourceLocation> locations))
-            {
-                bundleLocations = GatherDependenciesFromLocations(locations);
-            }
-
-            if (bundleLocations != null)
-            {
-                foreach (var dep in bundleLocations)
-                {
-                    AssetBundleRequestOptions bundleData = dep.Data as AssetBundleRequestOptions;
-                    //This should never be false when we get here, if it is there's likely a deeper problem.
-                    if (bundleData != null)
-                    {
-                        string bundleName = bundleData.BundleName;
-                        var cachedBundleOp = m_ResourceManager.GetOperationFromCache(dep, typeof(IAssetBundleResource));
-                        if (cachedBundleOp != null)
-                        {
-                            Debug.LogWarning($"Attempting to clear cached version including {bundleName}, while {bundleName} is currently loaded.");
-                            if (!string.IsNullOrEmpty(bundleData.Hash))
-                            {
-                                Hash128 currentVersion = Hash128.Parse(bundleData.Hash);
-                                Caching.ClearOtherCachedVersions(bundleName, currentVersion);
-                            }
-                        }
-                        else
-                            result = result && Caching.ClearAllCachedVersions(bundleName);
-                    }
-                }
-            }
-#endif
-            return result;
         }
 
         internal void AutoReleaseHandleOnCompletion(AsyncOperationHandle handle)
@@ -1145,70 +864,6 @@ namespace UnityEngine.AddressableAssets
         internal void AutoReleaseHandleOnTypelessCompletion<TObject>(AsyncOperationHandle<TObject> handle)
         {
             handle.CompletedTypeless += op => Release(op);
-        }
-
-        public AsyncOperationHandle<bool> ClearDependencyCacheAsync(object key, bool autoReleaseHandle)
-        {
-            QueueEditorUpdateIfNeeded();
-            if (ShouldChainRequest)
-            {
-                var chainOp = ResourceManager.CreateChainOperation(ChainOperation,
-                    op => ClearDependencyCacheAsync(key, autoReleaseHandle));
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(chainOp);
-                return chainOp;
-            }
-
-            bool result = ClearDependencyCacheForKey(key);
-
-            var completedOp = ResourceManager.CreateCompletedOperation(result, result ? String.Empty : "Unable to clear the cache.  AssetBundle's may still be loaded for the given key.");
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(completedOp);
-            return completedOp;
-        }
-
-        public AsyncOperationHandle<bool> ClearDependencyCacheAsync(IList<IResourceLocation> locations, bool autoReleaseHandle)
-        {
-            QueueEditorUpdateIfNeeded();
-            if (ShouldChainRequest)
-            {
-                var chainOp = ResourceManager.CreateChainOperation(ChainOperation,
-                    op => ClearDependencyCacheAsync(locations, autoReleaseHandle));
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(chainOp);
-                return chainOp;
-            }
-
-            bool result = true;
-            foreach (var location in locations)
-                result = result && ClearDependencyCacheForKey(location);
-
-            var completedOp = ResourceManager.CreateCompletedOperation(result, result ? String.Empty : "Unable to clear the cache.  AssetBundle's may still be loaded for the given key(s).");
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(completedOp);
-            return completedOp;
-        }
-
-        public AsyncOperationHandle<bool> ClearDependencyCacheAsync(IEnumerable keys, bool autoReleaseHandle)
-        {
-            QueueEditorUpdateIfNeeded();
-            if (ShouldChainRequest)
-            {
-                var chainOp = ResourceManager.CreateChainOperation(ChainOperation,
-                    op => ClearDependencyCacheAsync(keys, autoReleaseHandle));
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(chainOp);
-                return chainOp;
-            }
-
-            bool result = true;
-            foreach (var key in keys)
-                result = result && ClearDependencyCacheForKey(key);
-
-            var completedOp = ResourceManager.CreateCompletedOperation(result, result ? String.Empty : "Unable to clear the cache.  AssetBundle's may still be loaded for the given key(s).");
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(completedOp);
-            return completedOp;
         }
 
         public AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
@@ -1409,46 +1064,12 @@ namespace UnityEngine.AddressableAssets
             return obj;
         }
 
-        internal AsyncOperationHandle<List<string>> CheckForCatalogUpdates(bool autoReleaseHandle = true)
-        {
-            if (ShouldChainRequest)
-                return CheckForCatalogUpdatesWithChain(autoReleaseHandle);
-
-            if (m_ActiveCheckUpdateOperation.IsValid())
-                Release(m_ActiveCheckUpdateOperation);
-
-            m_ActiveCheckUpdateOperation = new CheckCatalogsOperation(this).Start(m_ResourceLocators);
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnTypelessCompletion(m_ActiveCheckUpdateOperation);
-            return m_ActiveCheckUpdateOperation;
-        }
-
-        internal AsyncOperationHandle<List<string>> CheckForCatalogUpdatesWithChain(bool autoReleaseHandle)
-        {
-            return ResourceManager.CreateChainOperation(ChainOperation, op => CheckForCatalogUpdates(autoReleaseHandle));
-        }
-
         public ResourceLocatorInfo GetLocatorInfo(string c)
         {
             foreach (var l in m_ResourceLocators)
                 if (l.Locator.LocatorId == c)
                     return l;
             return null;
-        }
-
-        internal IEnumerable<string> CatalogsWithAvailableUpdates => m_ResourceLocators.Where(s => s.ContentUpdateAvailable).Select(s => s.Locator.LocatorId);
-
-        internal AsyncOperationHandle<List<IResourceLocator>> UpdateCatalogs(IEnumerable<string> catalogIds = null, bool autoReleaseHandle = true, bool autoCleanBundleCache = false)
-        {
-            if (m_ActiveUpdateOperation.IsValid())
-                return m_ActiveUpdateOperation;
-            if (catalogIds == null && !CatalogsWithAvailableUpdates.Any())
-                return m_ResourceManager.CreateChainOperation(CheckForCatalogUpdates(), depOp => UpdateCatalogs(CatalogsWithAvailableUpdates, autoReleaseHandle, autoCleanBundleCache));
-
-            var op = new UpdateCatalogsOperation(this).Start(catalogIds == null ? CatalogsWithAvailableUpdates : catalogIds, autoCleanBundleCache);
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnTypelessCompletion(op);
-            return op;
         }
 
         //needed for IEqualityComparer<IResourceLocation> interface
@@ -1461,61 +1082,6 @@ namespace UnityEngine.AddressableAssets
         public int GetHashCode(IResourceLocation loc)
         {
             return loc.PrimaryKey.GetHashCode() * 31 + loc.ResourceType.GetHashCode();
-        }
-
-        internal AsyncOperationHandle<bool> CleanBundleCache(IEnumerable<string> catalogIds, bool forceSingleThreading)
-        {
-            if (ShouldChainRequest)
-                return CleanBundleCacheWithChain(catalogIds, forceSingleThreading);
-
-#if !ENABLE_CACHING
-            return ResourceManager.CreateCompletedOperation(false, "Caching not enabled. There is no bundle cache to modify.");
-#else
-            if (catalogIds == null)
-                catalogIds = m_ResourceLocators.Select(s => s.Locator.LocatorId);
-
-            var locations = new List<IResourceLocation>();
-            foreach (var c in catalogIds)
-            {
-                if (c == null)
-                    continue;
-                var loc = GetLocatorInfo(c);
-                if (loc == null || loc.CatalogLocation == null)
-                    continue;
-                locations.Add(loc.CatalogLocation);
-            }
-
-            if (locations.Count == 0)
-                return ResourceManager.CreateCompletedOperation(false,
-                    "Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.");
-
-            return CleanBundleCache(ResourceManager.CreateGroupOperation<object>(locations), forceSingleThreading);
-#endif
-        }
-
-        internal AsyncOperationHandle<bool> CleanBundleCache(AsyncOperationHandle<IList<AsyncOperationHandle>> depOp, bool forceSingleThreading)
-        {
-            if (ShouldChainRequest)
-                return CleanBundleCacheWithChain(depOp, forceSingleThreading);
-
-#if !ENABLE_CACHING
-            return ResourceManager.CreateCompletedOperation(false, "Caching not enabled. There is no bundle cache to modify.");
-#else
-            if (m_ActiveCleanBundleCacheOperation.IsValid() && !m_ActiveCleanBundleCacheOperation.IsDone)
-                return ResourceManager.CreateCompletedOperation(false, "Bundle cache is already being cleaned.");
-            m_ActiveCleanBundleCacheOperation = new CleanBundleCacheOperation(this, forceSingleThreading).Start(depOp);
-            return m_ActiveCleanBundleCacheOperation;
-#endif
-        }
-
-        internal AsyncOperationHandle<bool> CleanBundleCacheWithChain(AsyncOperationHandle<IList<AsyncOperationHandle>> depOp, bool forceSingleThreading)
-        {
-            return ResourceManager.CreateChainOperation(ChainOperation, op => CleanBundleCache(depOp, forceSingleThreading));
-        }
-
-        internal AsyncOperationHandle<bool> CleanBundleCacheWithChain(IEnumerable<string> catalogIds, bool forceSingleThreading)
-        {
-            return ResourceManager.CreateChainOperation(ChainOperation, op => CleanBundleCache(catalogIds, forceSingleThreading));
         }
     }
 }

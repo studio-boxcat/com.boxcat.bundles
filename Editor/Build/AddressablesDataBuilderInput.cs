@@ -25,11 +25,6 @@ namespace UnityEditor.AddressableAssets.Build
         public BuildTarget Target { get; private set; }
 
         /// <summary>
-        /// Player build version.
-        /// </summary>
-        public string PlayerVersion { get; set; }
-
-        /// <summary>
         /// Bool to signify if profiler events should be broadcast.
         /// </summary>
         public bool ProfilerEventsEnabled { get; private set; }
@@ -69,45 +64,17 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="settings">The settings object to pull values from.</param>
         public AddressablesDataBuilderInput(AddressableAssetSettings settings)
         {
-            string version = string.Empty;
-            if (settings == null)
-            {
-                Debug.LogError("Attempting to set up AddressablesDataBuilderInput with null settings.");
-            }
-            else
-                version = settings.PlayerBuildVersion;
-
             SetAllValues(settings,
                 BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget),
-                EditorUserBuildSettings.activeBuildTarget,
-                version);
+                EditorUserBuildSettings.activeBuildTarget);
         }
 
-        /// <summary>
-        /// Creates a default context object with values taken from the AddressableAssetSettings parameter.
-        /// </summary>
-        /// <param name="settings">The settings object to pull values from.</param>
-        /// <param name="playerBuildVersion">The player build version.</param>
-        public AddressablesDataBuilderInput(AddressableAssetSettings settings, string playerBuildVersion)
-        {
-            if (settings == null)
-            {
-                Debug.LogError("Attempting to set up AddressablesDataBuilderInput with null settings.");
-            }
-
-            SetAllValues(settings,
-                BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget),
-                EditorUserBuildSettings.activeBuildTarget,
-                playerBuildVersion);
-        }
-
-        internal void SetAllValues(AddressableAssetSettings settings, BuildTargetGroup buildTargetGroup, BuildTarget buildTarget, string playerBuildVersion)
+        internal void SetAllValues(AddressableAssetSettings settings, BuildTargetGroup buildTargetGroup, BuildTarget buildTarget)
         {
             AddressableSettings = settings;
 
             TargetGroup = buildTargetGroup;
             Target = buildTarget;
-            PlayerVersion = playerBuildVersion;
             ProfilerEventsEnabled = ProjectConfigData.PostProfilerEvents;
             Registry = new FileRegistry();
             PreviousContentState = null;

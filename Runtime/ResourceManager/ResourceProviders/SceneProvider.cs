@@ -31,11 +31,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_ResourceManager = rm;
             }
 
-            internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
-            {
-                return m_DepOp.IsValid() ? m_DepOp.InternalGetDownloadStatus(visited) : new DownloadStatus() { IsDone = IsDone };
-            }
-
             public void Init(IResourceLocation location, LoadSceneMode loadSceneMode, bool activateOnLoad, int priority, AsyncOperationHandle<IList<AsyncOperationHandle>> depOp)
             {
                 Init(location, new LoadSceneParameters(loadSceneMode), activateOnLoad, priority, depOp);
@@ -166,27 +161,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 base.Destroy();
             }
 
-            protected override float Progress
-            {
-                get
-                {
-                    float depOpWeight = 0.9f;
-                    float loadOpWeight = 0.1f;
-                    float progress = 0f;
-
-                    //We will always have an instance operation but this will be null until the dependant operation is completed.
-                    if (m_Inst.m_Operation != null)
-                        progress += m_Inst.m_Operation.progress * loadOpWeight;
-
-                    if (!m_DepOp.IsDone)
-                        progress += m_DepOp.PercentComplete * depOpWeight;
-                    else
-                        progress += depOpWeight;
-
-                    return progress;
-                }
-            }
-
             void IUpdateReceiver.Update(float unscaledDeltaTime)
             {
                 if (m_Inst.m_Operation != null)
@@ -256,11 +230,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             private void UnloadSceneCompletedNoRelease(AsyncOperation obj)
             {
                 Complete(m_Instance, true, "");
-            }
-
-            protected override float Progress
-            {
-                get { return m_sceneLoadHandle.PercentComplete; }
             }
         }
 

@@ -219,42 +219,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
 
         /// <summary>
-        /// Behavior for clearing old bundles from the cache.
-        /// </summary>
-        public enum CacheClearBehavior
-        {
-            /// <summary>
-            /// Bundles are only removed from the cache when space is needed.
-            /// </summary>
-            ClearWhenSpaceIsNeededInCache,
-
-            /// <summary>
-            /// Bundles are removed from the cache when a newer version has been loaded successfully.
-            /// </summary>
-            ClearWhenWhenNewVersionLoaded,
-        }
-
-        [SerializeField]
-        CacheClearBehavior m_CacheClearBehavior = CacheClearBehavior.ClearWhenSpaceIsNeededInCache;
-
-        /// <summary>
-        /// Determines how other cached versions of asset bundles are cleared.
-        /// </summary>
-        public CacheClearBehavior AssetBundledCacheClearBehavior
-        {
-            get => m_CacheClearBehavior;
-            set
-            {
-                if (m_CacheClearBehavior != value)
-                {
-                    m_CacheClearBehavior = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-
-        /// <summary>
         /// Gets the build compression settings for bundles in this group.
         /// </summary>
         /// <param name="bundleId">The bundle id.</param>
@@ -326,172 +290,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 if (m_ForceUniqueProvider != value)
                 {
                     m_ForceUniqueProvider = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [FormerlySerializedAs("m_useAssetBundleCache")]
-        [SerializeField]
-        [Tooltip("If true, the Hash value of the asset bundle is used to determine if a bundle can be loaded from the local cache instead of downloaded. (Only applies to remote asset bundles)")]
-        bool m_UseAssetBundleCache = true;
-
-        /// <summary>
-        /// If true, the CRC and Hash values of the asset bundle are used to determine if a bundle can be loaded from the local cache instead of downloaded.
-        /// </summary>
-        public bool UseAssetBundleCache
-        {
-            get => m_UseAssetBundleCache;
-            set
-            {
-                if (m_UseAssetBundleCache != value)
-                {
-                    m_UseAssetBundleCache = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [SerializeField]
-        [Tooltip("If true, the CRC (Cyclic Redundancy Check) of the asset bundle is used to check the integrity.  This can be used for both local and remote bundles.")]
-        bool m_UseAssetBundleCrc = true;
-
-        /// <summary>
-        /// If true, the CRC and Hash values of the asset bundle are used to determine if a bundle can be loaded from the local cache instead of downloaded.
-        /// </summary>
-        public bool UseAssetBundleCrc
-        {
-            get => m_UseAssetBundleCrc;
-            set
-            {
-                if (m_UseAssetBundleCrc != value)
-                {
-                    m_UseAssetBundleCrc = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [SerializeField]
-        [Tooltip("If true, the CRC (Cyclic Redundancy Check) of the asset bundle is used to check the integrity.")]
-        bool m_UseAssetBundleCrcForCachedBundles = true;
-
-        /// <summary>
-        /// If true, the CRC and Hash values of the asset bundle are used to determine if a bundle can be loaded from the local cache instead of downloaded.
-        /// </summary>
-        public bool UseAssetBundleCrcForCachedBundles
-        {
-            get => m_UseAssetBundleCrcForCachedBundles;
-            set
-            {
-                if (m_UseAssetBundleCrcForCachedBundles != value)
-                {
-                    m_UseAssetBundleCrcForCachedBundles = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [SerializeField]
-        [Tooltip("If true, local asset bundles will be loaded through UnityWebRequest.")]
-        bool m_UseUWRForLocalBundles = false;
-
-        /// <summary>
-        /// If true, local asset bundles will be loaded through UnityWebRequest.
-        /// </summary>
-        public bool UseUnityWebRequestForLocalBundles
-        {
-            get => m_UseUWRForLocalBundles;
-            set
-            {
-                if (m_UseUWRForLocalBundles != value)
-                {
-                    m_UseUWRForLocalBundles = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [FormerlySerializedAs("m_timeout")]
-        [SerializeField]
-        [Tooltip("Attempt to abort after the number of seconds in timeout have passed, where the UnityWebRequest has received no data. (Only applies to remote asset bundles)")]
-        int m_Timeout;
-
-        /// <summary>
-        /// Attempt to abort after the number of seconds in timeout have passed, where the UnityWebRequest has received no data.
-        /// </summary>
-        public int Timeout
-        {
-            get => m_Timeout;
-            set
-            {
-                if (m_Timeout != value)
-                {
-                    m_Timeout = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [FormerlySerializedAs("m_chunkedTransfer")]
-        [SerializeField]
-        [Tooltip("Deprecated in 2019.3+. Indicates whether the UnityWebRequest system should employ the HTTP/1.1 chunked-transfer encoding method. (Only applies to remote asset bundles)")]
-        bool m_ChunkedTransfer;
-
-        /// <summary>
-        /// Indicates whether the UnityWebRequest system should employ the HTTP/1.1 chunked-transfer encoding method.
-        /// </summary>
-        public bool ChunkedTransfer
-        {
-            get => m_ChunkedTransfer;
-            set
-            {
-                if (m_ChunkedTransfer != value)
-                {
-                    m_ChunkedTransfer = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-
-        [FormerlySerializedAs("m_redirectLimit")]
-        [SerializeField]
-        [Tooltip("Indicates the number of redirects which this UnityWebRequest will follow before halting with a “Redirect Limit Exceeded” system error. (Only applies to remote asset bundles)")]
-        int m_RedirectLimit = -1;
-
-        /// <summary>
-        /// Indicates the number of redirects which this UnityWebRequest will follow before halting with a “Redirect Limit Exceeded” system error.
-        /// </summary>
-        public int RedirectLimit
-        {
-            get => m_RedirectLimit;
-            set
-            {
-                if (m_RedirectLimit != value)
-                {
-                    m_RedirectLimit = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        [FormerlySerializedAs("m_retryCount")]
-        [SerializeField]
-        [Tooltip("Indicates the number of times the request will be retried.")]
-        int m_RetryCount;
-
-        /// <summary>
-        /// Indicates the number of times the request will be retried.
-        /// </summary>
-        public int RetryCount
-        {
-            get => m_RetryCount;
-            set
-            {
-                if (m_RetryCount != value)
-                {
-                    m_RetryCount = value;
                     SetDirty(true);
                 }
             }
@@ -911,23 +709,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         GUIContent m_CompressionContent = new GUIContent("Asset Bundle Compression", "Compression method to use for asset bundles.");
         GUIContent m_IncludeInBuildContent = new GUIContent("Include in Build", "If disabled, these bundles will not be included in the build.");
         GUIContent m_ForceUniqueProviderContent = new GUIContent("Force Unique Provider", "If enabled, this option forces bundles loaded from this group to use a unique provider.");
-        GUIContent m_UseAssetBundleCacheContent = new GUIContent("Use Asset Bundle Cache", "If enabled and supported, the device will cache  asset bundles.");
-        GUIContent m_AssetBundleCrcContent = new GUIContent("Asset Bundle CRC", "Defines which Asset Bundles will have their CRC checked when loading to ensure correct content.");
-
-        private GUIContent[] m_CrcPopupContent = new GUIContent[]
-        {
-            new GUIContent("Disabled", "Bundles will not have their CRC checked when loading."),
-            new GUIContent("Enabled, Including Cached", "All Bundles will have their CRC checked when loading."),
-            new GUIContent("Enabled, Excluding Cached", "Bundles that have already been downloaded and cached will not have their CRC check when loading, otherwise CRC check will be performed.")
-        };
-
-        GUIContent m_UseUWRForLocalBundlesContent = new GUIContent("Use UnityWebRequest for Local Asset Bundles", "If enabled, local asset bundles will load through UnityWebRequest.");
-        GUIContent m_TimeoutContent = new GUIContent("Request Timeout", "The timeout with no download activity (in seconds) for the Http request.");
-        GUIContent m_ChunkedTransferContent = new GUIContent("Use Http Chunked Transfer", "If enabled, the Http request will use chunked transfers.");
-        GUIContent m_RedirectLimitContent = new GUIContent("Http Redirect Limit", "The redirect limit for the Http request.");
-
-        GUIContent m_RetryCountContent = new GUIContent("Retry Count",
-            "The number of times to retry the http request. Note that a retry count of 0 allows auto-downloading asset bundles that fail to load from the cache. Set to -1 to prevent this auto-downloading behavior.");
 
         GUIContent m_IncludeAddressInCatalogContent = new GUIContent("Include Addresses in Catalog",
             "If disabled, addresses from this group will not be included in the catalog.  This is useful for reducing the size of the catalog if addresses are not needed.");
@@ -961,47 +742,16 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_Compression)), m_CompressionContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInBuild)), m_IncludeInBuildContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ForceUniqueProvider)), m_ForceUniqueProviderContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_UseAssetBundleCache)), m_UseAssetBundleCacheContent, true);
-            CRCPropertyPopupField(so);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_UseUWRForLocalBundles)), m_UseUWRForLocalBundlesContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_Timeout)), m_TimeoutContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ChunkedTransfer)), m_ChunkedTransferContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_RedirectLimit)), m_RedirectLimitContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_RetryCount)), m_RetryCountContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeAddressInCatalog)), m_IncludeAddressInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeGUIDInCatalog)), m_IncludeGUIDInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeLabelsInCatalog)), m_IncludeLabelsInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_InternalIdNamingMode)), m_InternalIdNamingModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_InternalBundleIdMode)), m_InternalBundleIdModeContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_CacheClearBehavior)), m_CacheClearBehaviorContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundleMode)), m_BundleModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundleNaming)), m_BundleNamingContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_AssetLoadMode)), m_AssetLoadModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundledAssetProviderType)), m_AssetProviderContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_AssetBundleProviderType)), m_BundleProviderContent, true);
-        }
-
-        void CRCPropertyPopupField(SerializedObject so)
-        {
-            int enumIndex = 0;
-            if (m_UseAssetBundleCrc)
-                enumIndex = m_UseAssetBundleCrcForCachedBundles ? 1 : 2;
-
-            int newEnumIndex = EditorGUILayout.Popup(m_AssetBundleCrcContent, enumIndex, m_CrcPopupContent);
-            if (enumIndex != newEnumIndex)
-            {
-                if (newEnumIndex != 0)
-                {
-                    if (!m_UseAssetBundleCrc)
-                        so.FindProperty("m_UseAssetBundleCrc").boolValue = true;
-                    if (newEnumIndex == 1 && !m_UseAssetBundleCrcForCachedBundles)
-                        so.FindProperty("m_UseAssetBundleCrcForCachedBundles").boolValue = true;
-                    else if (newEnumIndex == 2 && m_UseAssetBundleCrcForCachedBundles)
-                        so.FindProperty("m_UseAssetBundleCrcForCachedBundles").boolValue = false;
-                }
-                else
-                    so.FindProperty("m_UseAssetBundleCrc").boolValue = false;
-            }
         }
 
         void ShowAdvancedPropertiesMulti(SerializedObject so, List<AddressableAssetGroupSchema> otherBundledSchemas, ref List<Action<BundledAssetGroupSchema, BundledAssetGroupSchema>> queuedChanges)
@@ -1011,23 +761,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 ref m_IncludeInBuild);
             ShowSelectedPropertyMulti(so, nameof(m_ForceUniqueProvider), m_ForceUniqueProviderContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.ForceUniqueProvider = src.ForceUniqueProvider, ref m_ForceUniqueProvider);
-            ShowSelectedPropertyMulti(so, nameof(m_UseAssetBundleCache), m_UseAssetBundleCacheContent, otherBundledSchemas, ref queuedChanges,
-                (src, dst) => dst.UseAssetBundleCache = src.UseAssetBundleCache, ref m_UseAssetBundleCache);
-            ShowCustomGuiSelectedPropertyMulti(so, new string[] {nameof(m_UseAssetBundleCrc), nameof(m_UseAssetBundleCrcForCachedBundles)}, m_AssetBundleCrcContent, otherBundledSchemas,
-                ref queuedChanges,
-                schema => CRCPropertyPopupField(so), (src, dst) =>
-                {
-                    dst.UseAssetBundleCrc = src.UseAssetBundleCrc;
-                    dst.UseAssetBundleCrcForCachedBundles = src.UseAssetBundleCrcForCachedBundles;
-                });
-            ShowSelectedPropertyMulti(so, nameof(m_UseUWRForLocalBundles), m_UseUWRForLocalBundlesContent, otherBundledSchemas, ref queuedChanges,
-                (src, dst) => dst.UseUnityWebRequestForLocalBundles = src.UseUnityWebRequestForLocalBundles, ref m_UseUWRForLocalBundles);
-            ShowSelectedPropertyMulti(so, nameof(m_Timeout), m_TimeoutContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.Timeout = src.Timeout, ref m_Timeout);
-            ShowSelectedPropertyMulti(so, nameof(m_ChunkedTransfer), m_ChunkedTransferContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.ChunkedTransfer = src.ChunkedTransfer,
-                ref m_ChunkedTransfer);
-            ShowSelectedPropertyMulti(so, nameof(m_RedirectLimit), m_RedirectLimitContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.RedirectLimit = src.RedirectLimit,
-                ref m_RedirectLimit);
-            ShowSelectedPropertyMulti(so, nameof(m_RetryCount), m_RetryCountContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.RetryCount = src.RetryCount, ref m_RetryCount);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeAddressInCatalog), m_IncludeAddressInCatalogContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog, ref m_IncludeAddressInCatalog);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeGUIDInCatalog), m_IncludeGUIDInCatalogContent, otherBundledSchemas, ref queuedChanges,
@@ -1038,8 +771,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 (src, dst) => dst.InternalIdNamingMode = src.InternalIdNamingMode, ref m_InternalIdNamingMode);
             ShowSelectedPropertyMulti(so, nameof(m_InternalBundleIdMode), m_InternalBundleIdModeContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.InternalBundleIdMode = src.InternalBundleIdMode, ref m_InternalBundleIdMode);
-            ShowSelectedPropertyMulti(so, nameof(m_CacheClearBehavior), m_CacheClearBehaviorContent, otherBundledSchemas, ref queuedChanges,
-                (src, dst) => { dst.AssetBundledCacheClearBehavior = src.AssetBundledCacheClearBehavior; }, ref m_CacheClearBehavior);
             ShowSelectedPropertyMulti(so, nameof(m_BundleMode), m_BundleModeContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.BundleMode = src.BundleMode, ref m_BundleMode);
             ShowSelectedPropertyMulti(so, nameof(m_BundleNaming), m_BundleNamingContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.BundleNaming = src.BundleNaming, ref m_BundleNaming);
             ShowSelectedPropertyMulti(so, nameof(m_AssetLoadMode), m_AssetLoadModeContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.AssetLoadMode = src.AssetLoadMode,

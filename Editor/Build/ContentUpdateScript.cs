@@ -22,28 +22,6 @@ using Unity.Services.Ccd.Management;
 
 namespace UnityEditor.AddressableAssets.Build
 {
-    /// <summary>
-    /// Option for how to deal with automatically checking for content update restrictions as part of the Update a Previous Build workflow.
-    /// </summary>
-    public enum CheckForContentUpdateRestrictionsOptions
-    {
-        /// <summary>
-        /// If assets are modified that have been previously built in a Cannot Change Post Release group,
-        /// the build will be paused and the Update Restrictions Check window is opened
-        /// </summary>
-        ListUpdatedAssetsWithRestrictions = 0,
-
-        /// <summary>
-        /// If assets are modified that have been previously built in a Cannot Change Post Release group, the Content Update build will fail.
-        /// </summary>
-        FailBuild = 1,
-
-        /// <summary>
-        /// Updating a previous build does not automatically run the Check for Update Restrictions rule.
-        /// </summary>
-        Disabled = 2
-    }
-
 #if ENABLE_CCD
     /// <summary>
     /// This is used to determine the behavior of Update a Previous Build when taking advantage of the Build & Release feature.
@@ -165,46 +143,16 @@ namespace UnityEditor.AddressableAssets.Build
     public class AddressablesContentState
     {
         /// <summary>
-        /// The version that the player was built with.  This is usually set to AddressableAssetSettings.PlayerBuildVersion.
-        /// </summary>
-        [SerializeField]
-        public string playerVersion;
-
-        /// <summary>
-        /// The version of the unity editor used to build the player.
-        /// </summary>
-        [SerializeField]
-        public string editorVersion;
-
-        /// <summary>
         /// Dependency information for all assets in the build that have been marked StaticContent.
         /// </summary>
         [SerializeField]
         public CachedAssetState[] cachedInfos;
 
         /// <summary>
-        /// The path of a remote catalog.  This is the only place the player knows to look for an updated catalog.
-        /// </summary>
-        [SerializeField]
-        public string remoteCatalogLoadPath;
-
-        /// <summary>
         /// Information about asset bundles created for the build.
         /// </summary>
         [SerializeField]
         public CachedBundleState[] cachedBundles;
-    }
-
-    internal struct ContentUpdateUsageData
-    {
-        public string ContentUpdateInterruptMessage;
-        public bool UsingCCD;
-    }
-
-    internal struct ContentUpdateBuildData
-    {
-        public string Error;
-        public double BuildDuration;
     }
 
     /// <summary>
@@ -330,65 +278,16 @@ namespace UnityEditor.AddressableAssets.Build
         /// <summary>
         /// Save the content update information for a set of AddressableAssetEntry objects.
         /// </summary>
-        /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
-        /// <param name="entries">The entries to save.</param>
-        /// <param name="dependencyData">The raw dependency information generated from the build.</param>
-        /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
-        /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
-        /// <returns>True if the file is saved, false otherwise.</returns>
-        [Obsolete]
-        public static bool SaveContentState(string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion, string remoteCatalogPath)
-        {
-            return SaveContentState(new List<ContentCatalogDataEntry>(), path, entries, dependencyData, playerVersion, remoteCatalogPath);
-        }
-
-        /// <summary>
-        /// Save the content update information for a set of AddressableAssetEntry objects.
-        /// </summary>
-        /// <param name="locations">The ContentCatalogDataEntry locations that were built into the Content Catalog.</param>
-        /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
-        /// <param name="entries">The entries to save.</param>
-        /// <param name="dependencyData">The raw dependency information generated from the build.</param>
-        /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
-        /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
-        /// <returns>True if the file is saved, false otherwise.</returns>
-        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
-            string remoteCatalogPath)
-        {
-            return SaveContentState(locations, path, entries, dependencyData, playerVersion, remoteCatalogPath, null);
-        }
-
-        /// <summary>
-        /// Save the content update information for a set of AddressableAssetEntry objects.
-        /// </summary>
-        /// <param name="locations">The ContentCatalogDataEntry locations that were built into the Content Catalog.</param>
-        /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
-        /// <param name="entries">The entries to save.</param>
-        /// <param name="dependencyData">The raw dependency information generated from the build.</param>
-        /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
-        /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
-        /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
-        /// <returns>True if the file is saved, false otherwise.</returns>
-        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
-            string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
-        {
-            return SaveContentState(locations, null, path, entries, dependencyData, playerVersion, remoteCatalogPath, carryOverCacheState);
-        }
-
-        /// <summary>
-        /// Save the content update information for a set of AddressableAssetEntry objects.
-        /// </summary>
         /// <param name="locations">The ContentCatalogDataEntry locations that were built into the Content Catalog.</param>
         /// <param name="guidToCatalogLocation">Mapping of asset Guid to catalog locations entries for lookup of extra data.</param>
         /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
         /// <param name="entries">The entries to save.</param>
         /// <param name="dependencyData">The raw dependency information generated from the build.</param>
         /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
-        /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
         /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
         /// <returns>True if the file is saved, false otherwise.</returns>
-        internal static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
-            string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
+        internal static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData,
+            List<CachedAssetState> carryOverCacheState)
         {
             try
             {
@@ -410,9 +309,6 @@ namespace UnityEditor.AddressableAssets.Build
                 var cacheData = new AddressablesContentState
                 {
                     cachedInfos = cachedInfos.ToArray(),
-                    playerVersion = playerVersion,
-                    editorVersion = Application.unityVersion,
-                    remoteCatalogLoadPath = remoteCatalogPath,
                     cachedBundles = cachedBundleInfos.ToArray()
                 };
                 var formatter = new BinaryFormatter();
@@ -605,102 +501,6 @@ namespace UnityEditor.AddressableAssets.Build
 
         static bool s_StreamingAssetsExists;
         static string kStreamingAssetsPath = "Assets/StreamingAssets";
-
-        internal static void Cleanup(bool deleteStreamingAssetsFolderIfEmpty, bool cleanBuildPath)
-        {
-            if (cleanBuildPath)
-            {
-                DirectoryUtility.DeleteDirectory(Addressables.BuildPath, onlyIfEmpty: false, recursiveDelete: true);
-            }
-
-            if (deleteStreamingAssetsFolderIfEmpty)
-            {
-                DirectoryUtility.DeleteDirectory(kStreamingAssetsPath, onlyIfEmpty: true);
-            }
-        }
-
-        /// <summary>
-        /// Builds player content using the player content version from a specified cache file.
-        /// </summary>
-        /// <param name="settings">The settings object to use for the build.</param>
-        /// <param name="contentStateDataPath">The path of the cache data to use.</param>
-        /// <returns>The build operation.</returns>
-        public static AddressablesPlayerBuildResult BuildContentUpdate(AddressableAssetSettings settings, string contentStateDataPath)
-        {
-            var cacheData = LoadContentState(contentStateDataPath);
-            if (!IsCacheDataValid(settings, cacheData))
-                return null;
-
-            s_StreamingAssetsExists = Directory.Exists("Assets/StreamingAssets");
-            var context = new AddressablesDataBuilderInput(settings, cacheData.playerVersion);
-            context.IsContentUpdateBuild = true;
-            context.PreviousContentState = cacheData;
-
-            Cleanup(!s_StreamingAssetsExists, false);
-
-            SceneManagerState.Record();
-            var result = settings.ActivePlayerDataBuilder.BuildData<AddressablesPlayerBuildResult>(context);
-            if (!string.IsNullOrEmpty(result.Error))
-                Debug.LogError(result.Error);
-            SceneManagerState.Restore();
-            return result;
-        }
-
-        internal static bool IsCacheDataValid(AddressableAssetSettings settings, AddressablesContentState cacheData)
-        {
-            if (cacheData == null)
-                return false;
-
-            if (cacheData.editorVersion != Application.unityVersion)
-                Addressables.LogWarningFormat("Building content update with Unity editor version `{0}`, data was created with version `{1}`.  This may result in incompatible data.",
-                    Application.unityVersion, cacheData.editorVersion);
-
-            if (string.IsNullOrEmpty(cacheData.remoteCatalogLoadPath))
-            {
-                Addressables.LogError("Previous build had 'Build Remote Catalog' disabled.  You cannot update a player that has no remote catalog specified");
-                return false;
-            }
-
-            if (!settings.BuildRemoteCatalog)
-            {
-                Addressables.LogError("Current settings have 'Build Remote Catalog' disabled.  You cannot update a player that has no remote catalog to look to.");
-                return false;
-            }
-
-            if (cacheData.remoteCatalogLoadPath != settings.RemoteCatalogLoadPath.GetValue(settings))
-            {
-                Addressables.LogErrorFormat(
-                    "Current 'Remote Catalog Load Path' does not match load path of original player.  Player will only know to look up catalog at original location. Original: {0}  Current: {1}",
-                    cacheData.remoteCatalogLoadPath, settings.RemoteCatalogLoadPath.GetValue(settings));
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Get all modified addressable asset entries in groups that have BundledAssetGroupSchema and ContentUpdateGroupSchema with static content enabled.
-        /// This includes any Addressable dependencies that are affected by the modified entries.
-        /// </summary>
-        /// <param name="settings">Addressable asset settings.</param>
-        /// <param name="cacheDataPath">The cache data path.</param>
-        /// <returns>A list of all modified entries and dependencies (list is empty if there are none); null if failed to load cache data.</returns>
-        public static List<AddressableAssetEntry> GatherModifiedEntries(AddressableAssetSettings settings, string cacheDataPath)
-        {
-            HashSet<AddressableAssetEntry> retVal = new HashSet<AddressableAssetEntry>();
-            var entriesMap = GatherModifiedEntriesWithDependencies(settings, cacheDataPath);
-            foreach (var entry in entriesMap.Keys)
-            {
-                if (!retVal.Contains(entry))
-                    retVal.Add(entry);
-
-                foreach (var dependency in entriesMap[entry])
-                    if (!retVal.Contains(dependency))
-                        retVal.Add(dependency);
-            }
-
-            return retVal.ToList();
-        }
 
         internal static void GatherExplicitModifiedEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap,
             AddressablesContentState cacheData)
@@ -1055,23 +855,6 @@ namespace UnityEditor.AddressableAssets.Build
 
                 builder.AppendLine("");
             }
-        }
-
-        /// <summary>
-        /// Create a new AddressableAssetGroup with the items and mark it as remote.
-        /// </summary>
-        /// <param name="settings">The settings object.</param>
-        /// <param name="items">The items to move.</param>
-        /// <param name="groupName">The name of the new group.</param>
-        public static void CreateContentUpdateGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> items, string groupName)
-        {
-            var contentGroup = settings.CreateGroup(settings.FindUniqueGroupName(groupName), false, false, true, null);
-            var schema = contentGroup.AddSchema<BundledAssetGroupSchema>();
-            schema.BuildPath.SetVariableByName(settings, AddressableAssetSettings.kRemoteBuildPath);
-            schema.LoadPath.SetVariableByName(settings, AddressableAssetSettings.kRemoteLoadPath);
-            schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
-            contentGroup.AddSchema<ContentUpdateGroupSchema>().StaticContent = false;
-            settings.MoveEntries(items, contentGroup);
         }
 
         /// <summary>

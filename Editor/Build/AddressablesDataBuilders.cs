@@ -106,10 +106,6 @@ namespace UnityEditor.AddressableAssets.Build
             /// </summary>
             public AddressableAssetGroup SourceAssetGroup;
             /// <summary>
-            /// The calculated value used for security during cyclic redundancy checks
-            /// </summary>
-            public uint Crc;
-            /// <summary>
             /// The asset hash of the assets included inside the AssetBundle
             /// </summary>
             public string Hash;
@@ -124,16 +120,6 @@ namespace UnityEditor.AddressableAssets.Build
         /// Build results for AssetBundles created during the build.
         /// </summary>
         public List<BundleBuildResult> AssetBundleBuildResults => m_AssetBundleBuildResults;
-
-        /// <summary>
-        /// File path to the generated remote catalog hash file.
-        /// </summary>
-        public string RemoteCatalogHashFilePath { get; internal set; }
-
-        /// <summary>
-        /// File path to the generated remote catalog json file.
-        /// </summary>
-        public string RemoteCatalogJsonFilePath { get; internal set; }
 
         /// <summary>
         /// File path to the generate content state file

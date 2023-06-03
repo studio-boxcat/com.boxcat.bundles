@@ -94,18 +94,6 @@ namespace UnityEngine.AddressableAssets.Initialization
         }
 
         [SerializeField]
-        private bool m_DisableCatalogUpdateOnStart = false;
-
-        /// <summary>
-        /// Determine if we should check for Remote Catalogs on during initialization.
-        /// </summary>
-        public bool DisableCatalogUpdateOnStartup
-        {
-            get { return m_DisableCatalogUpdateOnStart; }
-            set { m_DisableCatalogUpdateOnStart = value; }
-        }
-
-        [SerializeField]
         private bool m_IsLocalCatalogInBundle = false;
 
         /// <summary>
@@ -139,30 +127,6 @@ namespace UnityEngine.AddressableAssets.Initialization
         {
             get { return m_AddressablesVersion; }
             set { m_AddressablesVersion = value; }
-        }
-
-        [SerializeField]
-        int m_maxConcurrentWebRequests = 500;
-
-        /// <summary>
-        /// The maximum number of concurrent web requests.  This value will be clamped from 1 to 1024.
-        /// </summary>
-        public int MaxConcurrentWebRequests
-        {
-            get { return m_maxConcurrentWebRequests; }
-            set { m_maxConcurrentWebRequests = Mathf.Clamp(value, 1, 1024); }
-        }
-
-        [SerializeField]
-        int m_CatalogRequestsTimeout = 0;
-
-        /// <summary>
-        /// The time until a catalog hash or json UnityWebRequest download will timeout in seconds. 0 for Default timeout.
-        /// </summary>
-        public int CatalogRequestsTimeout
-        {
-            get { return m_CatalogRequestsTimeout; }
-            set { m_CatalogRequestsTimeout = value < 0 ? 0 : value; }
         }
 
 #if ENABLE_CCD

@@ -85,7 +85,6 @@ namespace UnityEditor.AddressableAssets
         {
             public int UsageEventType;
             public bool IsUsingCCD;
-            public int AutoRunRestrictionsOption;
         }
 
         internal enum UsageEventType
@@ -313,16 +312,8 @@ namespace UnityEditor.AddressableAssets
 
                 if (pathType == PathType.Custom)
                 {
-                    if (ResourceManagerConfig.IsPathRemote(schema.LoadPath.GetValue(currentSettings)))
-                    {
-                        numberOfGroupsUsingRemoteCustomPaths += 1;
-                        numberOfAssetsInRemoteCustomPaths += group.entries.Count;
-                    }
-                    else
-                    {
-                        numberOfGroupsUsingLocalCustomPaths += 1;
-                        numberOfAssetsInLocalCustomPaths += group.entries.Count;
-                    }
+                    numberOfGroupsUsingLocalCustomPaths += 1;
+                    numberOfAssetsInLocalCustomPaths += group.entries.Count;
                 }
 
                 if (pathType == PathType.BuiltIn)
@@ -439,7 +430,7 @@ namespace UnityEditor.AddressableAssets
             EditorAnalytics.SendEventWithLimit(BuildEvent, data);
         }
 
-        internal static UsageData GenerateUsageData(UsageEventType eventType, AnalyticsContentUpdateRestriction restriction = AnalyticsContentUpdateRestriction.NotApplicable)
+        internal static UsageData GenerateUsageData(UsageEventType eventType)
         {
             bool usingCCD = false;
 
@@ -451,13 +442,12 @@ namespace UnityEditor.AddressableAssets
             {
                 UsageEventType = (int)eventType,
                 IsUsingCCD = usingCCD,
-                AutoRunRestrictionsOption = (int)restriction
             };
 
             return data;
         }
 
-        internal static void ReportUsageEvent(UsageEventType eventType, bool limitEventOncePerSession = false, int contentUpdateRestriction = -1)
+        internal static void ReportUsageEvent(UsageEventType eventType, bool limitEventOncePerSession = false)
         {
             if (!EditorAnalytics.enabled)
                 return;
@@ -474,7 +464,7 @@ namespace UnityEditor.AddressableAssets
                 if (!RegisterEvent(UsageEvent))
                     return;
 
-            UsageData data = GenerateUsageData(eventType, (AnalyticsContentUpdateRestriction) contentUpdateRestriction);
+            UsageData data = GenerateUsageData(eventType);
             EditorAnalytics.SendEventWithLimit(UsageEvent, data);
         }
 

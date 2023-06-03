@@ -65,26 +65,19 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             BuildLayoutSummary summary = BuildLayoutSummary.GetSummaryWithoutAssetTypes(buildReport);
 
             //This is a little overengineered, but if we do building multiple catalogs then this should help.
-            HashSet<string> remoteCatalogNames = new HashSet<string>();
             HashSet<string> localCatalogNames = new HashSet<string>();
 
             foreach (var catalog in buildReport.AddressablesRuntimeSettings.CatalogLoadPaths)
             {
                 string name = Path.GetFileName(catalog);
-                if (name.EndsWith(".hash"))
-                    remoteCatalogNames.Add(name.Replace(".hash", ".json"));
-                else
-                    localCatalogNames.Add(name);
+                localCatalogNames.Add(name);
             }
 
             SummaryRowBuilder generalInfo = new SummaryRowBuilder("General Information");
             if (localCatalogNames.Count > 0)
                 generalInfo.With("Local Catalog(s)", string.Join(", ", localCatalogNames));
-            if (remoteCatalogNames.Count > 0)
-                generalInfo.With("Remote Catalog(s)", string.Join(", ", remoteCatalogNames));
 
             generalInfo.With("Local catalog build location", buildReport.LocalCatalogBuildPath)
-                .With("Remote catalog build location", string.IsNullOrEmpty(buildReport.RemoteCatalogBuildPath) ? "No remote catalog built" : buildReport.RemoteCatalogBuildPath)
                 .With("Profile", buildReport.AddressablesEditorSettings.ActiveProfile.Name)
                 .With("Platform", buildReport.BuildTarget.ToString())
                 .With("Player Build Version", buildReport.PlayerBuildVersion)

@@ -144,13 +144,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #endif
                 ProfileEvents = builderInput.ProfilerEventsEnabled,
                 LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
-                DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup,
                 IsLocalCatalogInBundle = aaSettings.BundleLocalCatalog,
 #if UNITY_2019_3_OR_NEWER
                 AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version,
 #endif
-                MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests,
-                CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout
             };
             m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
             m_Linker.AddAssemblies(new[] {typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly});
@@ -267,7 +264,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
 
             var bundleRenameMap = new Dictionary<string, string>();
-            var playerBuildVersion = builderInput.PlayerVersion;
             if (m_AllBundleInputDefs.Count > 0)
             {
                 if (!BuildUtility.CheckModifiedScenesAndAskToSave())
@@ -388,7 +384,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 var bytes = contentCatalog.SerializeToByteArray();
                 var contentHash = HashingMethods.Calculate(bytes);
 
-                if (aaContext.Settings.BuildRemoteCatalog || ProjectConfigData.GenerateBuildLayout)
+                if (ProjectConfigData.GenerateBuildLayout)
                     contentCatalog.localHash = contentHash.ToString();
 
                 CreateCatalogFiles(bytes, builderInput, aaContext, contentHash.ToString());
@@ -421,7 +417,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 string jsonText = null;
                 using (m_Log.ScopedStep(LogLevel.Info, "Generating Json"))
                     jsonText = JsonUtility.ToJson(contentCatalog);
-                if (aaContext.Settings.BuildRemoteCatalog || ProjectConfigData.GenerateBuildLayout)
+                if (ProjectConfigData.GenerateBuildLayout)
                 {
                     using (m_Log.ScopedStep(LogLevel.Info, "Hashing Catalog"))
                         contentHash = HashingMethods.Calculate(jsonText).ToString();
@@ -472,16 +468,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 using (m_Log.ScopedStep(LogLevel.Info, "Generate Content Update State"))
                 {
-                    var remoteCatalogLoadPath = aaContext.Settings.BuildRemoteCatalog
-                        ? aaContext.Settings.RemoteCatalogLoadPath.GetValue(aaContext.Settings)
-                        : string.Empty;
-
                     var allEntries = new List<AddressableAssetEntry>();
                     using (m_Log.ScopedStep(LogLevel.Info, "Get Assets"))
                         aaContext.Settings.GetAllAssets(allEntries, false, ContentUpdateScript.GroupFilter);
 
                     if (ContentUpdateScript.SaveContentState(aaContext.locations, aaContext.GuidToCatalogLocation, tempPath, allEntries,
-                            extractData.DependencyData, playerBuildVersion, remoteCatalogLoadPath,
+                            extractData.DependencyData,
                             carryOverCachedState))
                     {
                         string contentStatePath = ContentUpdateScript.GetContentStateDataPath(false, aaContext.Settings);
@@ -619,11 +611,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             string[] dependencyHashes = null;
-            if (aaContext.Settings.BuildRemoteCatalog)
-            {
-                dependencyHashes = CreateRemoteCatalog(data, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true }, catalogHash);
-            }
-
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
                 new[] { ResourceManagerRuntimeData.kCatalogAddress },
                 localLoadPath,
@@ -632,59 +619,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 dependencyHashes));
 
             return true;
-        }
-        static string[] CreateRemoteCatalog(byte[] data, List<ResourceLocationData> locations, AddressableAssetSettings aaSettings, AddressablesDataBuilderInput builderInput,
-            ProviderLoadRequestOptions catalogLoadOptions, string contentHash)
-        {
-            string[] dependencyHashes = null;
-
-            var versionedFileName = aaSettings.profileSettings.EvaluateString(aaSettings.activeProfileId, "/catalog_" + builderInput.PlayerVersion);
-            var remoteBuildFolder = aaSettings.RemoteCatalogBuildPath.GetValue(aaSettings);
-            var remoteLoadFolder = aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings);
-
-            if (string.IsNullOrEmpty(remoteBuildFolder) ||
-                string.IsNullOrEmpty(remoteLoadFolder) ||
-                remoteBuildFolder == AddressableAssetProfileSettings.undefinedEntryValue ||
-                remoteLoadFolder == AddressableAssetProfileSettings.undefinedEntryValue)
-            {
-                Addressables.LogWarning(
-                    "Remote Build and/or Load paths are not set on the main AddressableAssetSettings asset, but 'Build Remote Catalog' is true.  Cannot create remote catalog.  In the inspector for any group, double click the 'Addressable Asset Settings' object to begin inspecting it. '" +
-                    remoteBuildFolder + "', '" + remoteLoadFolder + "'");
-            }
-            else
-            {
-                var remoteJsonBuildPath = remoteBuildFolder + versionedFileName + ".bin";
-                var remoteHashBuildPath = remoteBuildFolder + versionedFileName + ".hash";
-
-                WriteFile(remoteJsonBuildPath, data, builderInput.Registry);
-                WriteFile(remoteHashBuildPath, contentHash, builderInput.Registry);
-
-                dependencyHashes = new string[((int)ContentCatalogProvider.DependencyHashIndex.Count)];
-                dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = ResourceManagerRuntimeData.kCatalogAddress + "RemoteHash";
-                dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = ResourceManagerRuntimeData.kCatalogAddress + "CacheHash";
-
-                var remoteHashLoadPath = remoteLoadFolder + versionedFileName + ".hash";
-                var remoteHashLoadLocation = new ResourceLocationData(
-                    new[] { dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote] },
-                    remoteHashLoadPath,
-                    typeof(TextDataProvider), typeof(string));
-                remoteHashLoadLocation.Data = catalogLoadOptions.Copy();
-                locations.Add(remoteHashLoadLocation);
-
-#if UNITY_SWITCH
-                var cacheLoadPath = remoteHashLoadPath; // ResourceLocationBase does not allow empty string id
-#else
-                var cacheLoadPath = "{UnityEngine.Application.persistentDataPath}/com.unity.addressables" + versionedFileName + ".hash";
-#endif
-                var cacheLoadLocation = new ResourceLocationData(
-                    new[] { dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Cache] },
-                    cacheLoadPath,
-                    typeof(TextDataProvider), typeof(string));
-                cacheLoadLocation.Data = catalogLoadOptions.Copy();
-                locations.Add(cacheLoadLocation);
-            }
-
-            return dependencyHashes;
         }
 
         internal ReturnCode CreateCatalogBundle(string filepath, byte[] data, AddressablesDataBuilderInput builderInput)
@@ -1416,22 +1350,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (aaContext.PrimaryKeyToLocation.TryGetValue(builtBundleNames[i], out ContentCatalogDataEntry dataEntry))
                 {
                     var info = buildResult.BundleInfos[builtBundleNames[i]];
-                    bundleResultInfo.Crc = info.Crc;
                     bundleResultInfo.Hash = info.Hash.ToString();
                     var requestOptions = new AssetBundleRequestOptions
                     {
-                        Crc = schema.UseAssetBundleCrc ? info.Crc : 0,
-                        UseCrcForCachedBundle = schema.UseAssetBundleCrcForCachedBundles,
-                        UseUnityWebRequestForLocalBundles = schema.UseUnityWebRequestForLocalBundles,
-                        Hash = schema.UseAssetBundleCache ? info.Hash.ToString() : "",
-                        ChunkedTransfer = schema.ChunkedTransfer,
-                        RedirectLimit = schema.RedirectLimit,
-                        RetryCount = schema.RetryCount,
-                        Timeout = schema.Timeout,
+                        Hash = "",
                         BundleName = Path.GetFileNameWithoutExtension(info.FileName),
                         AssetLoadMode = schema.AssetLoadMode,
                         BundleSize = GetFileSize(info.FileName),
-                        ClearOtherCachedVersionsWhenLoaded = schema.AssetBundledCacheClearBehavior == BundledAssetGroupSchema.CacheClearBehavior.ClearWhenWhenNewVersionLoaded
                     };
                     dataEntry.Data = requestOptions;
                     bundleResultInfo.InternalBundleName = requestOptions.BundleName;

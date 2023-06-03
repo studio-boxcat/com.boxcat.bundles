@@ -25,10 +25,6 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_DiagnosticsHeader;
         static FoldoutSessionStateValue CatalogFoldout = new FoldoutSessionStateValue("Addressables.CatalogFoldout");
         GUIContent m_CatalogsHeader;
-        static FoldoutSessionStateValue ContentUpdateFoldout = new FoldoutSessionStateValue("Addressables.ContentUpdateFoldout");
-        GUIContent m_ContentUpdateHeader;
-        static FoldoutSessionStateValue DownloadsFoldout = new FoldoutSessionStateValue("Addressables.DownloadsFoldout");
-        GUIContent m_DownloadsHeader;
         static FoldoutSessionStateValue BuildFoldout = new FoldoutSessionStateValue("Addressables.BuildFoldout");
         GUIContent m_BuildHeader;
         static FoldoutSessionStateValue DataBuildersFoldout = new FoldoutSessionStateValue("Addressables.DataBuildersFoldout");
@@ -102,8 +98,6 @@ namespace UnityEditor.AddressableAssets.GUI
             m_ProfilesHeader = new GUIContent("Profiles", "Settings affect profiles.");
             m_DiagnosticsHeader = new GUIContent("Diagnostics", "Settings affect profiles.");
             m_CatalogsHeader = new GUIContent("Catalog", "Settings affect profiles.");
-            m_ContentUpdateHeader = new GUIContent("Update a Previous Build", "Settings affect profiles.");
-            m_DownloadsHeader = new GUIContent("Downloads", "Settings affect profiles.");
             m_BuildHeader = new GUIContent("Build", "Settings affect profiles.");
 
             m_DataBuildersHeader = new GUIContent("Build and Play Mode Scripts", "Settings affect profiles.");
@@ -146,10 +140,6 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_NonRecursiveBundleBuilding =
             new GUIContent("Non-Recursive Dependency Calculation", "If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods. This approach helps reduce asset bundle rebuilds and runtime memory consumption.\n*Requires Unity 2019.4.19f1 or above");
 #endif
-        GUIContent m_BuildRemoteCatalog =
-            new GUIContent("Build Remote Catalog",
-                "If set, this will create a copy of the content catalog for storage on a remote server.  This catalog can be overwritten later for content updates.");
-
         GUIContent m_BundleLocalCatalog =
             new GUIContent("Compress Local Catalog",
                 "If set, the local content catalog will be compressed in an asset bundle. This will affect build and load time of catalog. We recommend disabling this during iteration.");
@@ -158,32 +148,8 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("Optimize Catalog Size",
                 "If set, duplicate internal ids will be extracted to a lookup table and reconstructed at runtime.  This can reduce the size of the catalog but may impact performance due to extra processing at load time.");
 
-        GUIContent m_CheckForCatalogUpdateOnInit =
-            new GUIContent("Only update catalogs manually", "If set, this will forgo checking for content catalog updates on initialization.");
-
-        GUIContent m_RemoteCatBuildandLoadPaths =
-            new GUIContent("Build & Load Paths", "Paths to build or load a remote content catalog");
-
-        GUIContent m_RemoteCatPathPreview =
-            new GUIContent("Path Preview", "Preview of what the current paths will be evaluated to");
-
-        GUIContent m_RemoteCatBuildPath =
-            new GUIContent("Build Path", "The path for a remote content catalog.");
-
-        GUIContent m_RemoteCatLoadPath =
-            new GUIContent("Load Path", "The path to load a remote content catalog.");
-
-        GUIContent m_CatalogTimeout =
-            new GUIContent("Catalog Download Timeout", "The time until a catalog hash or json UnityWebRequest download will timeout in seconds. 0 for no timeout.");
-
-        GUIContent m_CertificateHandlerType =
-            new GUIContent("Custom certificate handler", "The class to use for custom certificate handling.  This type must inherit from UnityEngine.Networking.CertificateHandler.");
-
         GUIContent m_ProfileInUse =
             new GUIContent("Profile In Use", "This is the active profile that will be used to evaluate all profile variables during a build and when entering play mode.");
-
-        GUIContent m_MaxConcurrentWebRequests =
-            new GUIContent("Max Concurrent Web Requests", "Limits the number of concurrent web requests.  If more requests are made, they will be queued until some requests complete.");
 
         GUIContent m_IgnoreUnsupportedFilesInBuild =
             new GUIContent("Ignore Invalid/Unsupported Files in Build", "If enabled, files that cannot be built will be ignored.");
@@ -210,9 +176,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         GUIContent m_DisableVisibleSubAssetRepresentations =
             new GUIContent("Disable Visible Sub Asset Representations", "If enabled, the build will assume that all sub Assets have no visible asset representations.");
-
-        GUIContent m_ContentUpdateAutoCheckForRestrictions =
-            new GUIContent("Check for Update Issues", "Inform the system if it should perform a Content Update Restriction check as part of updating a previous build, and how to handle the result.");
 
 #if (ENABLE_CCD)
         GUIContent m_BuildAndReleaseBinFile =
@@ -337,153 +300,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (optimizeCatalogSize != m_AasTarget.OptimizeCatalogSize)
                     m_QueuedChanges.Add(() => m_AasTarget.OptimizeCatalogSize = optimizeCatalogSize);
 */
-                bool buildRemoteCatalog = EditorGUILayout.Toggle(m_BuildRemoteCatalog, m_AasTarget.BuildRemoteCatalog);
-                if (buildRemoteCatalog != m_AasTarget.BuildRemoteCatalog)
-                    m_QueuedChanges.Add(() => m_AasTarget.BuildRemoteCatalog = buildRemoteCatalog);
-                if ((m_AasTarget.RemoteCatalogBuildPath != null && m_AasTarget.RemoteCatalogLoadPath != null) // these will never actually be null, as the accessor initializes them.
-                    && (buildRemoteCatalog))
-                {
-                    DrawRemoteCatalogPaths();
-                }
 
-                EditorGUI.BeginDisabledGroup(!buildRemoteCatalog);
-                bool disableCatalogOnStartup = EditorGUILayout.Toggle(m_CheckForCatalogUpdateOnInit, m_AasTarget.DisableCatalogUpdateOnStartup);
-                if (disableCatalogOnStartup != m_AasTarget.DisableCatalogUpdateOnStartup)
-                    m_QueuedChanges.Add(() => m_AasTarget.DisableCatalogUpdateOnStartup = disableCatalogOnStartup);
-                EditorGUI.EndDisabledGroup();
-
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
-
-            ContentUpdateFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(ContentUpdateFoldout.IsActive, m_ContentUpdateHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#content-update");
-                Application.OpenURL(url);
-            });
-            if (ContentUpdateFoldout.IsActive)
-            {
-                if (!m_AasTarget.BuildRemoteCatalog)
-                    EditorGUILayout.HelpBox("You must enable the remote catalog in the Catalog settings to update a previous build.", MessageType.Warning);
-                EditorGUI.BeginDisabledGroup(!m_AasTarget.BuildRemoteCatalog);
-
-                int contentUpdateRestrictionsCheckOptionIndex = EditorGUILayout.Popup(m_ContentUpdateAutoCheckForRestrictions, (int)m_AasTarget.CheckForContentUpdateRestrictionsOption,
-                    new[] {"List Restricted Assets (recommended)", "Fail Build", "Disabled"});
-                if (contentUpdateRestrictionsCheckOptionIndex != (int)m_AasTarget.CheckForContentUpdateRestrictionsOption)
-                    m_QueuedChanges.Add(() => m_AasTarget.CheckForContentUpdateRestrictionsOption =
-                        (CheckForContentUpdateRestrictionsOptions)contentUpdateRestrictionsCheckOptionIndex);
-
-#if ENABLE_CCD
-                if (m_AasTarget.BuildAndReleaseBinFileOption == BuildAndReleaseContentStateBehavior.UseCCDBucket)
-                {
-                    EditorGUILayout.HelpBox($"Addressables settings are set to use CCD buckets for the building of the previous content " +
-                        $"state file.  The addressables_content_state.bin file will be built to {m_AasTarget.RemoteCatalogBuildPath.GetValue(m_AasTarget)}. " +
-                        $"If you wish to manually set the build path, change the Build and Release Content State file option to Use Content State Build Path.", MessageType.Info);
-                }
-                else
-#endif
-                {
-                    var variableNames = m_AasTarget.profileSettings.GetVariableNames();
-                    variableNames.Add(AddressableAssetProfileSettings.customEntryString);
-                    //This needs to be the last item in the list, or setting the index to names.Count - 1 below needs to be refactored.
-                    variableNames.Add(AddressableAssetProfileSettings.defaultSettingsPathString);
-
-                    int profileVariableIdIndex = EditorGUILayout.Popup(m_ContentStateFileBuildPath,
-                        variableNames.IndexOf(m_AasTarget.m_ContentStateBuildPathProfileVariableName),
-                        variableNames.ToArray());
-
-                    //if this hasn't been set, make it use the default settings path, unless there's a path already set.
-                    if (profileVariableIdIndex <= -1)
-                    {
-                        if (!string.IsNullOrEmpty(m_AasTarget.m_ContentStateBuildPath))
-                        {
-                            //there was an existing content state path put into the project, lets retain that.
-                            profileVariableIdIndex = variableNames.IndexOf(AddressableAssetProfileSettings.customEntryString);
-                        }
-                        else //Use the <default settings path>
-                            profileVariableIdIndex = variableNames.Count - 1;
-                    }
-
-                    //This is mainly to make sure we don't get into a bad state if the user changes the value via script
-                    if (m_AasTarget.m_ContentStateBuildPathProfileVariableName != AddressableAssetProfileSettings.customEntryString &&
-                        !string.IsNullOrEmpty(m_AasTarget.m_ContentStateBuildPath))
-                    {
-                        m_QueuedChanges.Add(() => { m_AasTarget.m_ContentStateBuildPathProfileVariableName = AddressableAssetProfileSettings.customEntryString; });
-                    }
-
-                    if (m_AasTarget.m_ContentStateBuildPathProfileVariableName != variableNames[profileVariableIdIndex])
-                        m_QueuedChanges.Add(() =>
-                        {
-                            m_AasTarget.m_ContentStateBuildPathProfileVariableName = variableNames[profileVariableIdIndex];
-                            //We only want the value serialized into the content state build path if using the <custom> option
-                            //This is pretty edge case now, given how the ContentStateBuildPath property is setup.  This is only useful
-                            //if the user has set the path via script and then gone into the UI and changed it
-                            if (m_AasTarget.m_ContentStateBuildPathProfileVariableName != AddressableAssetProfileSettings.customEntryString)
-                                m_AasTarget.m_ContentStateBuildPath = "";
-                        });
-
-                    //If we're set to a custom entry, display the custom entry text field
-                    if (variableNames[profileVariableIdIndex] == AddressableAssetProfileSettings.customEntryString)
-                    {
-                        string contentStateBuildPath = EditorGUILayout.TextField("Custom Content State Build Path", m_AasTarget.m_CustomContentStateBuildPath);
-                        if (contentStateBuildPath != m_AasTarget.ContentStateBuildPath)
-                            m_QueuedChanges.Add(() => { m_AasTarget.m_CustomContentStateBuildPath = contentStateBuildPath; });
-                    }
-
-                    EditorGUI.indentLevel++;
-                    m_ShowContentStatePath = EditorGUILayout.Foldout(m_ShowContentStatePath, "Path Preview", true);
-                    if (m_ShowContentStatePath)
-                    {
-                        EditorStyles.helpBox.fontSize = 12;
-                        string evaluatedBuildPath = m_AasTarget.profileSettings.EvaluateString(m_AasTarget.activeProfileId, m_AasTarget.ContentStateBuildPath);
-                        EditorGUILayout.HelpBox(String.Format("Build Path: {0}", evaluatedBuildPath), MessageType.None);
-                        if (ResourceManagerConfig.ShouldPathUseWebRequest(evaluatedBuildPath))
-                        {
-                            string contentStatePath = "";
-#if ENABLE_CCD
-                            contentStatePath = Path.Combine(m_AasTarget.RemoteCatalogBuildPath.GetValue(m_AasTarget), "addressables_content_state.bin");
-#else
-                            contentStatePath = ContentUpdateScript.PreviousContentStateFileCachePath;
-#endif
-                            EditorGUILayout.HelpBox($"The content state file path is a remote path. For new content builds, the content state file can be found at {contentStatePath}. " +
-                                                    $"When updating a previous build, the remote file will be downloaded to that same location.", MessageType.Info);
-                        }
-                    }
-
-                    EditorGUI.indentLevel--;
-                }
-
-#if ENABLE_CCD
-                int buildAndReleaseContentBehavior = EditorGUILayout.Popup(m_BuildAndReleaseBinFile, (int)m_AasTarget.BuildAndReleaseBinFileOption,
-                        new[]{"Use Content State Build Path", "Use uploaded addressables_content_state.bin"});
-                if (buildAndReleaseContentBehavior != (int)m_AasTarget.BuildAndReleaseBinFileOption)
-                    m_QueuedChanges.Add(() => m_AasTarget.BuildAndReleaseBinFileOption = (BuildAndReleaseContentStateBehavior)buildAndReleaseContentBehavior);
-#endif
-                EditorGUI.EndDisabledGroup();
-
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
-
-            DownloadsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(DownloadsFoldout.IsActive, m_DownloadsHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#downloads");
-                Application.OpenURL(url);
-            });
-            if (DownloadsFoldout.IsActive)
-            {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_CertificateHandlerType"), m_CertificateHandlerType);
-
-                var maxWebReqs = EditorGUILayout.IntField(m_MaxConcurrentWebRequests, m_AasTarget.MaxConcurrentWebRequests);
-                maxWebReqs = Mathf.Clamp(maxWebReqs, 1, 1024);
-                if (maxWebReqs != m_AasTarget.MaxConcurrentWebRequests)
-                    m_QueuedChanges.Add(() => m_AasTarget.MaxConcurrentWebRequests = maxWebReqs);
-
-                var catalogTimeouts = EditorGUILayout.IntField(m_CatalogTimeout, m_AasTarget.CatalogRequestsTimeout);
-                if (catalogTimeouts != m_AasTarget.CatalogRequestsTimeout)
-                    m_QueuedChanges.Add(() => m_AasTarget.CatalogRequestsTimeout = catalogTimeouts);
                 GUILayout.Space(postBlockContentSpace);
             }
 
@@ -796,83 +613,6 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             m_AasTarget.AddInitializationObject(initObj as IObjectInitializationDataProvider);
-        }
-
-        void DrawRemoteCatalogPaths()
-        {
-            ProfileValueReference BuildPath = m_AasTarget.RemoteCatalogBuildPath;
-            ProfileValueReference LoadPath = m_AasTarget.RemoteCatalogLoadPath;
-
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (settings == null)
-                return;
-            List<ProfileGroupType> groupTypes = ProfileGroupType.CreateGroupTypes(settings.profileSettings.GetProfile(settings.activeProfileId), settings);
-            List<string> options = groupTypes.Select(group => group.GroupTypePrefix).ToList();
-            //set selected to custom
-            options.Add(AddressableAssetProfileSettings.customEntryString);
-            int? selected = options.Count - 1;
-            HashSet<string> vars = settings.profileSettings.GetAllVariableIds();
-            if (vars.Contains(BuildPath.Id) && vars.Contains(LoadPath.Id) && !m_UseCustomPaths)
-            {
-                for (int i = 0; i < groupTypes.Count; i++)
-                {
-                    ProfileGroupType.GroupTypeVariable buildPathVar = groupTypes[i].GetVariableBySuffix("BuildPath");
-                    ProfileGroupType.GroupTypeVariable loadPathVar = groupTypes[i].GetVariableBySuffix("LoadPath");
-                    if (BuildPath.GetName(settings) == groupTypes[i].GetName(buildPathVar) && LoadPath.GetName(settings) == groupTypes[i].GetName(loadPathVar))
-                    {
-                        selected = i;
-                        break;
-                    }
-                }
-            }
-
-            if (selected.HasValue && selected != options.Count - 1)
-            {
-                m_UseCustomPaths = false;
-            }
-            else
-            {
-                m_UseCustomPaths = true;
-            }
-
-            EditorGUI.BeginChangeCheck();
-            var newIndex = EditorGUILayout.Popup(m_RemoteCatBuildandLoadPaths, selected.HasValue ? selected.Value : options.Count - 1, options.ToArray());
-            if (EditorGUI.EndChangeCheck() && newIndex != selected)
-            {
-                if (options[newIndex] != AddressableAssetProfileSettings.customEntryString)
-                {
-                    Undo.RecordObject(serializedObject.targetObject, serializedObject.targetObject.name + "Path Pair");
-                    BuildPath.SetVariableByName(settings, groupTypes[newIndex].GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + "BuildPath");
-                    LoadPath.SetVariableByName(settings, groupTypes[newIndex].GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + "LoadPath");
-                    m_UseCustomPaths = false;
-                }
-                else
-                {
-                    Undo.RecordObject(serializedObject.targetObject, serializedObject.targetObject.name + "Path Pair");
-                    m_UseCustomPaths = true;
-                }
-
-                EditorUtility.SetDirty(this);
-            }
-
-            if (m_UseCustomPaths)
-            {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_RemoteCatalogBuildPath"), m_RemoteCatBuildPath);
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_RemoteCatalogLoadPath"), m_RemoteCatLoadPath);
-            }
-
-            EditorGUI.indentLevel++;
-            m_ShowPaths = EditorGUILayout.Foldout(m_ShowPaths, m_RemoteCatPathPreview, true);
-            if (m_ShowPaths)
-            {
-                EditorStyles.helpBox.fontSize = 12;
-                var baseBuildPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, BuildPath.Id);
-                var baseLoadPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, LoadPath.Id);
-                EditorGUILayout.HelpBox(String.Format("Build Path: {0}", settings.profileSettings.EvaluateString(settings.activeProfileId, baseBuildPathValue)), MessageType.None);
-                EditorGUILayout.HelpBox(String.Format("Load Path: {0}", settings.profileSettings.EvaluateString(settings.activeProfileId, baseLoadPathValue)), MessageType.None);
-            }
-
-            EditorGUI.indentLevel--;
         }
     }
 }

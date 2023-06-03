@@ -139,16 +139,6 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public const string kLocalLoadPath = "Local.LoadPath";
 
-        /// <summary>
-        /// Default name of remote build path.
-        /// </summary>
-        public const string kRemoteBuildPath = "Remote.BuildPath";
-
-        /// <summary>
-        /// Default name of remote load path.
-        /// </summary>
-        public const string kRemoteLoadPath = "Remote.LoadPath";
-
         private const string kLocalGroupTypePrefix = "Built-In";
         internal static string LocalGroupTypePrefix => kLocalGroupTypePrefix;
 
@@ -162,33 +152,10 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public const string kLocalLoadPathValue = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]";
 
-        private const string kEditorHostedGroupTypePrefix = "Editor Hosted";
-        internal static string EditorHostedGroupTypePrefix => kEditorHostedGroupTypePrefix;
-
 #if ENABLE_CCD
         private const string kCcdManagerGroupTypePrefix = "Automatic";
         internal static string CcdManagerGroupTypePrefix = kCcdManagerGroupTypePrefix;
 #endif
-
-        /// <summary>
-        /// Default value of remote build path.
-        /// </summary>
-        public const string kRemoteBuildPathValue = "ServerData/[BuildTarget]";
-
-        /// <summary>
-        /// Default value of remote load path.
-        /// </summary>
-        public const string kRemoteLoadPathValue = "http://localhost/[BuildTarget]";
-
-        internal static string RemoteLoadPathValue
-        {
-            get
-            {
-                // Fix for case ADDR-2314. kRemoteLoadPathValue is incorrect, "http://localhost/[BuildTarget]" does not work with local hosting service
-                return "http://[PrivateIpAddress]:[HostingServicePort]";
-                // kRemoteLoadPathValue will be fixed to the correct path in Addressables 1.20.0
-            }
-        }
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
         /// <summary>
@@ -500,16 +467,7 @@ namespace UnityEditor.AddressableAssets.Settings
         bool m_OptimizeCatalogSize = false;
 
         [SerializeField]
-        bool m_BuildRemoteCatalog = false;
-
-        [SerializeField]
         bool m_BundleLocalCatalog = false;
-
-        [SerializeField]
-        int m_CatalogRequestsTimeout = 0;
-
-        [SerializeField]
-        bool m_DisableCatalogUpdateOnStart = false;
 
         [SerializeField]
         bool m_IgnoreUnsupportedFilesInBuild = false;
@@ -538,27 +496,6 @@ namespace UnityEditor.AddressableAssets.Settings
             set { m_CCDEnabled = value; }
         }
 #endif
-
-        [SerializeField]
-        int m_maxConcurrentWebRequests = 3;
-
-        /// <summary>
-        /// The maximum time to download hash and json catalog files before a timeout error.
-        /// </summary>
-        public int CatalogRequestsTimeout
-        {
-            get { return m_CatalogRequestsTimeout; }
-            set { m_CatalogRequestsTimeout = value < 0 ? 0 : value; }
-        }
-
-        /// <summary>
-        /// The maximum number of concurrent web requests.  This value will be clamped from 1 to 1024.
-        /// </summary>
-        public int MaxConcurrentWebRequests
-        {
-            get { return m_maxConcurrentWebRequests; }
-            set { m_maxConcurrentWebRequests = Mathf.Clamp(value, 1, 1024); }
-        }
 
         /// <summary>
         /// Set this to true to ensure unique bundle ids. Set to false to allow duplicate bundle ids.
@@ -604,30 +541,12 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Determine if a remote catalog should be built-for and loaded-by the app.
-        /// </summary>
-        public bool BuildRemoteCatalog
-        {
-            get { return m_BuildRemoteCatalog; }
-            set { m_BuildRemoteCatalog = value; }
-        }
-
-        /// <summary>
         /// Whether the local catalog should be serialized in an asset bundle or as json.
         /// </summary>
         public bool BundleLocalCatalog
         {
             get { return m_BundleLocalCatalog; }
             set { m_BundleLocalCatalog = value; }
-        }
-
-        /// <summary>
-        /// Tells Addressables if it should check for a Content Catalog Update during the initialization step.
-        /// </summary>
-        public bool DisableCatalogUpdateOnStartup
-        {
-            get { return m_DisableCatalogUpdateOnStart; }
-            set { m_DisableCatalogUpdateOnStart = value; }
         }
 
         [SerializeField]
@@ -702,19 +621,6 @@ namespace UnityEditor.AddressableAssets.Settings
             set { m_MonoScriptBundleNaming = value; }
         }
 
-        [SerializeField]
-        CheckForContentUpdateRestrictionsOptions m_CheckForContentUpdateRestrictionsOption = CheckForContentUpdateRestrictionsOptions.ListUpdatedAssetsWithRestrictions;
-
-        /// <summary>
-        /// Informs the Addressable system how to handle checking for Content Update Restrictions during a Content Update build.
-        /// During this check, assets are flagged that have changed, yet are contained in a Group that has the Cannot Change Post Release option set.
-        /// </summary>
-        public CheckForContentUpdateRestrictionsOptions CheckForContentUpdateRestrictionsOption
-        {
-            get { return m_CheckForContentUpdateRestrictionsOption; }
-            set { m_CheckForContentUpdateRestrictionsOption = value; }
-        }
-
 #if ENABLE_CCD
         [SerializeField]
         BuildAndReleaseContentStateBehavior m_BuildAndReleaseBinFileOption = 0;
@@ -740,51 +646,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get { return m_MonoScriptBundleCustomNaming; }
             set { m_MonoScriptBundleCustomNaming = value; }
-        }
-
-        [SerializeField]
-        ProfileValueReference m_RemoteCatalogBuildPath;
-
-        /// <summary>
-        /// The path to place a copy of the content catalog for online retrieval.  To do any content updates
-        /// to an existing built app, there must be a remote catalog. Overwriting the catalog is how the app
-        /// gets informed of the updated content.
-        /// </summary>
-        public ProfileValueReference RemoteCatalogBuildPath
-        {
-            get
-            {
-                if (m_RemoteCatalogBuildPath.Id == null)
-                {
-                    m_RemoteCatalogBuildPath = new ProfileValueReference();
-                    m_RemoteCatalogBuildPath.SetVariableByName(this, kRemoteBuildPath);
-                }
-
-                return m_RemoteCatalogBuildPath;
-            }
-            set { m_RemoteCatalogBuildPath = value; }
-        }
-
-        [SerializeField]
-        ProfileValueReference m_RemoteCatalogLoadPath;
-
-        /// <summary>
-        /// The path to load the remote content catalog from.  This is the location the app will check to
-        /// look for updated catalogs, which is the only indication the app has for updated content.
-        /// </summary>
-        public ProfileValueReference RemoteCatalogLoadPath
-        {
-            get
-            {
-                if (m_RemoteCatalogLoadPath.Id == null)
-                {
-                    m_RemoteCatalogLoadPath = new ProfileValueReference();
-                    m_RemoteCatalogLoadPath.SetVariableByName(this, kRemoteLoadPath);
-                }
-
-                return m_RemoteCatalogLoadPath;
-            }
-            set { m_RemoteCatalogLoadPath = value; }
         }
 
         [SerializeField]

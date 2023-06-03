@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -12,8 +11,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
 {
     abstract class VBAsyncOperation
     {
-        public abstract DownloadStatus GetDownloadStatus();
-        public abstract bool WaitForCompletion();
     }
 
     class VBAsyncOperation<TObject> : VBAsyncOperation
@@ -26,8 +23,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         DelegateList<VBAsyncOperation<TObject>> m_CompletedAction;
         Action<VBAsyncOperation<TObject>> m_OnDestroyAction;
 
-        public override DownloadStatus GetDownloadStatus() => default;
-        public override bool WaitForCompletion() => true;
+        public virtual bool WaitForCompletion() => true;
 
         public override string ToString()
         {
@@ -83,12 +79,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         public virtual bool IsDone
         {
             get { return Status == AsyncOperationStatus.Failed || Status == AsyncOperationStatus.Succeeded; }
-        }
-
-        /// <inheritdoc />
-        public virtual float PercentComplete
-        {
-            get { return IsDone ? 1f : 0f; }
         }
 
         /// <inheritdoc />
@@ -188,10 +178,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         [SerializeField]
         string m_Name;
 
-        [FormerlySerializedAs("m_isLocal")]
-        [SerializeField]
-        bool m_IsLocal;
-
         [FormerlySerializedAs("m_dataSize")]
         [SerializeField]
         long m_DataSize;
@@ -247,29 +233,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         }
 
         /// <summary>
-        /// The percent of data that has been loaded.
-        /// </summary>
-        public float PercentComplete
-        {
-            get
-            {
-                if (m_HeaderSize + m_DataSize <= 0)
-                    return 1;
-
-                return (float)(m_HeaderBytesLoaded + m_DataBytesLoaded) / (m_HeaderSize + m_DataSize);
-            }
-        }
-
-        /// <summary>
         /// Construct a new VirtualAssetBundle
         /// </summary>
         /// <param name="name">The name of the bundle.</param>
         /// <param name="local">Is the bundle local or remote.  This is used to determine which bandwidth value to use when simulating loading.</param>
-        public VirtualAssetBundle(string name, bool local, uint crc, string hash)
+        public VirtualAssetBundle(string name, uint crc, string hash)
         {
             m_Latency = .1f;
             m_Name = name;
-            m_IsLocal = local;
             m_HeaderBytesLoaded = 0;
             m_DataBytesLoaded = 0;
             m_Crc = crc;
@@ -308,7 +279,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         {
             VirtualAssetBundle m_Bundle;
             float m_TimeInLoadingState;
-            bool m_crcHashValidated;
 
             public LoadAssetBundleOp(IResourceLocation location, VirtualAssetBundle bundle)
             {
@@ -324,68 +294,17 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 return true;
             }
 
-            public override DownloadStatus GetDownloadStatus()
-            {
-                if (m_Bundle.m_IsLocal)
-                    return new DownloadStatus() {IsDone = IsDone};
-                return new DownloadStatus() {DownloadedBytes = m_Bundle.m_DataBytesLoaded, TotalBytes = m_Bundle.m_DataSize, IsDone = IsDone};
-            }
-
-            public override float PercentComplete
-            {
-                get
-                {
-                    if (IsDone)
-                        return 1f;
-                    return m_Bundle.PercentComplete;
-                }
-            }
-
-            public void Update(long localBandwidth, long remoteBandwidth, float unscaledDeltaTime)
+            public void Update(long localBandwidth, float unscaledDeltaTime)
             {
                 if (m_Result != null)
                     return;
-
-                if (!m_crcHashValidated)
-                {
-                    var location = Context as IResourceLocation;
-                    var reqOptions = location.Data as AssetBundleRequestOptions;
-                    if (reqOptions != null)
-                    {
-                        if (reqOptions.Crc != 0 && m_Bundle.m_Crc != reqOptions.Crc)
-                        {
-                            var err = string.Format("Error while downloading Asset Bundle: CRC Mismatch. Provided {0}, calculated {1} from data. Will not load Asset Bundle.", reqOptions.Crc,
-                                m_Bundle.m_Crc);
-                            SetResult(null);
-                            OperationException = new Exception(err);
-                            InvokeCompletionEvent();
-                        }
-
-                        if (!m_Bundle.m_IsLocal)
-                        {
-                            if (!string.IsNullOrEmpty(reqOptions.Hash))
-                            {
-                                if (string.IsNullOrEmpty(m_Bundle.m_Hash) || m_Bundle.m_Hash != reqOptions.Hash)
-                                {
-                                    Debug.LogWarningFormat("Mismatched hash in bundle {0}.", m_Bundle.Name);
-                                }
-                                //TODO: implement virtual cache that would persist between runs.
-                                //if(vCache.hashBundle(m_Bundle.Name, reqOptions.Hash))
-                                //      m_m_Bundle.IsLocal = true;
-                            }
-                        }
-                    }
-
-                    m_crcHashValidated = true;
-                }
 
                 m_TimeInLoadingState += unscaledDeltaTime;
                 if (m_TimeInLoadingState > m_Bundle.m_Latency)
                 {
                     long localBytes = (long)Math.Ceiling(unscaledDeltaTime * localBandwidth);
-                    long remoteBytes = (long)Math.Ceiling(unscaledDeltaTime * remoteBandwidth);
 
-                    if (m_Bundle.LoadData(localBytes, remoteBytes))
+                    if (m_Bundle.LoadData(localBytes))
                     {
                         SetResult(m_Bundle);
                         InvokeCompletionEvent();
@@ -394,33 +313,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             }
         }
 
-        bool LoadData(long localBytes, long remoteBytes)
+        bool LoadData(long localBytes)
         {
-            if (m_IsLocal)
-            {
-                m_HeaderBytesLoaded += localBytes;
-                if (m_HeaderBytesLoaded < m_HeaderSize)
-                    return false;
-                m_HeaderBytesLoaded = m_HeaderSize;
-                return true;
-            }
-            else
-            {
-                if (m_DataBytesLoaded < m_DataSize)
-                {
-                    m_DataBytesLoaded += remoteBytes;
-                    if (m_DataBytesLoaded < m_DataSize)
-                        return false;
-                    m_DataBytesLoaded = m_DataSize;
-                    return false;
-                }
-
-                m_HeaderBytesLoaded += localBytes;
-                if (m_HeaderBytesLoaded < m_HeaderSize)
-                    return false;
-                m_HeaderBytesLoaded = m_HeaderSize;
-                return true;
-            }
+            m_HeaderBytesLoaded += localBytes;
+            if (m_HeaderBytesLoaded < m_HeaderSize)
+                return false;
+            m_HeaderBytesLoaded = m_HeaderSize;
+            return true;
         }
 
         internal bool Unload()
@@ -477,7 +376,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             return op;
         }
 
-        internal void CountBandwidthUsage(ref long localCount, ref long remoteCount)
+        internal void CountBandwidthUsage(ref long localCount)
         {
             if (m_BundleLoadOperation != null && m_BundleLoadOperation.IsDone)
             {
@@ -485,22 +384,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 return;
             }
 
-            if (m_IsLocal)
-            {
-                localCount++;
-            }
-            else
-            {
-                if (m_DataBytesLoaded < m_DataSize)
-                    remoteCount++;
-                else
-                    localCount++;
-            }
+            localCount++;
         }
 
         interface IVirtualLoadable
         {
-            bool Load(long localBandwidth, long remoteBandwidth, float unscaledDeltaTime);
+            bool Load(long localBandwidth, float unscaledDeltaTime);
         }
 
         // TODO: This is only needed internally. We can change this to not derive off of AsyncOperationBase and simplify the code
@@ -524,19 +413,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 //TODO: this needs to just wait on the resourcemanager update loop to ensure proper loading order
                 while (!IsDone)
                 {
-                    Load(k_SynchronousBytesPerSecond, k_SynchronousBytesPerSecond, .1f);
+                    Load(k_SynchronousBytesPerSecond, .1f);
                     System.Threading.Thread.Sleep(100);
                 }
 
                 return true;
             }
 
-            public override float PercentComplete
-            {
-                get { return Mathf.Clamp01(m_BytesLoaded / (float)m_AssetInfo.Size); }
-            }
-
-            public bool Load(long localBandwidth, long remoteBandwidth, float unscaledDeltaTime)
+            public bool Load(long localBandwidth, float unscaledDeltaTime)
             {
                 if (IsDone)
                     return false;
@@ -575,20 +459,20 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         }
 
         //return true until complete
-        internal bool UpdateAsyncOperations(long localBandwidth, long remoteBandwidth, float unscaledDeltaTime)
+        internal bool UpdateAsyncOperations(long localBandwidth, float unscaledDeltaTime)
         {
             if (m_BundleLoadOperation == null)
                 return false;
 
             if (!m_BundleLoadOperation.IsDone)
             {
-                m_BundleLoadOperation.Update(localBandwidth, remoteBandwidth, unscaledDeltaTime);
+                m_BundleLoadOperation.Update(localBandwidth, unscaledDeltaTime);
                 return true;
             }
 
             foreach (var o in m_AssetLoadOperations)
             {
-                if (!o.Load(localBandwidth, remoteBandwidth, unscaledDeltaTime))
+                if (!o.Load(localBandwidth, unscaledDeltaTime))
                 {
                     m_AssetLoadOperations.Remove(o);
                     break;

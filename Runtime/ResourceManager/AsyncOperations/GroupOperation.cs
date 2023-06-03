@@ -72,22 +72,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             Result.Clear();
         }
 
-        internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
-        {
-            var status = new DownloadStatus() {IsDone = IsDone};
-            for (int i = 0; i < Result.Count; i++)
-            {
-                if (Result[i].IsValid())
-                {
-                    var depStatus = Result[i].InternalGetDownloadStatus(visited);
-                    status.DownloadedBytes += depStatus.DownloadedBytes;
-                    status.TotalBytes += depStatus.TotalBytes;
-                }
-            }
-
-            return status;
-        }
-
         HashSet<string> m_CachedDependencyLocations = new HashSet<string>();
 
         private bool DependenciesAreUnchanged(List<AsyncOperationHandle> deps)
@@ -188,25 +172,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             ReleaseDependencies();
         }
-
-        protected override float Progress
-        {
-            get
-            {
-                float total = 0f;
-                for (int i = 0; i < Result.Count; i++)
-                {
-                    var handle = Result[i];
-                    if (!handle.IsDone)
-                        total += handle.PercentComplete;
-                    else
-                        total++;
-                }
-
-                return total / Result.Count;
-            }
-        }
-
 
         public void Init(List<AsyncOperationHandle> operations, bool releaseDependenciesOnFailure = true, bool allowFailedDependencies = false)
         {

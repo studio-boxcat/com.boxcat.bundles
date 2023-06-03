@@ -354,7 +354,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
                 loadPath += bagSchema.UrlSuffix;
-            if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPath) && !bagSchema.UseUnityWebRequestForLocalBundles)
+            if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPath))
             {
                 char separator = PathSeparatorForPlatform(target);
                 if (separator != '/')

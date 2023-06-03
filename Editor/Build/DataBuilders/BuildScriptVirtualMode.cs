@@ -101,8 +101,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             aaContext.runtimeData.ProfileEvents = ProjectConfigData.PostProfilerEvents;
             aaContext.runtimeData.LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions;
             aaContext.runtimeData.ProfileEvents = ProjectConfigData.PostProfilerEvents;
-            aaContext.runtimeData.MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests;
-            aaContext.runtimeData.CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout;
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
                 new[] { ResourceManagerRuntimeData.kCatalogAddress },
                 GetCatalogPath("file://{UnityEngine.Application.dataPath}/../"),
@@ -179,7 +177,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (schema != null)
                 {
                     var bundleLocData = aaContext.locations.First(s => s.Keys[0] == bd.Key);
-                    var isLocalBundle = IsInternalIdLocal(bundleLocData.InternalId);
                     uint crc = (uint)UnityEngine.Random.Range(0, int.MaxValue);
                     var hash = Guid.NewGuid().ToString();
 
@@ -188,7 +185,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     bundleLocData.InternalId = bundleLocData.InternalId.Remove(bundleLocData.InternalId.Length - originalBundleName.Length) + newBundleName;
                     var abb = m_AllBundleInputDefinitions.FirstOrDefault(a => a.assetBundleName == originalBundleName);
                     var virtualBundleName = AddressablesRuntimeProperties.EvaluateString(bundleLocData.InternalId);
-                    var bundleData = new VirtualAssetBundle(virtualBundleName, isLocalBundle, crc, hash);
+                    var bundleData = new VirtualAssetBundle(virtualBundleName, crc, hash);
 
                     long dataSize = 0;
                     long headerSize = 0;
@@ -215,12 +212,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                     var requestOptions = new VirtualAssetBundleRequestOptions
                     {
-                        Crc = schema.UseAssetBundleCrc ? crc : 0,
-                        Hash = schema.UseAssetBundleCache ? hash : "",
-                        ChunkedTransfer = schema.ChunkedTransfer,
-                        RedirectLimit = schema.RedirectLimit,
-                        RetryCount = schema.RetryCount,
-                        Timeout = schema.Timeout,
+                        Hash = "",
                         BundleName = Path.GetFileName(bundleLocData.InternalId),
                         AssetLoadMode = schema.AssetLoadMode,
                         BundleSize = dataSize + headerSize
@@ -315,7 +307,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (!m_CreatedProviderIds.ContainsKey(bundledProviderId))
             {
                 //TODO: pull from schema instead of ProjectConfigData
-                var virtualBundleRuntimeData = new VirtualAssetBundleRuntimeData(ProjectConfigData.LocalLoadSpeed, ProjectConfigData.RemoteLoadSpeed);
+                var virtualBundleRuntimeData = new VirtualAssetBundleRuntimeData(ProjectConfigData.LocalLoadSpeed);
                 //save virtual runtime data to collect assets into virtual bundles
                 m_CreatedProviderIds.Add(bundledProviderId, virtualBundleRuntimeData);
             }
@@ -351,11 +343,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             m_AllBundleInputDefinitions.AddRange(bundleInputDefs);
 
             return errorString;
-        }
-
-        static bool IsInternalIdLocal(string path)
-        {
-            return path.StartsWith("{UnityEngine.AddressableAssets.Addressables.RuntimePath}", StringComparison.Ordinal);
         }
 
         static string OutputLibraryPathForAsset(string a)

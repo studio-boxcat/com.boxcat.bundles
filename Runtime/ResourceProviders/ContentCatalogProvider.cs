@@ -42,11 +42,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         }
 
         /// <summary>
-        /// Use to indicate if the updating the catalog on startup should be disabled.
-        /// </summary>
-        public bool DisableCatalogUpdateOnStart = false;
-
-        /// <summary>
         /// Use to indicate if the local catalog is in a bundle.
         /// </summary>
         public bool IsLocalCatalogInBundle = false;
@@ -80,28 +75,24 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             //   int m_StartFrame;
             string m_LocalDataPath;
-            string m_RemoteHashValue;
             internal string m_LocalHashValue;
             ProvideHandle m_ProviderInterface;
             internal ContentCatalogData m_ContentCatalogData;
             AsyncOperationHandle<ContentCatalogData> m_ContentCatalogDataLoadOp;
             private BundledCatalog m_BundledCatalog;
             private bool m_Retried;
-            private bool m_DisableCatalogUpdateOnStart;
             private bool m_IsLocalCatalogInBundle;
 
-            public void Start(ProvideHandle providerInterface, bool disableCatalogUpdateOnStart, bool isLocalCatalogInBundle)
+            public void Start(ProvideHandle providerInterface, bool isLocalCatalogInBundle)
             {
                 m_ProviderInterface = providerInterface;
-                m_DisableCatalogUpdateOnStart = disableCatalogUpdateOnStart;
                 m_IsLocalCatalogInBundle = isLocalCatalogInBundle;
                 m_ProviderInterface.SetWaitForCompletionCallback(WaitForCompletionCallback);
                 m_LocalDataPath = null;
-                m_RemoteHashValue = null;
 
                 List<object> deps = new List<object>(); // TODO: garbage. need to pass actual count and reuse the list
                 m_ProviderInterface.GetDependencies(deps);
-                string idToLoad = DetermineIdToLoad(m_ProviderInterface.Location, deps, disableCatalogUpdateOnStart);
+                string idToLoad = DetermineIdToLoad(m_ProviderInterface.Location, deps);
 
                 Addressables.LogFormat("Addressables - Using content catalog from {0}.", idToLoad);
 
@@ -157,8 +148,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                     if (loadCatalogFromLocalBundle)
                     {
-                        int webRequestTimeout = providerLoadRequestOptions?.WebRequestTimeout ?? 0;
-                        m_BundledCatalog = new BundledCatalog(idToLoad, webRequestTimeout);
+                        m_BundledCatalog = new BundledCatalog(idToLoad);
                         m_BundledCatalog.OnLoaded += ccd =>
                         {
                             m_ContentCatalogData = ccd;
@@ -202,16 +192,14 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 internal AssetBundle m_CatalogAssetBundle;
                 private AssetBundleRequest m_LoadTextAssetRequest;
                 private ContentCatalogData m_CatalogData;
-                private WebRequestQueueOperation m_WebRequestQueueOperation;
                 private AsyncOperation m_RequestOperation;
-                private int m_WebRequestTimeout;
 
                 public event Action<ContentCatalogData> OnLoaded;
 
                 public bool OpInProgress => m_OpInProgress;
                 public bool OpIsSuccess => !m_OpInProgress && m_CatalogData != null;
 
-                public BundledCatalog(string bundlePath, int webRequestTimeout = 0)
+                public BundledCatalog(string bundlePath)
                 {
                     if (string.IsNullOrEmpty(bundlePath))
                     {
@@ -223,7 +211,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     }
 
                     m_BundlePath = bundlePath;
-                    m_WebRequestTimeout = webRequestTimeout;
                 }
 
                 ~BundledCatalog()
@@ -250,27 +237,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                     if (ResourceManagerConfig.ShouldPathUseWebRequest(m_BundlePath))
                     {
-                        var req = UnityWebRequestAssetBundle.GetAssetBundle(m_BundlePath);
-                        if (m_WebRequestTimeout > 0)
-                            req.timeout = m_WebRequestTimeout;
-
-                        m_WebRequestQueueOperation = WebRequestQueue.QueueRequest(req);
-                        if (m_WebRequestQueueOperation.IsDone)
-                        {
-                            m_RequestOperation = m_WebRequestQueueOperation.Result;
-                            if (m_RequestOperation.isDone)
-                                WebRequestOperationCompleted(m_RequestOperation);
-                            else
-                                m_RequestOperation.completed += WebRequestOperationCompleted;
-                        }
-                        else
-                        {
-                            m_WebRequestQueueOperation.OnComplete += asyncOp =>
-                            {
-                                m_RequestOperation = asyncOp;
-                                m_RequestOperation.completed += WebRequestOperationCompleted;
-                            };
-                        }
+                        throw new NotSupportedException();
                     }
                     else
                     {
@@ -357,7 +324,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             ".json";
 #endif
 
-            internal string DetermineIdToLoad(IResourceLocation location, IList<object> dependencyObjects, bool disableCatalogUpdateOnStart = false)
+            internal string DetermineIdToLoad(IResourceLocation location, IList<object> dependencyObjects)
             {
                 //default to load actual local source catalog
                 string idToLoad = GetTransformedInternalId(location);
@@ -366,11 +333,9 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     dependencyObjects.Count == (int)DependencyHashIndex.Count &&
                     location.Dependencies.Count == (int)DependencyHashIndex.Count)
                 {
-                    var remoteHash = dependencyObjects[(int)DependencyHashIndex.Remote] as string;
                     m_LocalHashValue = dependencyObjects[(int)DependencyHashIndex.Cache] as string;
-                    Addressables.LogFormat("Addressables - ContentCatalogProvider CachedHash = {0}, RemoteHash = {1}.", m_LocalHashValue, remoteHash);
+                    Addressables.LogFormat("Addressables - ContentCatalogProvider CachedHash = {0}.", m_LocalHashValue);
 
-                    if (string.IsNullOrEmpty(remoteHash) || disableCatalogUpdateOnStart) //offline
                     {
 #if ENABLE_CACHING
                         if (!string.IsNullOrEmpty(m_LocalHashValue) && !m_Retried && !string.IsNullOrEmpty(Application.persistentDataPath)) //cache exists and not forcing a retry state
@@ -384,22 +349,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 #else
                         m_LocalHashValue = Hash128.Compute(idToLoad).ToString();
 #endif
-                    }
-                    else //online
-                    {
-                        if (remoteHash == m_LocalHashValue && !m_Retried) //cache of remote is good and not forcing a retry state
-                        {
-                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", kCatalogExt);
-                        }
-                        else //remote is different than cache, or no cache
-                        {
-                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Remote]).Replace(".hash", kCatalogExt);
-                            m_RemoteHashValue = remoteHash;
-#if ENABLE_CACHING
-                            if (!string.IsNullOrEmpty(Application.persistentDataPath))
-                                m_LocalDataPath = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", kCatalogExt);
-#endif
-                        }
                     }
                 }
 
@@ -416,38 +365,8 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 #endif
                     ccd.location = m_ProviderInterface.Location;
                     ccd.localHash = m_LocalHashValue;
-                    if (!string.IsNullOrEmpty(m_RemoteHashValue) && !string.IsNullOrEmpty(m_LocalDataPath))
-                    {
 #if ENABLE_CACHING
-                        var dir = Path.GetDirectoryName(m_LocalDataPath);
-                        var localCachePath = m_LocalDataPath;
-                        Addressables.LogFormat("Addressables - Saving cached content catalog to {0}.", localCachePath);
-                        try
-                        {
-                            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                                Directory.CreateDirectory(dir);
-                            File.WriteAllText(localCachePath, JsonUtility.ToJson(ccd));
-                            File.WriteAllText(localCachePath.Replace(kCatalogExt, ".hash"), m_RemoteHashValue);
-                        }
-                        catch (UnauthorizedAccessException uae)
-                        {
-                            Addressables.LogWarning($"Did not save cached content catalog. Missing access permissions for location {localCachePath} : {uae.Message}");
-                            m_ProviderInterface.Complete(ccd, true, null);
-                            return;
-                        }
-                        catch (Exception e)
-                        {
-                            string remoteInternalId = GetTransformedInternalId(m_ProviderInterface.Location.Dependencies[(int)DependencyHashIndex.Remote]);
-                            var errorMessage = $"Unable to load ContentCatalogData from location {remoteInternalId}. Failed to cache catalog to location {localCachePath}.";
-                            ccd = null;
-                            m_ProviderInterface.Complete(ccd, false, new Exception(errorMessage, e));
-                            return;
-                        }
-#endif
-                        ccd.localHash = m_RemoteHashValue;
-                    }
-#if ENABLE_CACHING
-                    else if (string.IsNullOrEmpty(m_LocalDataPath) && string.IsNullOrEmpty(Application.persistentDataPath))
+                    if (string.IsNullOrEmpty(m_LocalDataPath) && string.IsNullOrEmpty(Application.persistentDataPath))
                     {
                         Addressables.LogWarning($"Did not save cached content catalog because Application.persistentDataPath is an empty path.");
                     }
@@ -481,7 +400,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                         }
 
                         Addressables.LogWarning(errorMessage + ". Attempting to retry...");
-                        Start(m_ProviderInterface, m_DisableCatalogUpdateOnStart, m_IsLocalCatalogInBundle);
+                        Start(m_ProviderInterface, m_IsLocalCatalogInBundle);
                     }
                     else
                     {
@@ -496,7 +415,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             if (!m_LocationToCatalogLoadOpMap.ContainsKey(providerInterface.Location))
                 m_LocationToCatalogLoadOpMap.Add(providerInterface.Location, new InternalOp());
-            m_LocationToCatalogLoadOpMap[providerInterface.Location].Start(providerInterface, DisableCatalogUpdateOnStart, IsLocalCatalogInBundle);
+            m_LocationToCatalogLoadOpMap[providerInterface.Location].Start(providerInterface,IsLocalCatalogInBundle);
         }
     }
 }

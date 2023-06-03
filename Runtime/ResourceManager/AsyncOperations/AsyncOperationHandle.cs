@@ -48,22 +48,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_UnloadSceneOpExcludeReleaseCallback = false;
         }
 
-        /// <summary>
-        /// Return the current download status for this operation and its dependencies.
-        /// </summary>
-        /// <returns>The download status.</returns>
-        public DownloadStatus GetDownloadStatus()
-        {
-            return InternalGetDownloadStatus(new HashSet<object>());
-        }
-
-        internal DownloadStatus InternalGetDownloadStatus(HashSet<object> visited)
-        {
-            if (visited == null)
-                visited = new HashSet<object>();
-            return visited.Add(InternalOp) ? InternalOp.GetDownloadStatus(visited) : new DownloadStatus() {IsDone = IsDone};
-        }
-
         internal AsyncOperationHandle(IAsyncOperation op)
         {
             m_InternalOp = (AsyncOperationBase<TObject>)op;
@@ -238,19 +222,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         public Exception OperationException
         {
             get { return InternalOp.OperationException; }
-        }
-
-        /// <summary>
-        /// The progress of the internal operation.
-        /// This is evenly weighted between all sub-operations. For example, a LoadAssetAsync call could potentially
-        /// be chained with InitializeAsync and have multiple dependent operations that download and load content.
-        /// In that scenario, PercentComplete would reflect how far the overal operation was, and would not accurately
-        /// represent just percent downloaded or percent loaded into memory.
-        /// For accurate download percentages, use GetDownloadStatus().
-        /// </summary>
-        public float PercentComplete
-        {
-            get { return InternalOp.PercentComplete; }
         }
 
         /// <summary>
@@ -484,36 +455,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         public Exception OperationException
         {
             get { return InternalOp.OperationException; }
-        }
-
-        /// <summary>
-        /// The progress of the internal operation.
-        /// This is evenly weighted between all sub-operations. For example, a LoadAssetAsync call could potentially
-        /// be chained with InitializeAsync and have multiple dependent operations that download and load content.
-        /// In that scenario, PercentComplete would reflect how far the overal operation was, and would not accurately
-        /// represent just percent downloaded or percent loaded into memory.
-        /// For accurate download percentages, use GetDownloadStatus().
-        /// </summary>
-        public float PercentComplete
-        {
-            get { return InternalOp.PercentComplete; }
-        }
-
-        /// <summary>
-        /// Return the current download status for this operation and its dependencies.  In some instances, the information will not be available.  This can happen if the operation
-        /// is dependent on the initialization operation for addressables.  Once the initialization operation completes, the information returned will be accurate.
-        /// </summary>
-        /// <returns>The download status.</returns>
-        public DownloadStatus GetDownloadStatus()
-        {
-            return InternalGetDownloadStatus(new HashSet<object>());
-        }
-
-        internal DownloadStatus InternalGetDownloadStatus(HashSet<object> visited)
-        {
-            if (visited == null)
-                visited = new HashSet<object>();
-            return visited.Add(InternalOp) ? InternalOp.GetDownloadStatus(visited) : new DownloadStatus() {IsDone = IsDone};
         }
 
         /// <summary>

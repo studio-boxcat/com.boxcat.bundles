@@ -97,8 +97,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(m_addressables.ResourceManager));
-            WebRequestQueue.SetMaxConcurrentRequests(m_settings.MaxConcurrentWebRequests);
-            m_addressables.CatalogRequestsTimeout = m_settings.CatalogRequestsTimeout;
 
             if (m_settings.InitializationObjects.Count == 0)
             {

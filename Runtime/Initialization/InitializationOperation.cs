@@ -30,16 +30,6 @@ namespace UnityEngine.AddressableAssets.Initialization
             m_Diagnostics = new ResourceManagerDiagnostics(aa.ResourceManager);
         }
 
-        protected override float Progress
-        {
-            get
-            {
-                if (m_rtdOp.IsValid())
-                    return m_rtdOp.PercentComplete;
-                return 0f;
-            }
-        }
-
         protected override string DebugName
         {
             get { return "InitializationOperation"; }
@@ -113,15 +103,6 @@ namespace UnityEngine.AddressableAssets.Initialization
 #endif
 
             m_Addressables.ResourceManager.postProfilerEvents = rtd.ProfileEvents;
-            WebRequestQueue.SetMaxConcurrentRequests(rtd.MaxConcurrentWebRequests);
-            m_Addressables.CatalogRequestsTimeout = rtd.CatalogRequestsTimeout;
-            foreach (var catalogLocation in rtd.CatalogLocations)
-            {
-                if (catalogLocation.Data != null && catalogLocation.Data is ProviderLoadRequestOptions loadData)
-                {
-                    loadData.WebRequestTimeout = rtd.CatalogRequestsTimeout;
-                }
-            }
 
             m_Addressables.Release(m_rtdOp);
             if (rtd.CertificateHandlerType != null)
@@ -149,7 +130,6 @@ namespace UnityEngine.AddressableAssets.Initialization
                 .FirstOrDefault(rp => rp.GetType() == typeof(ContentCatalogProvider)) as ContentCatalogProvider;
             if (ccp != null)
             {
-                ccp.DisableCatalogUpdateOnStart = rtd.DisableCatalogUpdateOnStartup;
                 ccp.IsLocalCatalogInBundle = rtd.IsLocalCatalogInBundle;
             }
 
@@ -167,7 +147,7 @@ namespace UnityEngine.AddressableAssets.Initialization
             {
                 Addressables.LogFormat("Addressables - loading content catalogs, {0} found.", catalogs.Count);
                 IResourceLocation remoteHashLocation = null;
-                if (catalogs[0].Dependencies.Count == 2 && rtd.DisableCatalogUpdateOnStartup)
+                if (catalogs[0].Dependencies.Count == 2)
                 {
                     remoteHashLocation = catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote];
                     catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache];

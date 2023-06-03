@@ -22,8 +22,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         void DecrementReferenceCount();
         void IncrementReferenceCount();
         int ReferenceCount { get; }
-        float PercentComplete { get; }
-        DownloadStatus GetDownloadStatus(HashSet<object> visited);
         AsyncOperationStatus Status { get; }
 
         Exception OperationException { get; }
@@ -62,15 +60,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// </summary>
         protected virtual void Destroy()
         {
-        }
-
-        /// <summary>
-        /// A custom operation should override this method to return the progress of the operation.
-        /// </summary>
-        /// <returns>Progress of the operation. Value should be between 0.0f and 1.0f</returns>
-        protected virtual float Progress
-        {
-            get { return 0; }
         }
 
         /// <summary>
@@ -370,26 +359,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             get { return Status == AsyncOperationStatus.Failed || Status == AsyncOperationStatus.Succeeded; }
         }
 
-        internal float PercentComplete
-        {
-            get
-            {
-                if (m_Status == AsyncOperationStatus.None)
-                {
-                    try
-                    {
-                        return Progress;
-                    }
-                    catch
-                    {
-                        return 0.0f;
-                    }
-                }
-
-                return 1.0f;
-            }
-        }
-
         internal void InvokeCompletionEvent()
         {
             if (m_CompletedActionT != null)
@@ -560,7 +529,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         int IAsyncOperation.ReferenceCount => ReferenceCount;
 
-        float IAsyncOperation.PercentComplete => PercentComplete;
 
         AsyncOperationStatus IAsyncOperation.Status => Status;
 
@@ -602,15 +570,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         internal virtual void ReleaseDependencies()
         {
-        }
-
-        /// <inheritdoc/>
-        DownloadStatus IAsyncOperation.GetDownloadStatus(HashSet<object> visited) => GetDownloadStatus(visited);
-
-        internal virtual DownloadStatus GetDownloadStatus(HashSet<object> visited)
-        {
-            visited.Add(this);
-            return new DownloadStatus() {IsDone = IsDone};
         }
     }
 }

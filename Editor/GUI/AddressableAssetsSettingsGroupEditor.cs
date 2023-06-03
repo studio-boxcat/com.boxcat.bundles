@@ -307,7 +307,6 @@ namespace UnityEditor.AddressableAssets.GUI
                             EditorGUIUtility.PingObject(AddressableAssetSettingsDefaultObject.Settings);
                             Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
                         });
-                        menu.AddItem(new GUIContent("Check for Content Update Restrictions"), false, OnPrepareUpdate);
 
                         menu.AddItem(new GUIContent("Window/Profiles"), false, () => EditorWindow.GetWindow<ProfileWindow>().Show(true));
                         menu.AddItem(new GUIContent("Window/Labels"), false, () => EditorWindow.GetWindow<LabelWindow>(true).Intialize(settings));
@@ -665,42 +664,6 @@ namespace UnityEditor.AddressableAssets.GUI
         void OnCleanSBP()
         {
             BuildCache.PurgeCache(true);
-        }
-
-        void OnPrepareUpdate()
-        {
-            var path = ContentUpdateScript.GetContentStateDataPath(false);
-            if (string.IsNullOrEmpty(path))
-            {
-                Debug.LogWarning("No path specified for Content State Data file.");
-                return;
-            }
-
-            if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
-                path = ContentUpdateScript.DownloadBinFileToTempLocation(path);
-
-            if (!File.Exists(path))
-            {
-                if (UnityEditorInternal.InternalEditorUtility.inBatchMode)
-                {
-                    Debug.LogWarningFormat("No Content State Data file exists at path: {0}", path);
-                    return;
-                }
-                else
-                {
-                    bool selectFileManually = EditorUtility.DisplayDialog("Unable to Check for Update Restrictions", $"The addressable_content_state.bin file could " +
-                                                                                                                     $"not be found at {path}", "Select .bin file", "Cancel content update");
-                    if (selectFileManually)
-                        path = ContentUpdateScript.GetContentStateDataPath(true);
-                    else
-                    {
-                        Debug.LogWarningFormat("No Content State Data file exists at path: {0}.  Content update has been cancelled.", path);
-                        return;
-                    }
-                }
-            }
-
-            ContentUpdatePreviewWindow.PrepareForContentUpdate(AddressableAssetSettingsDefaultObject.Settings, path);
         }
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)

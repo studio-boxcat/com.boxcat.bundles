@@ -133,8 +133,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         [SerializeField]
         private bool m_IgnoreFailures = false;
 
-        private int m_WebRequestTimeout = 0;
-
         /// <summary>
         /// Creates a memberwise clone of a given ProviderLoadRequestOption.
         /// </summary>
@@ -151,15 +149,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             get { return m_IgnoreFailures; }
             set { m_IgnoreFailures = value; }
-        }
-
-        /// <summary>
-        /// UnityWebRequest Timeout
-        /// </summary>
-        public int WebRequestTimeout
-        {
-            get => m_WebRequestTimeout;
-            set => m_WebRequestTimeout = value;
         }
     }
 }
