@@ -261,28 +261,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     }
                 }
 
-                private void WebRequestOperationCompleted(AsyncOperation op)
-                {
-                    UnityWebRequestAsyncOperation remoteReq = op as UnityWebRequestAsyncOperation;
-                    var webReq = remoteReq.webRequest;
-                    DownloadHandlerAssetBundle downloadHandler = webReq.downloadHandler as DownloadHandlerAssetBundle;
-                    if (!UnityWebRequestUtilities.RequestHasErrors(webReq, out UnityWebRequestResult uwrResult))
-                    {
-                        m_CatalogAssetBundle = downloadHandler.assetBundle;
-                        m_LoadTextAssetRequest = m_CatalogAssetBundle.LoadAllAssetsAsync<TextAsset>();
-                        if (m_LoadTextAssetRequest.isDone)
-                            LoadTextAssetRequestComplete(m_LoadTextAssetRequest);
-                        m_LoadTextAssetRequest.completed += LoadTextAssetRequestComplete;
-                    }
-                    else
-                    {
-                        Addressables.LogError($"Unable to load dependent bundle from location : {m_BundlePath}");
-                        m_OpInProgress = false;
-                    }
-
-                    webReq.Dispose();
-                }
-
                 void LoadTextAssetRequestComplete(AsyncOperation op)
                 {
                     if (op is AssetBundleRequest loadRequest

@@ -128,24 +128,6 @@ namespace UnityEngine.ResourceManagement
             return location.InternalId;
         }
 
-        /// <summary>
-        /// Delegate that can be used to override the web request options before being sent.
-        /// </summary>
-        /// <remarks>
-        /// You can assign a function to the <see cref="Addressables"/> object's WebRequestOverride property to individually modify the <see cref="UnityWebRequest"/> which is used to download files.
-        ///
-        /// This can be used to add custom request headers or query strings.
-        ///
-        /// This affects all downloads through Addressables including catalog files and asset bundles.
-        ///
-        /// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
-        /// 
-        /// For example you could add an Authorization header to authenticate with Cloud Content Delivery's private buckets.
-        /// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingWebRequestOverride.cs" region="SAMPLE" />
-        /// </remarks>
-        /// <seealso href="xref:addressables-api-transform-internal-id#webrequest-override">Transforming resource URLs</seealso>
-        public Action<UnityWebRequest> WebRequestOverride { get; set; }
-
         internal bool CallbackHooksEnabled = true; // tests might need to disable the callback hooks to manually pump updating
 
         ListWithEvents<IResourceProvider> m_ResourceProviders = new ListWithEvents<IResourceProvider>();

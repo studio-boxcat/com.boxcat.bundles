@@ -15,9 +15,7 @@
     "com.unity.scriptablebuildpipeline": "1.21.5",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
-    "com.unity.modules.jsonserialize": "1.0.0",
-    "com.unity.modules.unitywebrequest": "1.0.0",
-    "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
+    "com.unity.modules.jsonserialize": "1.0.0"
   },
   "_upm": {
     "changelog": "- Fixed issue with a potential race conditon when calling GetAssetBundle to load local files using WaitForCompletion\n- Fixed compiler error when using the profiler module on a noncaching platform.\n- Fixed issue where stack overflow occurs for http requests on Unity 2022.1+ when insecure requests are disallowed.\n- Added groups field to Inspector and move assets popup.\n- Fixed issue where sprite atlas cannot be assigned to an AssetReferenceAtlasedSprite."

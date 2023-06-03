@@ -46,7 +46,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             public void Start(ProvideHandle provideHandle)
             {
-                provideHandle.SetProgressCallback(ProgressCallback);
                 provideHandle.SetWaitForCompletionCallback(WaitForCompletionHandler);
                 subObjectName = null;
                 m_ProvideHandle = provideHandle;
@@ -226,11 +225,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.")
                     : null;
                 m_ProvideHandle.Complete(m_Result, m_Result != null, e);
-            }
-
-            public float ProgressCallback()
-            {
-                return m_RequestOperation != null ? m_RequestOperation.progress : 0.0f;
             }
         }
 

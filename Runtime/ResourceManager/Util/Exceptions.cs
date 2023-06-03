@@ -159,43 +159,4 @@ namespace UnityEngine.ResourceManagement.Exceptions
         /// </summary>
         public IResourceLocation Location { get; }
     }
-
-    /// <summary>
-    /// Class representing an error occured during an operation that remotely fetch data.
-    /// </summary>
-    public class RemoteProviderException : ProviderException
-    {
-        /// <summary>
-        /// Creates a new instance of <see cref="ProviderException"/>.
-        /// </summary>
-        /// <param name="message">A message describing the error.</param>
-        /// <param name="location">The resource location that the operation was trying to provide.</param>
-        /// <param name="uwrResult">The result of the unity web request, if any.</param>
-        /// <param name="innerException">The exception that caused the error, if any.</param>
-        public RemoteProviderException(string message, IResourceLocation location = null, UnityWebRequestResult uwrResult = null, Exception innerException = null)
-            : base(message, location, innerException)
-        {
-            WebRequestResult = uwrResult;
-        }
-
-        /// <summary>
-        /// Returns a string describing this exception.
-        /// </summary>
-        public override string Message => this.ToString();
-
-        /// <summary>
-        /// The result of the unity web request, if any.
-        /// </summary>
-        public UnityWebRequestResult WebRequestResult { get; }
-
-        /// <summary>Provides a new string object describing the exception.</summary>
-        /// <returns>A newly allocated managed string.</returns>
-        public override string ToString()
-        {
-            if (WebRequestResult != null)
-                return $"{GetType().Name} : {base.Message}\nUnityWebRequest result : {WebRequestResult}\n{InnerException}";
-            else
-                return base.ToString();
-        }
-    }
 }

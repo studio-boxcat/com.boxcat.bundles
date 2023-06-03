@@ -362,7 +362,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_ProvideHandle.Complete(this, true, null);
             else
                 m_ProvideHandle.Complete<AssetBundleResource>(null, false,
-                    new RemoteProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
+                    new ProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
             m_Completed = true;
         }
 
