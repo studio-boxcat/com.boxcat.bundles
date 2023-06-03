@@ -280,8 +280,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             if (m_ImplicitAssets.Count == 0)
                 return;
 
-            var group = settings.CreateGroup("Duplicate Asset Isolation", false, false, false, null, typeof(BundledAssetGroupSchema), typeof(ContentUpdateGroupSchema));
-            group.GetSchema<ContentUpdateGroupSchema>().StaticContent = true;
+            var group = settings.CreateGroup("Duplicate Asset Isolation", false, false, false, null, typeof(BundledAssetGroupSchema));
 
             foreach (var asset in m_ImplicitAssets)
                 settings.CreateOrMoveEntry(asset.ToString(), group, false, false);

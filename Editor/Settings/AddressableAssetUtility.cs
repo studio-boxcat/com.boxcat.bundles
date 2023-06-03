@@ -221,7 +221,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 var schema = group.AddSchema<BundledAssetGroupSchema>();
                 schema.Validate();
                 schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
-                group.AddSchema<ContentUpdateGroupSchema>().StaticContent = true;
 
                 var assetList = AssetDatabase.GetAssetPathsFromAssetBundle(bundle);
 

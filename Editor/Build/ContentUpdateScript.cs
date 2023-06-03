@@ -176,38 +176,9 @@ namespace UnityEditor.AddressableAssets.Build
             return path;
         }
 
-        internal static void ClearContentUpdateNotifications(AddressableAssetGroup assetGroup)
-        {
-            if (assetGroup == null)
-                return;
-
-            if (assetGroup.FlaggedDuringContentUpdateRestriction)
-            {
-                ClearContentUpdateFlagForEntries(assetGroup.entries);
-                assetGroup.FlaggedDuringContentUpdateRestriction = false;
-            }
-        }
-
-        static void ClearContentUpdateFlagForEntries(ICollection<AddressableAssetEntry> entries)
-        {
-            foreach (var e in entries)
-            {
-                if (e != null)
-                    e.FlaggedDuringContentUpdateRestriction = false;
-                if (e.IsFolder)
-                {
-                    List<AddressableAssetEntry> folderEntries = new List<AddressableAssetEntry>();
-                    e.GatherFolderEntries(folderEntries, true, true, null);
-                    ClearContentUpdateFlagForEntries(folderEntries);
-                }
-            }
-        }
-
         internal static bool GroupFilter(AddressableAssetGroup g)
         {
             if (g == null)
-                return false;
-            if (!g.HasSchema<ContentUpdateGroupSchema>() || !g.GetSchema<ContentUpdateGroupSchema>().StaticContent)
                 return false;
             if (!g.HasSchema<BundledAssetGroupSchema>() || !g.GetSchema<BundledAssetGroupSchema>().IncludeInBuild)
                 return false;

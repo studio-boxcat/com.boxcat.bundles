@@ -23,8 +23,6 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_ProfilesHeader;
         static FoldoutSessionStateValue DiagnosticsFoldout = new FoldoutSessionStateValue("Addressables.DiagnosticsFoldout");
         GUIContent m_DiagnosticsHeader;
-        static FoldoutSessionStateValue CatalogFoldout = new FoldoutSessionStateValue("Addressables.CatalogFoldout");
-        GUIContent m_CatalogsHeader;
         static FoldoutSessionStateValue BuildFoldout = new FoldoutSessionStateValue("Addressables.BuildFoldout");
         GUIContent m_BuildHeader;
         static FoldoutSessionStateValue DataBuildersFoldout = new FoldoutSessionStateValue("Addressables.DataBuildersFoldout");
@@ -85,7 +83,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             m_ProfilesHeader = new GUIContent("Profiles", "Settings affect profiles.");
             m_DiagnosticsHeader = new GUIContent("Diagnostics", "Settings affect profiles.");
-            m_CatalogsHeader = new GUIContent("Catalog", "Settings affect profiles.");
             m_BuildHeader = new GUIContent("Build", "Settings affect profiles.");
 
             m_DataBuildersHeader = new GUIContent("Build and Play Mode Scripts", "Settings affect profiles.");
@@ -109,9 +106,6 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("Log Runtime Exceptions",
                 "Addressables does not throw exceptions at run time when there are loading issues, instead it adds to the error state of the IAsyncOperation.  With this flag enabled, exceptions will also be logged.");
 
-        GUIContent m_OverridePlayerVersion =
-            new GUIContent("Player Version Override", "If set, this will be used as the player version instead of one based off of a time stamp.");
-
         GUIContent m_UniqueBundles =
             new GUIContent("Unique Bundle IDs",
                 "If set, every content build (original or update) will result in asset bundles with more complex internal names.  This may result in more bundles being rebuilt, but safer mid-run updates.  See docs for more info.");
@@ -127,13 +121,6 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_NonRecursiveBundleBuilding =
             new GUIContent("Non-Recursive Dependency Calculation", "If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods. This approach helps reduce asset bundle rebuilds and runtime memory consumption.\n*Requires Unity 2019.4.19f1 or above");
 #endif
-        GUIContent m_BundleLocalCatalog =
-            new GUIContent("Compress Local Catalog",
-                "If set, the local content catalog will be compressed in an asset bundle. This will affect build and load time of catalog. We recommend disabling this during iteration.");
-
-        GUIContent m_OptimizeCatalogSize =
-            new GUIContent("Optimize Catalog Size",
-                "If set, duplicate internal ids will be extracted to a lookup table and reconstructed at runtime.  This can reduce the size of the catalog but may impact performance due to extra processing at load time.");
 
         GUIContent m_ProfileInUse =
             new GUIContent("Profile In Use", "This is the active profile that will be used to evaluate all profile variables during a build and when entering play mode.");
@@ -263,31 +250,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 if (logResourceManagerExceptions != m_AasTarget.buildSettings.LogResourceManagerExceptions)
                     m_QueuedChanges.Add(() => m_AasTarget.buildSettings.LogResourceManagerExceptions = logResourceManagerExceptions);
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
-
-            CatalogFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(CatalogFoldout.IsActive, m_CatalogsHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#catalog");
-                Application.OpenURL(url);
-            });
-            if (CatalogFoldout.IsActive)
-            {
-                string overridePlayerVersion = EditorGUILayout.TextField(m_OverridePlayerVersion, m_AasTarget.OverridePlayerVersion);
-                if (overridePlayerVersion != m_AasTarget.OverridePlayerVersion)
-                    m_QueuedChanges.Add(() => m_AasTarget.OverridePlayerVersion = overridePlayerVersion);
-
-                bool bundleLocalCatalog = EditorGUILayout.Toggle(m_BundleLocalCatalog, m_AasTarget.BundleLocalCatalog);
-                if (bundleLocalCatalog != m_AasTarget.BundleLocalCatalog)
-                    m_QueuedChanges.Add(() => m_AasTarget.BundleLocalCatalog = bundleLocalCatalog);
-/*
-                bool optimizeCatalogSize = EditorGUILayout.Toggle(m_OptimizeCatalogSize, m_AasTarget.OptimizeCatalogSize);
-                if (optimizeCatalogSize != m_AasTarget.OptimizeCatalogSize)
-                    m_QueuedChanges.Add(() => m_AasTarget.OptimizeCatalogSize = optimizeCatalogSize);
-*/
-
                 GUILayout.Space(postBlockContentSpace);
             }
 

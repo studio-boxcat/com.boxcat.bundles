@@ -41,21 +41,14 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             Count
         }
 
-        /// <summary>
-        /// Use to indicate if the local catalog is in a bundle.
-        /// </summary>
-        public bool IsLocalCatalogInBundle = false;
-
         internal Dictionary<IResourceLocation, InternalOp> m_LocationToCatalogLoadOpMap = new Dictionary<IResourceLocation, InternalOp>();
-        ResourceManager m_RM;
 
         /// <summary>
         /// Constructor for this provider.
         /// </summary>
         /// <param name="resourceManagerInstance">The resource manager to use.</param>
-        public ContentCatalogProvider(ResourceManager resourceManagerInstance)
+        public ContentCatalogProvider()
         {
-            m_RM = resourceManagerInstance;
             m_BehaviourFlags = ProviderBehaviourFlags.CanProvideWithFailedDependencies;
         }
 
@@ -78,14 +71,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             ProvideHandle m_ProviderInterface;
             internal ContentCatalogData m_ContentCatalogData;
             AsyncOperationHandle<ContentCatalogData> m_ContentCatalogDataLoadOp;
-            private BundledCatalog m_BundledCatalog;
             private bool m_Retried;
-            private bool m_IsLocalCatalogInBundle;
 
-            public void Start(ProvideHandle providerInterface, bool isLocalCatalogInBundle)
+            public void Start(ProvideHandle providerInterface)
             {
                 m_ProviderInterface = providerInterface;
-                m_IsLocalCatalogInBundle = isLocalCatalogInBundle;
                 m_ProviderInterface.SetWaitForCompletionCallback(WaitForCompletionCallback);
                 m_LocalDataPath = null;
 
@@ -95,9 +85,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                 Addressables.LogFormat("Addressables - Using content catalog from {0}.", idToLoad);
 
-                bool loadCatalogFromLocalBundle = isLocalCatalogInBundle && CanLoadCatalogFromBundle(idToLoad, m_ProviderInterface.Location);
-
-                LoadCatalog(idToLoad, loadCatalogFromLocalBundle);
+                LoadCatalog(idToLoad);
             }
 
             bool WaitForCompletionCallback()
@@ -105,11 +93,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 if (m_ContentCatalogData != null)
                     return true;
                 bool ccComplete;
-                if (m_BundledCatalog != null)
-                {
-                    ccComplete = m_BundledCatalog.WaitForCompletion();
-                }
-                else
                 {
                     ccComplete = m_ContentCatalogDataLoadOp.IsDone;
                     if (!ccComplete)
@@ -137,7 +120,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                        idToLoad.Equals(GetTransformedInternalId(location));
             }
 
-            internal void LoadCatalog(string idToLoad, bool loadCatalogFromLocalBundle)
+            internal void LoadCatalog(string idToLoad)
             {
                 try
                 {
@@ -145,17 +128,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     if (m_ProviderInterface.Location.Data is ProviderLoadRequestOptions providerData)
                         providerLoadRequestOptions = providerData.Copy();
 
-                    if (loadCatalogFromLocalBundle)
-                    {
-                        m_BundledCatalog = new BundledCatalog(idToLoad);
-                        m_BundledCatalog.OnLoaded += ccd =>
-                        {
-                            m_ContentCatalogData = ccd;
-                            OnCatalogLoaded(ccd);
-                        };
-                        m_BundledCatalog.LoadCatalogFromBundleAsync();
-                    }
-                    else
                     {
 #if ENABLE_BINARY_CATALOG
                         ResourceLocationBase location = new ResourceLocationBase(idToLoad, idToLoad,
@@ -181,110 +153,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 m_ContentCatalogData = op.Result;
                 m_ProviderInterface.ResourceManager.Release(op);
                 OnCatalogLoaded(m_ContentCatalogData);
-            }
-
-            internal class BundledCatalog
-            {
-                private readonly string m_BundlePath;
-                private bool m_OpInProgress;
-                private AssetBundleCreateRequest m_LoadBundleRequest;
-                internal AssetBundle m_CatalogAssetBundle;
-                private AssetBundleRequest m_LoadTextAssetRequest;
-                private ContentCatalogData m_CatalogData;
-                private AsyncOperation m_RequestOperation;
-
-                public event Action<ContentCatalogData> OnLoaded;
-
-                public bool OpInProgress => m_OpInProgress;
-                public bool OpIsSuccess => !m_OpInProgress && m_CatalogData != null;
-
-                public BundledCatalog(string bundlePath)
-                {
-                    if (string.IsNullOrEmpty(bundlePath))
-                    {
-                        throw new ArgumentNullException(nameof(bundlePath), "Catalog bundle path is null.");
-                    }
-                    else if (!bundlePath.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new ArgumentException("You must supply a valid bundle file path.");
-                    }
-
-                    m_BundlePath = bundlePath;
-                }
-
-                ~BundledCatalog()
-                {
-                    Unload();
-                }
-
-                private void Unload()
-                {
-                    m_CatalogAssetBundle?.Unload(true);
-                    m_CatalogAssetBundle = null;
-                }
-
-                public void LoadCatalogFromBundleAsync()
-                {
-                    //Debug.Log($"LoadCatalogFromBundleAsync frame : {Time.frameCount}");
-                    if (m_OpInProgress)
-                    {
-                        Addressables.LogError($"Operation in progress : A catalog is already being loaded. Please wait for the operation to complete.");
-                        return;
-                    }
-
-                    m_OpInProgress = true;
-
-                    if (ResourceManagerConfig.ShouldPathUseWebRequest(m_BundlePath))
-                    {
-                        throw new NotSupportedException();
-                    }
-                    else
-                    {
-                        m_LoadBundleRequest = AssetBundle.LoadFromFileAsync(m_BundlePath);
-                        m_LoadBundleRequest.completed += loadOp =>
-                        {
-                            if (loadOp is AssetBundleCreateRequest createRequest && createRequest.assetBundle != null)
-                            {
-                                m_CatalogAssetBundle = createRequest.assetBundle;
-                                m_LoadTextAssetRequest = m_CatalogAssetBundle.LoadAllAssetsAsync<TextAsset>();
-                                if (m_LoadTextAssetRequest.isDone)
-                                    LoadTextAssetRequestComplete(m_LoadTextAssetRequest);
-                                m_LoadTextAssetRequest.completed += LoadTextAssetRequestComplete;
-                            }
-                            else
-                            {
-                                Addressables.LogError($"Unable to load dependent bundle from location : {m_BundlePath}");
-                                m_OpInProgress = false;
-                            }
-                        };
-                    }
-                }
-
-                void LoadTextAssetRequestComplete(AsyncOperation op)
-                {
-                    if (op is AssetBundleRequest loadRequest
-                        && loadRequest.asset is TextAsset textAsset
-                        && textAsset.text != null)
-                    {
-                        m_CatalogData = JsonUtility.FromJson<ContentCatalogData>(textAsset.text);
-                        OnLoaded?.Invoke(m_CatalogData);
-                    }
-                    else
-                    {
-                        Addressables.LogError($"No catalog text assets where found in bundle {m_BundlePath}");
-                    }
-
-                    Unload();
-                    m_OpInProgress = false;
-                }
-
-                public bool WaitForCompletion()
-                {
-                    if (m_LoadBundleRequest.assetBundle == null)
-                        return false;
-
-                    return m_LoadTextAssetRequest.asset != null || m_LoadTextAssetRequest.allAssets != null;
-                }
             }
 
             string GetTransformedInternalId(IResourceLocation loc)
@@ -349,7 +217,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                         }
 
                         Addressables.LogWarning(errorMessage + ". Attempting to retry...");
-                        Start(m_ProviderInterface, m_IsLocalCatalogInBundle);
+                        Start(m_ProviderInterface);
                     }
                     else
                     {
@@ -364,7 +232,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             if (!m_LocationToCatalogLoadOpMap.ContainsKey(providerInterface.Location))
                 m_LocationToCatalogLoadOpMap.Add(providerInterface.Location, new InternalOp());
-            m_LocationToCatalogLoadOpMap[providerInterface.Location].Start(providerInterface,IsLocalCatalogInBundle);
+            m_LocationToCatalogLoadOpMap[providerInterface.Location].Start(providerInterface);
         }
     }
 }

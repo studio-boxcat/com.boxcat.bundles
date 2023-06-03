@@ -10,7 +10,6 @@ using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets;
 using Debug = UnityEngine.Debug;
 using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
-using UnityEditor.AddressableAssets.Build;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
@@ -26,7 +25,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         enum ColumnId
         {
-            Notification,
             Id,
             Type,
             Path,
@@ -34,7 +32,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         ColumnId[] m_SortOptions =
         {
-            ColumnId.Notification,
             ColumnId.Id,
             ColumnId.Type,
             ColumnId.Path,
@@ -50,25 +47,12 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             showBorder = true;
             m_Editor = ed;
-            columnIndexForTreeFoldouts = 1;
+            columnIndexForTreeFoldouts = 0;
             multiColumnHeader.sortingChanged += OnSortingChanged;
 
             BuiltinSceneCache.sceneListChanged += OnScenesChanged;
             AddressablesAssetPostProcessor.OnPostProcess.Register(OnPostProcessAllAssets, 1);
         }
-
-        GUIContent m_WarningIcon;
-
-        GUIContent WarningIcon
-        {
-            get
-            {
-                if (m_WarningIcon == null)
-                    m_WarningIcon = EditorGUIUtility.IconContent("console.warnicon.sml");
-                return m_WarningIcon;
-            }
-        }
-
 
         internal TreeViewItem Root => rootItem;
 
@@ -332,7 +316,6 @@ namespace UnityEditor.AddressableAssets.GUI
             IEnumerable<AssetEntryTreeViewItem> orderedKids = kids;
             switch (col)
             {
-                case ColumnId.Notification:
                 case ColumnId.Type:
                     break;
                 case ColumnId.Path:
@@ -451,7 +434,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             item.checkedForChildren = true;
             var subAssets = new List<AddressableAssetEntry>();
-            bool includeSubObjects = ProjectConfigData.ShowSubObjectsInGroupView && !entry.IsFolder && !string.IsNullOrEmpty(entry.guid);
+            bool includeSubObjects = ProjectConfigData.ShowSubObjectsInGroupView && !string.IsNullOrEmpty(entry.guid);
             entry.GatherAllAssets(subAssets, false, entry.IsInResources, includeSubObjects);
             if (subAssets.Count > 0)
             {
@@ -558,22 +541,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             switch ((ColumnId)column)
             {
-                case ColumnId.Notification:
-                    bool flaggedForUpdateWarning = item.entry == null ? item.group.FlaggedDuringContentUpdateRestriction : item.entry.FlaggedDuringContentUpdateRestriction;
-                    if (flaggedForUpdateWarning)
-                    {
-                        var notification = WarningIcon;
-                        if (item.group != null)
-                            notification.tooltip = "This group contains assets with the setting �Prevent Updates� that have been modified. " +
-                                                   "To resolve, change the group setting, or move the assets to a different group.";
-                        else if (item.entry != null)
-                            notification.tooltip = "This asset has been modified, but it is in a group with the setting �Prevent Updates�. " +
-                                                   "To resolve, change the group setting, or move the asset to a different group.";
-                        UnityEngine.GUI.Label(cellRect, notification);
-                    }
-
-                    break;
-
                 case ColumnId.Id:
                 {
                     args.rowRect = cellRect;
@@ -609,20 +576,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 new MultiColumnHeaderState.Column(),
                 new MultiColumnHeaderState.Column(),
                 new MultiColumnHeaderState.Column(),
-                new MultiColumnHeaderState.Column(),
-                new MultiColumnHeaderState.Column(),
             };
 
             int counter = 0;
-
-            retVal[counter].headerContent = new GUIContent(EditorGUIUtility.FindTexture("_Help@2x"), "Notifications");
-            retVal[counter].minWidth = 25;
-            retVal[counter].width = 25;
-            retVal[counter].maxWidth = 25;
-            retVal[counter].headerTextAlignment = TextAlignment.Left;
-            retVal[counter].canSort = false;
-            retVal[counter].autoResize = true;
-            counter++;
 
             retVal[counter].headerContent = new GUIContent("Group Name \\ Addressable Name", "Address used to load asset at runtime");
             retVal[counter].minWidth = 100;
@@ -780,16 +736,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 Assert.IsNotNull(templateObject);
                 menu.AddItem(new GUIContent("Create New Group/" + templateObject.name), false, CreateNewGroup, templateObject);
             }
-
-            menu.AddItem(new GUIContent("Clear Content Update Warnings"), false, ClearContentUpdateWarnings);
-        }
-
-        void ClearContentUpdateWarnings()
-        {
-            foreach (var group in m_Editor.settings.groups)
-                ContentUpdateScript.ClearContentUpdateNotifications(group);
-
-            Reload();
         }
 
         void HandleCustomContextMenuItemGroups(object context)

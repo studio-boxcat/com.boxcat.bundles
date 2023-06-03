@@ -167,11 +167,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public string PackageVersion;
 
         /// <summary>
-        /// Player build version for the build, this is a timestamp if PlayerVersionOverride is not set in the settings
-        /// </summary>
-        public string PlayerBuildVersion;
-
-        /// <summary>
         /// Settings used by the Addressables settings at the time of building
         /// </summary>
         public AddressablesEditorData AddressablesEditorSettings;
@@ -450,16 +445,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Active Addressables profile set at time of Building
             /// </summary>
             public Profile ActiveProfile;
-
-            /// <summary>
-            /// Addressables setting value set for bundling the local catalog
-            /// </summary>
-            public bool BundleLocalCatalog;
-
-            /// <summary>
-            /// Addressables setting value set for optimising the catalog size
-            /// </summary>
-            public bool OptimizeCatalogSize;
 
             /// <summary>
             /// Addressables setting value set for if the build created unique bundle ids

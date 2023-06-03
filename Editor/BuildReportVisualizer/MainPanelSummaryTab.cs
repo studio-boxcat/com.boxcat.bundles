@@ -80,7 +80,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             generalInfo.With("Local catalog build location", buildReport.LocalCatalogBuildPath)
                 .With("Profile", buildReport.AddressablesEditorSettings.ActiveProfile.Name)
                 .With("Platform", buildReport.BuildTarget.ToString())
-                .With("Player Build Version", buildReport.PlayerBuildVersion)
                 .With("Build Duration", TimeSpan.FromSeconds(buildReport.Duration).ToString("g"))
                 .With("Package Version", buildReport.PackageVersion)
                 .With("Unity Editor Version", buildReport.UnityVersion);

@@ -46,13 +46,11 @@ namespace UnityEditor.AddressableAssets
             public int NumberOfGroupsUsingEditorHosted;
             public int NumberOfGroupsUsingBuiltIn;
             public int NumberOfGroupsUsingCCD;
-            public int NumberOfGroupsUsingRemoteCustomPaths;
             public int NumberOfGroupsUsingLocalCustomPaths;
 
             public int NumberOfAssetsInEditorHostedPaths;
             public int NumberOfAssetsInBuiltInPaths;
             public int NumberOfAssetsInCCDPaths;
-            public int NumberOfAssetsInRemoteCustomPaths;
             public int NumberOfAssetsInLocalCustomPaths;
 
             public int IsIncrementalBuild;
@@ -256,13 +254,11 @@ namespace UnityEditor.AddressableAssets
             int numberOfGroupsUsingEditorHosted = 0;
             int numberOfGroupsUsingBuiltIn = 0;
             int numberOfGroupsUsingCCD = 0;
-            int numberOfGroupsUsingRemoteCustomPaths = 0;
             int numberOfGroupsUsingLocalCustomPaths = 0;
 
             int numberOfAssetsInEditorHostedPaths = 0;
             int numberOfAssetsInBuiltInPaths = 0;
             int numberOfAssetsInCCDPaths = 0;
-            int numberOfAssetsInRemoteCustomPaths = 0;
             int numberOfAssetsInLocalCustomPaths = 0;
 
 
@@ -393,10 +389,8 @@ namespace UnityEditor.AddressableAssets
                 NumberOfGroupsPackedSeparately = numberOfGroupsPackedSeparately,
                 NumberOfGroupsUsingBuiltIn = numberOfGroupsUsingBuiltIn,
                 NumberOfGroupsUsingEditorHosted = numberOfGroupsUsingEditorHosted,
-                NumberOfGroupsUsingRemoteCustomPaths = numberOfGroupsUsingRemoteCustomPaths,
                 NumberOfGroupsUsingLocalCustomPaths = numberOfGroupsUsingLocalCustomPaths,
                 NumberOfGroupsUsingCCD = numberOfGroupsUsingCCD,
-                NumberOfAssetsInRemoteCustomPaths = numberOfAssetsInRemoteCustomPaths,
                 NumberOfAssetsInLocalCustomPaths = numberOfAssetsInLocalCustomPaths,
                 NumberOfAssetsInBuiltInPaths = numberOfAssetsInBuiltInPaths,
                 NumberOfAssetsInEditorHostedPaths = numberOfAssetsInEditorHostedPaths,

@@ -96,7 +96,7 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(m_addressables.ResourceManager));
+            m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider());
 
             Complete(locator, true, null);
         }

@@ -52,29 +52,19 @@ namespace UnityEditor.AddressableAssets.Settings
         AddressableAssetGroupSchemaSet m_SchemaSet = new AddressableAssetGroupSchemaSet();
 
         Dictionary<string, AddressableAssetEntry> m_EntryMap = new Dictionary<string, AddressableAssetEntry>();
-        List<AddressableAssetEntry> m_FolderEntryCache = null;
         List<AddressableAssetEntry> m_AssetCollectionEntryCache = null;
-
-        /// <summary>
-        /// If true, this Group is likely marked 'Cannot Change Post Release', but has a modified asset since the previous build.
-        /// </summary>
-        public bool FlaggedDuringContentUpdateRestriction { get; internal set; }
 
         internal void RefreshEntriesCache()
         {
-            m_FolderEntryCache = new List<AddressableAssetEntry>();
             m_AssetCollectionEntryCache = new List<AddressableAssetEntry>();
-            FlaggedDuringContentUpdateRestriction = false;
             foreach (AddressableAssetEntry e in entries)
             {
                 if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
-                    m_FolderEntryCache.Add(e);
+                    throw new NotSupportedException();
 #pragma warning disable 0618
                 else if (!string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
                     m_AssetCollectionEntryCache.Add(e);
 #pragma warning restore 0618
-                if (e.FlaggedDuringContentUpdateRestriction)
-                    FlaggedDuringContentUpdateRestriction = true;
             }
         }
 
@@ -346,16 +336,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal Dictionary<string, AddressableAssetEntry> EntryMap => m_EntryMap;
 
-        internal ICollection<AddressableAssetEntry> FolderEntries
-        {
-            get
-            {
-                if (m_FolderEntryCache == null)
-                    RefreshEntriesCache();
-                return m_FolderEntryCache;
-            }
-        }
-
         internal ICollection<AddressableAssetEntry> AssetCollectionEntries
         {
             get
@@ -438,7 +418,6 @@ namespace UnityEditor.AddressableAssets.Settings
         internal void ResetEntryMap()
         {
             m_EntryMap.Clear();
-            m_FolderEntryCache = null;
             m_AssetCollectionEntryCache = null;
             foreach (var e in m_SerializeEntries)
             {
@@ -568,8 +547,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (processed.Contains(path))
                     continue;
-                if (FolderEntries.Contains(entry))
-                    continue;
                 if (entry.guid == AddressableAssetEntry.EditorSceneListName || entry.guid == AddressableAssetEntry.ResourcesName)
                     continue;
 
@@ -581,54 +558,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     IsInResources = entry.IsInResources,
                 };
                 results.Add(reference);
-            }
-        }
-
-        internal void GatherAllFolderSubAssetReferenceEntryData(List<IReferenceEntryData> results, HashSet<string> processed)
-        {
-            if (processed == null)
-                processed = new HashSet<string>();
-
-            // go through all entries that are in folder
-            foreach (AddressableAssetEntry folderEntry in FolderEntries)
-            {
-                var path = folderEntry.AssetPath;
-                if (string.IsNullOrEmpty(path))
-                    return;
-                if (processed.Contains(path))
-                    continue;
-                if (folderEntry.guid == AddressableAssetEntry.EditorSceneListName || folderEntry.guid == AddressableAssetEntry.ResourcesName)
-                    continue;
-
-                processed.Add(folderEntry.AssetPath);
-
-                string[] guids = AssetDatabase.FindAssets("", new[] {folderEntry.AssetPath});
-                foreach (var guid in guids)
-                {
-                    string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                    if (string.IsNullOrEmpty(assetPath))
-                        return;
-                    if (processed.Contains(assetPath))
-                        continue;
-                    processed.Add(assetPath);
-
-                    if (BuiltinSceneCache.Contains(assetPath))
-                        continue;
-                    if (AssetDatabase.IsValidFolder(assetPath))
-                        continue;
-                    if (!AddressableAssetUtility.IsPathValidForEntry(assetPath))
-                        continue;
-
-                    string relativePath = assetPath.Remove(0, folderEntry.AssetPath.Length);
-                    string relativeAddress = folderEntry.address + relativePath;
-                    var reference = new ImplicitAssetEntry()
-                    {
-                        address = relativeAddress,
-                        AssetPath = assetPath,
-                        IsInResources = folderEntry.IsInResources,
-                    };
-                    results.Add(reference);
-                }
             }
         }
 
@@ -678,14 +607,12 @@ namespace UnityEditor.AddressableAssets.Settings
             e.IsSubAsset = false;
             e.parentGroup = this;
             m_EntryMap[e.guid] = e;
-            if (m_FolderEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
-                m_FolderEntryCache.Add(e);
+            if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
+                throw new NotSupportedException();
 #pragma warning disable 0618
             else if (m_AssetCollectionEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
                 m_AssetCollectionEntryCache.Add(e);
 #pragma warning restore 0618
-            if (HasSchema<ContentUpdateGroupSchema>() && !GetSchema<ContentUpdateGroupSchema>().StaticContent)
-                e.FlaggedDuringContentUpdateRestriction = false;
             m_SerializeEntries = null;
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
         }
@@ -726,20 +653,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
 
-            if (FolderEntries.Count != 0)
-            {
-                if (assetPath == null)
-                    assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-
-                AddressableAssetEntry entry;
-                foreach (var e in m_FolderEntryCache)
-                {
-                    entry = e.GetFolderSubEntry(assetGuid, assetPath);
-                    if (entry != null)
-                        return entry;
-                }
-            }
-
             return null;
         }
 
@@ -769,7 +682,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
         {
             m_EntryMap.Remove(entry.guid);
-            m_FolderEntryCache?.Remove(entry);
             m_AssetCollectionEntryCache?.Remove(entry);
             entry.parentGroup = null;
             m_SerializeEntries = null;
@@ -781,7 +693,6 @@ namespace UnityEditor.AddressableAssets.Settings
             foreach (AddressableAssetEntry entry in removeEntries)
             {
                 m_EntryMap.Remove(entry.guid);
-                m_FolderEntryCache?.Remove(entry);
                 m_AssetCollectionEntryCache?.Remove(entry);
                 entry.parentGroup = null;
             }

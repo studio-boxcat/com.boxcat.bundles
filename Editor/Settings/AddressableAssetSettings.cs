@@ -107,14 +107,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        ///  Default bundle version.
-        /// </summary>
-        /// <remarks>
-        /// Used when generating the catalog name. When using the default, the version will be evaluated from the version set in Player Settings.
-        /// </remarks>
-        internal const string kDefaultPlayerVersion = "[UnityEditor.PlayerSettings.bundleVersion]";
-
-        /// <summary>
         /// Build Path Name
         /// </summary>
         public const string kBuildPath = "BuildPath";
@@ -434,12 +426,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         [SerializeField]
-        bool m_OptimizeCatalogSize = false;
-
-        [SerializeField]
-        bool m_BundleLocalCatalog = false;
-
-        [SerializeField]
         bool m_IgnoreUnsupportedFilesInBuild = false;
 
         [SerializeField]
@@ -499,24 +485,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get { return m_NonRecursiveBuilding; }
             set { m_NonRecursiveBuilding = value; }
-        }
-
-        /// <summary>
-        /// Enables size optimization of content catalogs.  This may increase the cpu usage of loading the catalog.
-        /// </summary>
-        public bool OptimizeCatalogSize
-        {
-            get { return m_OptimizeCatalogSize; }
-            set { m_OptimizeCatalogSize = value; }
-        }
-
-        /// <summary>
-        /// Whether the local catalog should be serialized in an asset bundle or as json.
-        /// </summary>
-        public bool BundleLocalCatalog
-        {
-            get { return m_BundleLocalCatalog; }
-            set { m_BundleLocalCatalog = value; }
         }
 
         [SerializeField]
@@ -749,32 +717,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             CreateOrMoveEntry(guid, DefaultGroup);
             return new AssetReference(guid);
-        }
-
-        [SerializeField]
-        string m_overridePlayerVersion = "";
-
-        /// <summary>
-        /// Allows for overriding the player version used to generated catalog names.
-        /// </summary>
-        public string OverridePlayerVersion
-        {
-            get { return m_overridePlayerVersion; }
-            set { m_overridePlayerVersion = value; }
-        }
-
-        /// <summary>
-        /// The version of the player build.  This is implemented as a timestamp int UTC of the form  string.Format("{0:D4}.{1:D2}.{2:D2}.{3:D2}.{4:D2}.{5:D2}", now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second).
-        /// </summary>
-        public string PlayerBuildVersion
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(m_overridePlayerVersion))
-                    return profileSettings.EvaluateString(activeProfileId, m_overridePlayerVersion);
-                var now = DateTime.UtcNow;
-                return string.Format("{0:D4}.{1:D2}.{2:D2}.{3:D2}.{4:D2}.{5:D2}", now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-            }
         }
 
         [FormerlySerializedAs("m_groupAssets")]
@@ -1142,12 +1084,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (g != null)
                     g.GatherAllDirectAssetReferenceEntryData(assets, processed);
             }
-            // gather all folders
-            foreach (var g in groups)
-            {
-                if (g != null)
-                    g.GatherAllFolderSubAssetReferenceEntryData(assets, processed);
-            }
             // gather all collections
             foreach (var g in groups)
             {
@@ -1270,7 +1206,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 // TODO: Uncomment after initial opt-in testing period
                 //aa.ContiguousBundles = true;
                 aa.BuildAddressablesWithPlayerBuild = PlayerBuildOption.PreferencesValue;
-                aa.OverridePlayerVersion = kDefaultPlayerVersion;
 
                 if (isPersisted)
                 {
@@ -1445,7 +1380,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         private static AddressableAssetGroup CreateDefaultGroup(AddressableAssetSettings aa)
         {
-            var localGroup = aa.CreateGroup(DefaultLocalGroupName, true, false, false, null, typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
+            var localGroup = aa.CreateGroup(DefaultLocalGroupName, true, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = localGroup.GetSchema<BundledAssetGroupSchema>();
             schema.BuildPath.SetVariableByName(aa, kLocalBuildPath);
             schema.LoadPath.SetVariableByName(aa, kLocalLoadPath);
@@ -1461,7 +1396,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (File.Exists(assetPath))
                 return LoadGroupTemplateObject(aa, assetPath);
 
-            return aa.CreateAndAddGroupTemplate(aa.m_DefaultGroupTemplateName, "Pack assets into asset bundles.", typeof(BundledAssetGroupSchema), typeof(ContentUpdateGroupSchema));
+            return aa.CreateAndAddGroupTemplate(aa.m_DefaultGroupTemplateName, "Pack assets into asset bundles.", typeof(BundledAssetGroupSchema));
         }
 
         private static bool LoadGroupTemplateObject(AddressableAssetSettings aa, string assetPath)

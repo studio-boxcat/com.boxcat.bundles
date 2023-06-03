@@ -56,21 +56,10 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         bool m_ReadOnly;
 
-        /// <summary>
-        /// If true, this asset was changed after being built into an Addressable Group marked 'Cannot Change Post Release'.
-        /// </summary>
-        [SerializeField]
-        public bool FlaggedDuringContentUpdateRestriction = false;
-
         internal virtual bool HasSettings()
         {
             return false;
         }
-
-        /// <summary>
-        /// Flag indicating if an AssetEntry is a folder or not.
-        /// </summary>
-        public bool IsFolder { get; set; }
 
         /// <summary>
         /// List of AddressableAssetEntries that are considered sub-assets of a main Asset.  Typically used for Folder entires.
@@ -450,11 +439,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (AssetDatabase.IsValidFolder(AssetPath))
                 {
-                    IsFolder = true;
-                    List<AddressableAssetEntry> folderEntries = new List<AddressableAssetEntry>();
-                    GatherFolderEntries(folderEntries, recurseAll, includeSubObjects, entryFilter);
-                    SubAssets = folderEntries;
-                    assets.AddRange(folderEntries);
+                    throw new NotSupportedException();
                 }
                 else
                 {
@@ -561,53 +546,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
 #pragma warning restore 0618
 
-        internal void GatherFolderEntries(List<AddressableAssetEntry> assets, bool recurseAll, bool includeSubObjects, Func<AddressableAssetEntry, bool> entryFilter)
-        {
-            var path = AssetPath;
-            var settings = parentGroup.Settings;
-            foreach (var file in AddressablesFileEnumeration.EnumerateAddressableFolder(path, settings, recurseAll))
-            {
-                var subGuid = AssetDatabase.AssetPathToGUID(file);
-                var entry = settings.CreateSubEntryIfUnique(subGuid, address + GetRelativePath(file, path), this);
-
-                if (entry != null)
-                {
-                    entry.IsInResources =
-                        IsInResources; //if this is a sub-folder of Resources, copy it on down
-                    if (entryFilter == null || entryFilter(entry))
-                        assets.Add(entry);
-
-                    if (includeSubObjects)
-                    {
-                        var mainType = AssetDatabase.GetMainAssetTypeAtPath(entry.AssetPath);
-                        if (mainType == typeof(SpriteAtlas))
-                            entry.GatherSpriteAtlasEntries(assets);
-                        else
-                            entry.GatherSubObjectEntries(assets);
-                    }
-                }
-            }
-
-            if (!recurseAll)
-            {
-                foreach (var fo in Directory.EnumerateDirectories(path, "*.*", SearchOption.TopDirectoryOnly))
-                {
-                    var folder = fo.Replace('\\', '/');
-                    if (AssetDatabase.IsValidFolder(folder))
-                    {
-                        var entry = settings.CreateSubEntryIfUnique(AssetDatabase.AssetPathToGUID(folder), address + GetRelativePath(folder, path), this);
-                        if (entry != null)
-                        {
-                            entry.IsInResources = IsInResources; //if this is a sub-folder of Resources, copy it on down
-                            entry.IsFolder = true;
-                            if (entryFilter == null || entryFilter(entry))
-                                assets.Add(entry);
-                        }
-                    }
-                }
-            }
-        }
-
         /// <summary>
         /// Gets an entry for this folder entry
         /// </summary>
@@ -642,19 +580,13 @@ namespace UnityEditor.AddressableAssets.Settings
                 var folderEntry = settings.CreateSubEntryIfUnique(folderGuid, address + "/" + folderPath.Remove(assetPath.Length), this);
                 if (folderEntry != null)
                 {
-                    folderEntry.IsInResources = IsInResources;
-                    folderEntry.IsFolder = true;
+                    throw new NotSupportedException();
                 }
                 else
                     return null;
             }
 
             assetEntry = settings.CreateSubEntryIfUnique(subAssetGuid, address + "/" + relativePath, this);
-
-            if (assetEntry != null)
-            {
-                assetEntry.IsFolder = false;
-            }
 
             if (assetEntry == null || assetEntry.IsSubAsset == false)
                 return null;

@@ -97,18 +97,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 result.Duration = span.TotalSeconds;
             }
 
-            if (result != null && string.IsNullOrEmpty(result.Error))
-            {
-                foreach (var group in m_IncludedGroupsInBuild)
-                    ContentUpdateScript.ClearContentUpdateNotifications(group);
-            }
-
-            if (result != null && string.IsNullOrEmpty(result.Error))
-            {
-                foreach (var group in m_IncludedGroupsInBuild)
-                    ContentUpdateScript.ClearContentUpdateNotifications(group);
-            }
-
 #if UNITY_2022_2_OR_NEWER
             if (result != null && !Application.isBatchMode && ProjectConfigData.AutoOpenAddressablesReport && ProjectConfigData.GenerateBuildLayout)
             {
@@ -143,7 +131,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #endif
                 ProfileEvents = builderInput.ProfilerEventsEnabled,
                 LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
-                IsLocalCatalogInBundle = aaSettings.BundleLocalCatalog,
 #if UNITY_2019_3_OR_NEWER
                 AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version,
 #endif
@@ -539,18 +526,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + builderInput.RuntimeCatalogFilename;
             m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, builderInput.RuntimeCatalogFilename);
 
-            if (aaContext.Settings.BundleLocalCatalog)
-            {
-                localLoadPath = localLoadPath.Replace(".bin", ".bundle");
-                m_CatalogBuildPath = m_CatalogBuildPath.Replace(".bin", ".bundle");
-                var returnCode = CreateCatalogBundle(m_CatalogBuildPath, data, builderInput);
-                if (returnCode != ReturnCode.Success || !File.Exists(m_CatalogBuildPath))
-                {
-                    Addressables.LogError($"An error occured during the creation of the content catalog bundle (return code {returnCode}).");
-                    return false;
-                }
-            }
-            else
             {
                 WriteFile(m_CatalogBuildPath, data, builderInput.Registry);
             }
@@ -564,74 +539,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 dependencyHashes));
 
             return true;
-        }
-
-        internal ReturnCode CreateCatalogBundle(string filepath, byte[] data, AddressablesDataBuilderInput builderInput)
-        {
-            if (string.IsNullOrEmpty(filepath) || data == null || data.Length == 0 || builderInput == null)
-            {
-                throw new ArgumentException("Unable to create catalog bundle (null arguments).");
-            }
-
-            // A bundle requires an actual asset
-            var tempFolderName = "TempCatalogFolder";
-
-            var configFolder = AddressableAssetSettingsDefaultObject.kDefaultConfigFolder;
-            if (builderInput.AddressableSettings != null && builderInput.AddressableSettings.IsPersisted)
-                configFolder = builderInput.AddressableSettings.ConfigFolder;
-
-            var tempFolderPath = Path.Combine(configFolder, tempFolderName);
-            var tempFilePath = Path.Combine(tempFolderPath, Path.GetFileName(filepath).Replace(".bundle", ".bin"));
-            if (!WriteFile(tempFilePath, data, builderInput.Registry))
-            {
-                throw new Exception("An error occured during the creation of temporary files needed to bundle the content catalog.");
-            }
-
-            AssetDatabase.Refresh();
-
-            var bundleBuildContent = new BundleBuildContent(new[]
-            {
-                new AssetBundleBuild()
-                {
-                    assetBundleName = Path.GetFileName(filepath),
-                    assetNames = new[] {tempFilePath},
-                    addressableNames = new string[0]
-                }
-            });
-
-            var buildTasks = new List<IBuildTask>
-            {
-                new CalculateAssetDependencyData(),
-                new GenerateBundlePacking(),
-                new GenerateBundleCommands(),
-                new WriteSerializedFiles(),
-                new ArchiveAndCompressBundles()
-            };
-
-            var buildParams = new BundleBuildParameters(builderInput.Target, builderInput.TargetGroup, Path.GetDirectoryName(filepath));
-            if (builderInput.Target == BuildTarget.WebGL)
-                buildParams.BundleCompression = BuildCompression.LZ4Runtime;
-            var retCode = ContentPipeline.BuildAssetBundles(buildParams, bundleBuildContent, out IBundleBuildResults result, buildTasks, m_Log);
-
-            if (Directory.Exists(tempFolderPath))
-            {
-                Directory.Delete(tempFolderPath, true);
-                builderInput.Registry.RemoveFile(tempFilePath);
-            }
-
-            var tempFolderMetaFile = tempFolderPath + ".meta";
-            if (File.Exists(tempFolderMetaFile))
-            {
-                File.Delete(tempFolderMetaFile);
-                builderInput.Registry.RemoveFile(tempFolderMetaFile);
-            }
-
-            if (File.Exists(filepath))
-            {
-                builderInput.Registry.AddFile(filepath);
-            }
-
-            return retCode;
         }
 
 #else
@@ -817,8 +724,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             foreach (var loc in assetEntries)
             {
                 AddressableAssetEntry processedEntry = loc;
-                if (loc.IsFolder && loc.SubAssets.Count > 0)
-                    processedEntry = loc.SubAssets[0];
                 GUID guid = new GUID(processedEntry.guid);
                 //For every entry in the write data we need to ensure the BundleFileId is set so we can save it correctly in the cached state
                 if (writeData.AssetToFiles.TryGetValue(guid, out List<string> files))

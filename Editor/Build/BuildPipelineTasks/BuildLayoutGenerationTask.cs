@@ -1093,9 +1093,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 editorSettings.MonoScriptBundleNaming = aaSettings.MonoScriptBundleNaming.ToString();
             editorSettings.StripUnityVersionFromBundleBuild = aaSettings.StripUnityVersionFromBundleBuild;
 
-            editorSettings.BundleLocalCatalog = aaSettings.BundleLocalCatalog;
-            editorSettings.OptimizeCatalogSize = aaSettings.OptimizeCatalogSize;
-
             var profile = aaSettings.profileSettings.GetProfile(aaSettings.activeProfileId);
             editorSettings.ActiveProfile = new BuildLayout.Profile()
             {
@@ -1119,7 +1116,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 layoutOut.PackageVersion = $"{info.name}: {info.version}";
             layoutOut.BuildTarget = EditorUserBuildSettings.activeBuildTarget;
             layoutOut.BuildScript = aaSettings.ActivePlayerDataBuilder.Name;
-            layoutOut.PlayerBuildVersion = aaSettings.PlayerBuildVersion;
         }
 
         static BuildLayout.AddressablesRuntimeData GetAddressableRuntimeSettings(AddressableAssetsBuildContext aaContext, ContentCatalogData contentCatalog)
