@@ -953,15 +953,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             AddressableAssetGroup assetGroup,
             AddressableAssetsBuildContext aaContext)
         {
-            if (CreateLocationsForPlayerData(schema, assetGroup, aaContext.locations, aaContext.providerTypes))
-            {
-                if (!m_CreatedProviderIds.Contains(typeof(LegacyResourcesProvider).Name))
-                {
-                    m_CreatedProviderIds.Add(typeof(LegacyResourcesProvider).Name);
-                    m_ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(typeof(LegacyResourcesProvider)));
-                }
-            }
-
             return string.Empty;
         }
 
@@ -1143,38 +1134,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         a.GatherAllAssets(allEntries, true, true, false, entryFilter);
                         combinedEntries.AddRange(allEntries);
                         GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
-                    }
-                }
-                    break;
-                case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
-                {
-                    var labelTable = new Dictionary<string, List<AddressableAssetEntry>>();
-                    foreach (AddressableAssetEntry a in assetGroup.entries)
-                    {
-                        if (entryFilter != null && !entryFilter(a))
-                            continue;
-                        var sb = new StringBuilder();
-                        foreach (var l in a.labels)
-                            sb.Append(l);
-                        var key = sb.ToString();
-                        List<AddressableAssetEntry> entries;
-                        if (!labelTable.TryGetValue(key, out entries))
-                            labelTable.Add(key, entries = new List<AddressableAssetEntry>());
-                        entries.Add(a);
-                    }
-
-                    foreach (var entryGroup in labelTable)
-                    {
-                        var allEntries = new List<AddressableAssetEntry>();
-                        foreach (var a in entryGroup.Value)
-                        {
-                            if (entryFilter != null && !entryFilter(a))
-                                continue;
-                            a.GatherAllAssets(allEntries, true, true, false, entryFilter);
-                        }
-
-                        combinedEntries.AddRange(allEntries);
-                        GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
                     }
                 }
                     break;

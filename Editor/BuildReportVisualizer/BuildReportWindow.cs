@@ -67,7 +67,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             BundleView = 0,
             AssetsView,
-            LabelsView,
             GroupsView
         }
 
@@ -243,9 +242,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                     case (int) ContentViewType.GroupsView:
                         AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportViewByGroup);
                         break;
-                    case (int) ContentViewType.LabelsView:
-                        AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportViewByLabels);
-                        break;
                 }
             }
             else if (m_CurrentTab == (int)RibbonTabType.PotentialIssues)
@@ -281,9 +277,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                     break;
                 case ContentViewType.GroupsView:
                     view = new GroupsContentView(m_HelperConsumer, m_DetailsView);
-                    break;
-                case ContentViewType.LabelsView:
-                    view = new LabelsContentView(m_HelperConsumer, m_DetailsView);
                     break;
                 case ContentViewType.BundleView:
                 default:

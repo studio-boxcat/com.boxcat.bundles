@@ -30,11 +30,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             /// Creates a bundle per entry.  This is useful if each entry is a folder as all sub entries will go to the same bundle.
             /// </summary>
             PackSeparately,
-
-            /// <summary>
-            /// Creates a bundle per unique set of labels
-            /// </summary>
-            PackTogetherByLabel
         }
 
         /// <summary>
@@ -146,12 +141,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [SerializeField]
         bool m_IncludeAddressInCatalog = true;
 
-        [SerializeField]
-        bool m_IncludeGUIDInCatalog = true;
-
-        [SerializeField]
-        bool m_IncludeLabelsInCatalog = true;
-
         /// <summary>
         /// If enabled, addresses are included in the content catalog.  This is required if assets are to be loaded via their main address.
         /// </summary>
@@ -163,38 +152,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 if (m_IncludeAddressInCatalog != value)
                 {
                     m_IncludeAddressInCatalog = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        /// <summary>
-        /// If enabled, guids are included in content catalogs.  This is required if assets are to be loaded via AssetReference.
-        /// </summary>
-        public bool IncludeGUIDInCatalog
-        {
-            get => m_IncludeGUIDInCatalog;
-            set
-            {
-                if (m_IncludeGUIDInCatalog != value)
-                {
-                    m_IncludeGUIDInCatalog = value;
-                    SetDirty(true);
-                }
-            }
-        }
-
-        /// <summary>
-        /// If enabled, labels are included in the content catalogs.  This is required if labels are used at runtime load load assets.
-        /// </summary>
-        public bool IncludeLabelsInCatalog
-        {
-            get => m_IncludeLabelsInCatalog;
-            set
-            {
-                if (m_IncludeLabelsInCatalog != value)
-                {
-                    m_IncludeLabelsInCatalog = value;
                     SetDirty(true);
                 }
             }
@@ -713,19 +670,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         GUIContent m_IncludeAddressInCatalogContent = new GUIContent("Include Addresses in Catalog",
             "If disabled, addresses from this group will not be included in the catalog.  This is useful for reducing the size of the catalog if addresses are not needed.");
 
-        GUIContent m_IncludeGUIDInCatalogContent = new GUIContent("Include GUIDs in Catalog",
-            "If disabled, guids from this group will not be included in the catalog.  This is useful for reducing the size of the catalog if guids are not needed.");
-
-        GUIContent m_IncludeLabelsInCatalogContent = new GUIContent("Include Labels in Catalog",
-            "If disabled, labels from this group will not be included in the catalog.  This is useful for reducing the size of the catalog if labels are not needed.");
-
         GUIContent m_InternalIdNamingModeContent = new GUIContent("Internal Asset Naming Mode",
             "Mode for naming assets internally in bundles.  This can reduce the size of the catalog by replacing long paths with shorter strings.");
 
         GUIContent m_InternalBundleIdModeContent = new GUIContent("Internal Bundle Id Mode",
             $"Specifies how the internal id of the bundle is generated.  This must be set to {BundleInternalIdMode.GroupGuid} or {BundleInternalIdMode.GroupGuidProjectIdHash} to ensure proper caching on device.");
 
-        GUIContent m_CacheClearBehaviorContent = new GUIContent("Cache Clear Behavior", "Controls how old cached asset bundles are cleared.");
         GUIContent m_BundleModeContent = new GUIContent("Bundle Mode", "Controls how bundles are created from this group.");
         GUIContent m_BundleNamingContent = new GUIContent("Bundle Naming Mode", "Controls the final file naming mode for bundles in this group.");
 
@@ -743,8 +693,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInBuild)), m_IncludeInBuildContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ForceUniqueProvider)), m_ForceUniqueProviderContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeAddressInCatalog)), m_IncludeAddressInCatalogContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeGUIDInCatalog)), m_IncludeGUIDInCatalogContent, true);
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeLabelsInCatalog)), m_IncludeLabelsInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_InternalIdNamingMode)), m_InternalIdNamingModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_InternalBundleIdMode)), m_InternalBundleIdModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundleMode)), m_BundleModeContent, true);
@@ -763,10 +711,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 (src, dst) => dst.ForceUniqueProvider = src.ForceUniqueProvider, ref m_ForceUniqueProvider);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeAddressInCatalog), m_IncludeAddressInCatalogContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog, ref m_IncludeAddressInCatalog);
-            ShowSelectedPropertyMulti(so, nameof(m_IncludeGUIDInCatalog), m_IncludeGUIDInCatalogContent, otherBundledSchemas, ref queuedChanges,
-                (src, dst) => dst.IncludeGUIDInCatalog = src.IncludeGUIDInCatalog, ref m_IncludeGUIDInCatalog);
-            ShowSelectedPropertyMulti(so, nameof(m_IncludeLabelsInCatalog), m_IncludeLabelsInCatalogContent, otherBundledSchemas, ref queuedChanges,
-                (src, dst) => dst.IncludeLabelsInCatalog = src.IncludeLabelsInCatalog, ref m_IncludeLabelsInCatalog);
             ShowSelectedPropertyMulti(so, nameof(m_InternalIdNamingMode), m_InternalIdNamingModeContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.InternalIdNamingMode = src.InternalIdNamingMode, ref m_InternalIdNamingMode);
             ShowSelectedPropertyMulti(so, nameof(m_InternalBundleIdMode), m_InternalBundleIdModeContent, otherBundledSchemas, ref queuedChanges,

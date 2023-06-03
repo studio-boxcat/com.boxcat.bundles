@@ -132,11 +132,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             {BuildReportUtility.GroupsContentViewColBundleSize, typeof(ulong)},
             {BuildReportUtility.GroupsContentViewColRefsBy, typeof(int)},
             {BuildReportUtility.GroupsContentViewColRefsTo, typeof(int)},
-            {BuildReportUtility.LabelsContentViewColSizePlusRefs, typeof(ulong)},
-            {BuildReportUtility.LabelsContentViewColSizeUncompressed, typeof(ulong)},
-            {BuildReportUtility.LabelsContentViewColSizeBundle, typeof(ulong)},
-            {BuildReportUtility.LabelsContentViewColRefsBy, typeof(int)},
-            {BuildReportUtility.LabelsContentViewColRefsTo, typeof(int)},
             {BuildReportUtility.DuplicatedAssetsContentViewSpaceSaved, typeof(ulong)},
             {BuildReportUtility.DuplicatedAssetsContentViewDuplicationCount, typeof(int)},
             {BuildReportUtility.DuplicatedAssetsContentViewColSize, typeof(ulong)}
@@ -158,8 +153,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                itemData = ContentTreeView.GetItemDataForIndex<AssetsViewBuildReportItem>(index);
             if (type == typeof(BundlesContentView))
                 itemData = ContentTreeView.GetItemDataForIndex<BundlesViewBuildReportItem>(index);
-            if (type == typeof(LabelsContentView))
-                itemData = ContentTreeView.GetItemDataForIndex<LabelsViewBuildReportItem>(index);
             if (type == typeof(GroupsContentView))
                 itemData = ContentTreeView.GetItemDataForIndex<GroupsViewBuildReportItem>(index);
             if (type == typeof(DuplicatedAssetsContentView))
@@ -209,8 +202,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 if (asset is DuplicatedAssetsViewBuildReportDuplicatedAsset)
                     name.AddToClassList(BuildReportUtility.TreeViewDuplicatedAsset);
             }
-            else if (itemData is LabelsViewBuildReportLabel label)
-                icon.image = EditorGUIUtility.IconContent("FilterByLabel").image as Texture2D;
             else if (itemData is GroupsViewBuildReportGroup group ||
                      itemData is BundlesViewBuildReportIndirectlyReferencedBundles ||
                      itemData is GroupsViewBuildReportIndirectlyReferencedBundles)

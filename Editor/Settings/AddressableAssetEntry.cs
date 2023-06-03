@@ -19,7 +19,6 @@ namespace UnityEditor.AddressableAssets.Settings
         string AssetPath { get; }
         string address { get; set; }
         bool IsInResources { get; set; }
-        HashSet<string> labels { get; }
     }
 
     internal struct ImplicitAssetEntry : IReferenceEntryData
@@ -27,7 +26,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public string AssetPath { get; set; }
         public string address { get; set; }
         public bool IsInResources { get; set; }
-        public HashSet<string> labels { get; set; }
     }
 
     /// <summary>
@@ -57,12 +55,6 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_readOnly")]
         [SerializeField]
         bool m_ReadOnly;
-
-        [FormerlySerializedAs("m_serializedLabels")]
-        [SerializeField]
-        List<string> m_SerializedLabels;
-
-        HashSet<string> m_Labels = new HashSet<string>();
 
         /// <summary>
         /// If true, this asset was changed after being built into an Addressable Group marked 'Cannot Change Post Release'.
@@ -160,11 +152,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public bool IsInResources { get; set; }
 
         /// <summary>
-        /// Is scene in scene list.
-        /// </summary>
-        public bool IsInSceneList { get; set; }
-
-        /// <summary>
         /// Is a sub asset.  For example an asset in an addressable folder.
         /// </summary>
         public bool IsSubAsset { get; set; }
@@ -194,14 +181,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        /// <summary>
-        /// The set of labels for this entry.  There is no inherent limit to the number of labels.
-        /// </summary>
-        public HashSet<string> labels
-        {
-            get { return m_Labels; }
-        }
-
         internal Type m_cachedMainAssetType = null;
 
         /// <summary>
@@ -223,77 +202,21 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Set or unset a label on this entry.
+        /// Creates a list of keys that can be used to load this entry.
         /// </summary>
-        /// <param name="label">The label name.</param>
-        /// <param name="enable">Setting to true will add the label, false will remove it.</param>
-        /// <param name="force">When enable is true, setting force to true will force the label to exist on the parent AddressableAssetSettings object if it does not already.</param>
-        /// <param name="postEvent">Post modification event.</param>
-        /// <returns></returns>
-        public bool SetLabel(string label, bool enable, bool force = false, bool postEvent = true)
-        {
-            if (enable)
-            {
-                if (force)
-                    parentGroup.Settings.AddLabel(label, postEvent);
-                if (m_Labels.Add(label))
-                {
-                    SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, postEvent);
-                    return true;
-                }
-            }
-            else
-            {
-                if (m_Labels.Remove(label))
-                {
-                    SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, postEvent);
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
+        public List<object> CreateKeyList() => CreateKeyList(true);
 
         /// <summary>
         /// Creates a list of keys that can be used to load this entry.
         /// </summary>
         /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        public List<object> CreateKeyList() => CreateKeyList(true, true, true);
-
-        /// <summary>
-        /// Creates a list of keys that can be used to load this entry.
-        /// </summary>
-        /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        internal List<object> CreateKeyList(bool includeAddress, bool includeGUID, bool includeLabels)
+        internal List<object> CreateKeyList(bool includeAddress)
         {
             var keys = new List<object>();
             //the address must be the first key
             if (includeAddress)
                 keys.Add(address);
-            if (includeGUID && !string.IsNullOrEmpty(guid))
-                keys.Add(guid);
-            if (IsScene && IsInSceneList)
-            {
-                int index = BuiltinSceneCache.GetSceneIndex(new GUID(guid));
-                if (index != -1)
-                    keys.Add(index);
-            }
-
-            if (includeLabels && labels != null && labels.Count > 0)
-            {
-                var labelsToRemove = new HashSet<string>();
-                var currentLabels = parentGroup.Settings.GetLabels();
-                foreach (var l in labels)
-                {
-                    if (currentLabels.Contains(l))
-                        keys.Add(l);
-                    else
-                        labelsToRemove.Add(l);
-                }
-
-                foreach (var l in labelsToRemove)
-                    labels.Remove(l);
-            }
 
             return keys;
         }
@@ -307,7 +230,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_ReadOnly = readOnly;
             parentGroup = parent;
             IsInResources = false;
-            IsInSceneList = false;
         }
 
         Hash128 m_CurrentHash;
@@ -319,11 +241,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     m_CurrentHash.Append(m_GUID);
                     m_CurrentHash.Append(m_Address);
-                    m_CurrentHash.Append(m_Labels.Count);
-                    var flags = (m_ReadOnly ? 1 : 0) | (IsInResources ? 2 : 0) | (IsInSceneList ? 4 : 0) | (IsSubAsset ? 8 : 0);
+                    var flags = (m_ReadOnly ? 1 : 0) | (IsInResources ? 2 : 0) | (IsSubAsset ? 8 : 0);
                     m_CurrentHash.Append(flags);
-                    foreach (var l in m_Labels)
-                        m_CurrentHash.Append(l);
                 }
                 return m_CurrentHash;
             }
@@ -520,11 +439,9 @@ namespace UnityEditor.AddressableAssets.Settings
 
             if (guid == EditorSceneListName)
             {
-                GatherEditorSceneEntries(assets, entryFilter);
             }
             else if (guid == ResourcesName)
             {
-                GatherResourcesEntries(assets, recurseAll, entryFilter);
             }
             else
             {
@@ -635,10 +552,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     if (entry != null)
                     {
                         entry.IsInResources = e.IsInResources;
-                        foreach (var l in e.labels)
-                            entry.SetLabel(l, true, false, false);
-                        foreach (var l in m_Labels)
-                            entry.SetLabel(l, true, false, false);
                         if (entryFilter == null || entryFilter(entry))
                             assets.Add(entry);
                     }
@@ -661,7 +574,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     entry.IsInResources =
                         IsInResources; //if this is a sub-folder of Resources, copy it on down
-                    entry.m_Labels = m_Labels;
                     if (entryFilter == null || entryFilter(entry))
                         assets.Add(entry);
 
@@ -687,7 +599,6 @@ namespace UnityEditor.AddressableAssets.Settings
                         if (entry != null)
                         {
                             entry.IsInResources = IsInResources; //if this is a sub-folder of Resources, copy it on down
-                            entry.m_Labels = m_Labels;
                             entry.IsFolder = true;
                             if (entryFilter == null || entryFilter(entry))
                                 assets.Add(entry);
@@ -732,7 +643,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (folderEntry != null)
                 {
                     folderEntry.IsInResources = IsInResources;
-                    folderEntry.m_Labels = m_Labels;
                     folderEntry.IsFolder = true;
                 }
                 else
@@ -743,7 +653,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
             if (assetEntry != null)
             {
-                assetEntry.m_Labels = m_Labels;
                 assetEntry.IsFolder = false;
             }
 
@@ -767,53 +676,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
 #pragma warning restore 0618
 
-        internal void GatherResourcesEntries(List<AddressableAssetEntry> assets, bool recurseAll, Func<AddressableAssetEntry, bool> entryFilter)
-        {
-            var settings = parentGroup.Settings;
-            var pd = parentGroup.GetSchema<GroupSchemas.PlayerDataGroupSchema>();
-            if (pd.IncludeResourcesFolders)
-            {
-                foreach (var resourcesDir in GetResourceDirectories())
-                {
-                    foreach (var file in Directory.GetFiles(resourcesDir, "*.*", recurseAll ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
-                    {
-                        if (AddressableAssetUtility.IsPathValidForEntry(file))
-                        {
-                            var g = AssetDatabase.AssetPathToGUID(file);
-                            var addr = GetResourcesPath(file);
-                            var entry = settings.CreateSubEntryIfUnique(g, addr, this);
-
-                            if (entry != null) //TODO - it's probably really bad if this is ever null. need some error detection
-                            {
-                                entry.IsInResources = true;
-                                entry.m_Labels = m_Labels;
-                                if (entryFilter == null || entryFilter(entry))
-                                    assets.Add(entry);
-                            }
-                        }
-                    }
-
-                    if (!recurseAll)
-                    {
-                        foreach (var folder in Directory.GetDirectories(resourcesDir))
-                        {
-                            if (AssetDatabase.IsValidFolder(folder))
-                            {
-                                var entry = settings.CreateSubEntryIfUnique(AssetDatabase.AssetPathToGUID(folder), GetResourcesPath(folder), this);
-                                if (entry != null) //TODO - it's probably really bad if this is ever null. need some error detection
-                                {
-                                    entry.IsInResources = true;
-                                    entry.m_Labels = m_Labels;
-                                    if (entryFilter == null || entryFilter(entry))
-                                        assets.Add(entry);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         static IEnumerable<string> GetResourceDirectories()
         {
             string[] resourcesGuids = AssetDatabase.FindAssets("Resources", new string[] {"Assets", "Packages"});
@@ -823,29 +685,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (resourcesAssetPath.EndsWith("/resources", StringComparison.OrdinalIgnoreCase) && AssetDatabase.IsValidFolder(resourcesAssetPath) && Directory.Exists(resourcesAssetPath))
                 {
                     yield return resourcesAssetPath;
-                }
-            }
-        }
-
-        void GatherEditorSceneEntries(List<AddressableAssetEntry> assets, Func<AddressableAssetEntry, bool> entryFilter)
-        {
-            var settings = parentGroup.Settings;
-            var pd = parentGroup.GetSchema<GroupSchemas.PlayerDataGroupSchema>();
-            if (pd.IncludeBuildSettingsScenes)
-            {
-                foreach (var s in BuiltinSceneCache.scenes)
-                {
-                    if (s.enabled)
-                    {
-                        var entry = settings.CreateSubEntryIfUnique(s.guid.ToString(), Path.GetFileNameWithoutExtension(s.path), this);
-                        if (entry != null) //TODO - it's probably really bad if this is ever null. need some error detection
-                        {
-                            entry.IsInSceneList = true;
-                            entry.m_Labels = m_Labels;
-                            if (entryFilter == null || entryFilter(entry))
-                                assets.Add(entry);
-                        }
-                    }
                 }
             }
         }
@@ -861,14 +700,8 @@ namespace UnityEditor.AddressableAssets.Settings
             return file.Substring(path.Length);
         }
 
-        /// <summary>
-        /// Implementation of ISerializationCallbackReceiver.  Converts data to serializable form before serialization.
-        /// </summary>
         public void OnBeforeSerialize()
         {
-            m_SerializedLabels = new List<string>();
-            foreach (var t in m_Labels)
-                m_SerializedLabels.Add(t);
         }
 
         /// <summary>
@@ -876,10 +709,6 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public void OnAfterDeserialize()
         {
-            m_Labels = new HashSet<string>();
-            foreach (var s in m_SerializedLabels)
-                m_Labels.Add(s);
-            m_SerializedLabels = null;
             m_cachedMainAssetType = null;
             m_cachedAssetPath = null;
             m_CheckedIsScene = false;
@@ -908,7 +737,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="providerTypes">Any unknown provider types are added to this set in order to ensure they are not stripped.</param>
         public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, bool isBundled, string providerType, IEnumerable<object> dependencies, object extraData, HashSet<Type> providerTypes)
         {
-            CreateCatalogEntries(entries, isBundled, providerType, dependencies, extraData, null, providerTypes, true, true, true, null);
+            CreateCatalogEntries(entries, isBundled, providerType, dependencies, extraData, null, providerTypes, true, null);
         }
 
         /// <summary>
@@ -926,13 +755,13 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="includeLabels">Flag indicating if label locations should be included</param>
         /// <param name="assetsInBundle">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
         public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, bool isBundled, string providerType, IEnumerable<object> dependencies, object extraData,
-            Dictionary<GUID, AssetLoadInfo> depInfo, HashSet<Type> providerTypes, bool includeAddress, bool includeGUID, bool includeLabels, HashSet<string> assetsInBundle)
+            Dictionary<GUID, AssetLoadInfo> depInfo, HashSet<Type> providerTypes, bool includeAddress, HashSet<string> assetsInBundle)
         {
             if (string.IsNullOrEmpty(AssetPath))
                 return;
 
             string assetPath = GetAssetLoadPath(isBundled, assetsInBundle);
-            List<object> keyList = CreateKeyList(includeAddress, includeGUID, includeLabels);
+            List<object> keyList = CreateKeyList(includeAddress);
             if (keyList.Count == 0)
                 return;
 

@@ -1074,63 +1074,6 @@ namespace UnityEditor.AddressableAssets.GUI
     }
 
     /// <summary>
-    /// Surrogate to AssetReferenceUILabelRestriction
-    /// This surrogate class provides the editor-side implementation of AssetReferenceUILabelRestriction attribute
-    /// Used to restrict an AssetReference field or property to only allow items wil specific labels. This is only enforced through the UI.
-    /// </summary>
-    [AssetReferenceSurrogate(typeof(AssetReferenceUILabelRestriction))]
-    public class AssetReferenceUILabelRestrictionSurrogate : AssetReferenceUIRestrictionSurrogate
-    {
-        AssetReferenceUILabelRestriction data;
-
-        /// <summary>
-        /// Sets the AssetReferenceUILabelRestriction for this surrogate
-        /// </summary>
-        /// <param name="initData">To initialize AssetReferenceUILabelRestriction field</param>
-        public override void Init(AssetReferenceUIRestriction initData)
-        {
-            data = initData as AssetReferenceUILabelRestriction;
-        }
-
-        /// <inheritdoc/>
-        public override bool ValidateAsset(Object obj)
-        {
-            var path = AssetDatabase.GetAssetOrScenePath(obj);
-            return ValidateAsset(path);
-        }
-
-        /// <inheritdoc/>
-        public override bool ValidateAsset(string path)
-        {
-            if (AddressableAssetSettingsDefaultObject.Settings == null)
-                return false;
-            var guid = AssetDatabase.AssetPathToGUID(path);
-            var entry = AddressableAssetSettingsDefaultObject.Settings.FindAssetEntry(guid, true);
-            return ValidateAsset(entry);
-        }
-
-        internal override bool ValidateAsset(IReferenceEntryData entry)
-        {
-            if (entry != null)
-            {
-                foreach (var label in data.m_AllowedLabels)
-                {
-                    if (entry.labels.Contains(label))
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        ///<inheritdoc/>
-        public override string ToString()
-        {
-            return data.ToString();
-        }
-    }
-
-    /// <summary>
     /// Utility Class
     /// </summary>
     public class AssetReferenceUtility

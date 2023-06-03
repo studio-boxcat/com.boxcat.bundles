@@ -998,8 +998,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             rootAsset.AddressableName = rootEntry.address;
             rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.MainAssetType);
             rootAsset.InternalId = rootEntry.GetAssetLoadPath(true, loadPathsForBundle);
-            rootAsset.Labels = new string[rootEntry.labels.Count];
-            rootEntry.labels.CopyTo(rootAsset.Labels);
             rootAsset.GroupGuid = rootEntry.parentGroup.Guid;
 
             if (rootAsset.Bundle == null)

@@ -286,15 +286,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             PlayerDataGroupSchema playerSchema = assetGroup.GetSchema<PlayerDataGroupSchema>();
             if (playerSchema != null)
             {
-                if (CreateLocationsForPlayerData(playerSchema, assetGroup, aaContext.locations, aaContext.providerTypes))
-                {
-                    if (!m_CreatedProviderIds.ContainsKey(typeof(LegacyResourcesProvider).Name))
-                    {
-                        m_CreatedProviderIds.Add(typeof(LegacyResourcesProvider).Name, null);
-                        m_ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(typeof(LegacyResourcesProvider)));
-                    }
-                }
-
                 return errorString;
             }
 

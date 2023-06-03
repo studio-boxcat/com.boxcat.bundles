@@ -32,14 +32,12 @@ namespace UnityEditor.AddressableAssets
             public bool IsPlayModeBuild;
             public int BuildScript;
             public int NumberOfAddressableAssets;
-            public int NumberOfLabels;
             public int NumberOfAssetBundles;
             public int NumberOfGroups;
             public int NumberOfGroupsUsingLZ4;
             public int NumberOfGroupsUsingLZMA;
             public int NumberOfGroupsUncompressed;
             public int NumberOfGroupsPackedTogether;
-            public int NumberOfGroupsPackedTogetherByLabel;
             public int NumberOfGroupsPackedSeparately;
             public int MaxNumberOfAddressableAssetsInAGroup;
             public int MinNumberOfAddressableAssetsInAGroup;
@@ -112,7 +110,6 @@ namespace UnityEditor.AddressableAssets
             BuildReportSelectedSummaryTab = 20,
             BuildReportViewByAssetBundle = 21,
             BuildReportViewByAssets = 22,
-            BuildReportViewByLabels = 23,
             BuildReportViewByGroup = 24,
             BuildReportViewByDuplicatedAssets = 25,
             BuildReportImportedManually = 26
@@ -252,7 +249,6 @@ namespace UnityEditor.AddressableAssets
 
             int numberOfGroupsPackedSeparately = 0;
             int numberOfGroupsPackedTogether = 0;
-            int numberOfGroupsPackedTogetherByLabel = 0;
 
             int minNumberOfAssetsInAGroup = -1;
             int maxNumberOfAssetsInAGroup = -1;
@@ -364,9 +360,6 @@ namespace UnityEditor.AddressableAssets
                     case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
                         numberOfGroupsPackedTogether += 1;
                         break;
-                    case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
-                        numberOfGroupsPackedTogetherByLabel += 1;
-                        break;
                 }
 
                 if (group.entries.Count > maxNumberOfAssetsInAGroup)
@@ -386,7 +379,6 @@ namespace UnityEditor.AddressableAssets
                 DebugBuildLayoutEnabled = ProjectConfigData.GenerateBuildLayout,
                 AutoOpenBuildReportEnabled = ProjectConfigData.AutoOpenAddressablesReport && ProjectConfigData.GenerateBuildLayout,
 #endif
-                NumberOfLabels = currentSettings.labelTable.labelNames.Count,
                 IsIncrementalBuild = (int)buildType,
                 NumberOfAssetBundles = numberOfAssetBundles,
                 NumberOfAddressableAssets = numberOfAddressableAssets,
@@ -398,7 +390,6 @@ namespace UnityEditor.AddressableAssets
                 NumberOfGroupsUsingLZMA = numberOfGroupsUsingLZMA,
                 NumberOfGroupsUncompressed = numberOfGroupsUncompressed,
                 NumberOfGroupsPackedTogether = numberOfGroupsPackedTogether,
-                NumberOfGroupsPackedTogetherByLabel = numberOfGroupsPackedTogetherByLabel,
                 NumberOfGroupsPackedSeparately = numberOfGroupsPackedSeparately,
                 NumberOfGroupsUsingBuiltIn = numberOfGroupsUsingBuiltIn,
                 NumberOfGroupsUsingEditorHosted = numberOfGroupsUsingEditorHosted,

@@ -579,7 +579,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     address = entry.address,
                     AssetPath = entry.AssetPath,
                     IsInResources = entry.IsInResources,
-                    labels = new HashSet<string>(entry.labels)
                 };
                 results.Add(reference);
             }
@@ -627,7 +626,6 @@ namespace UnityEditor.AddressableAssets.Settings
                         address = relativeAddress,
                         AssetPath = assetPath,
                         IsInResources = folderEntry.IsInResources,
-                        labels = new HashSet<string>(folderEntry.labels)
                     };
                     results.Add(reference);
                 }
@@ -667,7 +665,6 @@ namespace UnityEditor.AddressableAssets.Settings
                             address = entry.address,
                             AssetPath = entry.AssetPath,
                             IsInResources = entry.IsInResources,
-                            labels = new HashSet<string>(entry.labels)
                         };
                         results.Add(reference);
                     }

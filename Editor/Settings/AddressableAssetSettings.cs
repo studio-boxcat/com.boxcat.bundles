@@ -269,16 +269,6 @@ namespace UnityEditor.AddressableAssets.Settings
             EntryRemoved,
 
             /// <summary>
-            /// Use to indicate that an asset label was added to the settings object.
-            /// </summary>
-            LabelAdded,
-
-            /// <summary>
-            /// Use to indicate that an asset label was removed from the settings object.
-            /// </summary>
-            LabelRemoved,
-
-            /// <summary>
             /// Use to indicate that a profile was added to the settings object.
             /// </summary>
             ProfileAdded,
@@ -755,7 +745,6 @@ namespace UnityEditor.AddressableAssets.Settings
                         {
                         selfHash,
                         m_BuildSettings.currentHash,
-                        m_LabelTable.currentHash,
                         m_ProfileSettings.currentHash,
                         groupsHash
                         };
@@ -842,18 +831,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public AddressableAssetProfileSettings profileSettings
         {
             get { return m_ProfileSettings; }
-        }
-
-        [FormerlySerializedAs("m_labelTable")]
-        [SerializeField]
-        LabelTable m_LabelTable = new LabelTable();
-
-        /// <summary>
-        /// LabelTable object.
-        /// </summary>
-        internal LabelTable labelTable
-        {
-            get { return m_LabelTable; }
         }
 
         [FormerlySerializedAs("m_schemaTemplates")]
@@ -1242,91 +1219,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        /// <summary>
-        /// Gets the list of all defined labels.
-        /// </summary>
-        /// <returns>Returns a list of all defined labels.</returns>
-        public List<string> GetLabels()
-        {
-            return m_LabelTable.labelNames.ToList();
-        }
-
-        /// <summary>
-        /// Add a new label.
-        /// </summary>
-        /// <param name="label">The label name.</param>
-        /// <param name="postEvent">Send modification event.</param>
-        public void AddLabel(string label, bool postEvent = true)
-        {
-            if (m_LabelTable.AddLabelName(label))
-                SetDirty(ModificationEvent.LabelAdded, label, postEvent, true);
-        }
-
-        internal void RenameLabel(string oldLabelName, string newLabelName, bool postEvent = true)
-        {
-            int index = m_LabelTable.GetIndexOfLabel(oldLabelName);
-            if (index < 0)
-                return;
-
-            if (!m_LabelTable.AddLabelName(newLabelName, index))
-                return;
-            if (postEvent)
-                SetDirty(ModificationEvent.LabelAdded, newLabelName, postEvent, true);
-
-            foreach (var group in groups)
-            {
-                foreach (var entry in group.entries)
-                {
-                    if (entry.labels.Contains(oldLabelName))
-                    {
-                        entry.labels.Remove(oldLabelName);
-                        entry.SetLabel(newLabelName, true);
-                    }
-                }
-            }
-
-            m_LabelTable.RemoveLabelName(oldLabelName);
-            SetDirty(ModificationEvent.LabelRemoved, oldLabelName, postEvent, true);
-        }
-
-        /// <summary>
-        /// Remove a label by name.
-        /// </summary>
-        /// <param name="label">The label name.</param>
-        /// <param name="postEvent">Send modification event.</param>
-        public void RemoveLabel(string label, bool postEvent = true)
-        {
-            m_LabelTable.RemoveLabelName(label);
-            SetDirty(ModificationEvent.LabelRemoved, label, postEvent, true);
-            Debug.LogWarningFormat("Label \"{0}\" removed. If you re-add the label before building, it will be restored in entries that had it. " +
-                                   "Building Addressables content will clear this label from all entries. That action cannot be undone.", label);
-        }
-
-        /// <summary>
-        /// Removes all labels that are not in use by an entry.
-        /// </summary>
-        /// <param name="postEvent">Send modification event.</param>
-        internal void RemoveUnusedLabels(bool postEvent = true)
-        {
-            HashSet<string> usedLabels = new HashSet<string>();
-            foreach (AddressableAssetGroup assetGroup in groups)
-            {
-                foreach (AddressableAssetEntry entry in assetGroup.entries)
-                {
-                    foreach (string label in entry.labels)
-                        usedLabels.Add(label);
-                }
-            }
-
-            HashSet<string> unused = new HashSet<string>(m_LabelTable.labelNames);
-            unused.RemoveWhere(l => usedLabels.Contains(l));
-            if (unused.Count > 0)
-            {
-                foreach (string s in unused)
-                    RemoveLabel(s, postEvent);
-            }
-        }
-
         [FormerlySerializedAs("m_activeProfileId")]
         [SerializeField]
         string m_ActiveProfileId;
@@ -1453,8 +1345,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 m_BuildSettings = new AddressableAssetBuildSettings();
             if (m_ProfileSettings == null)
                 m_ProfileSettings = new AddressableAssetProfileSettings();
-            if (m_LabelTable == null)
-                m_LabelTable = new LabelTable();
             if (string.IsNullOrEmpty(m_ActiveProfileId))
                 m_ActiveProfileId = m_ProfileSettings.CreateDefaultProfile();
             if (m_DataBuilders == null || m_DataBuilders.Count == 0)
@@ -2272,20 +2162,6 @@ namespace UnityEditor.AddressableAssets.Settings
                         AssetDatabase.DeleteAsset(groupPath);
                 }
             }
-        }
-
-        internal void SetLabelValueForEntries(List<AddressableAssetEntry> entries, string label, bool value, bool postEvent = true)
-        {
-            var addedNewLabel = value && m_LabelTable.AddLabelName(label);
-
-            foreach (var e in entries)
-            {
-                e.SetLabel(label, value, false, false);
-                AddressableAssetUtility.OpenAssetIfUsingVCIntegration(e.parentGroup);
-            }
-
-            SetDirty(ModificationEvent.EntryModified, entries, postEvent, addedNewLabel);
-            AddressableAssetUtility.OpenAssetIfUsingVCIntegration(this);
         }
 
         internal void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)

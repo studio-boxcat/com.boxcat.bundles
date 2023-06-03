@@ -288,7 +288,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         {
                             int indexAddedStart = locations.Count;
                             entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes,
-                                schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds);
+                                schema.IncludeAddressInCatalog, bEntry.AssetInternalIds);
                             if (indexAddedStart < locations.Count)
                                 guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count-indexAddedStart));
                         }

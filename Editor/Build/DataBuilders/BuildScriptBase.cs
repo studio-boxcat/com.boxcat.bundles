@@ -196,36 +196,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
         /// <summary>
-        /// Utility method for creating locations from player data.
-        /// </summary>
-        /// <param name="playerDataSchema">The schema for the group.</param>
-        /// <param name="assetGroup">The group to extract the locations from.</param>
-        /// <param name="locations">The list of created locations to fill in.</param>
-        /// <param name="providerTypes">Any unknown provider types are added to this set in order to ensure they are not stripped.</param>
-        /// <returns>True if any legacy locations were created.  This is used by the build scripts to determine if a legacy provider is needed.</returns>
-        protected bool CreateLocationsForPlayerData(PlayerDataGroupSchema playerDataSchema, AddressableAssetGroup assetGroup, List<ContentCatalogDataEntry> locations, HashSet<Type> providerTypes)
-        {
-            bool needsLegacyProvider = false;
-            if (playerDataSchema != null && (playerDataSchema.IncludeBuildSettingsScenes || playerDataSchema.IncludeResourcesFolders))
-            {
-                var entries = new List<AddressableAssetEntry>();
-                assetGroup.GatherAllAssets(entries, true, true, false);
-                foreach (var a in entries.Where(e => e.IsInSceneList || e.IsInResources))
-                {
-                    if (!playerDataSchema.IncludeBuildSettingsScenes && a.IsInSceneList)
-                        continue;
-                    if (!playerDataSchema.IncludeResourcesFolders && a.IsInResources)
-                        continue;
-                    a.CreateCatalogEntries(locations, false, a.IsScene ? "" : typeof(LegacyResourcesProvider).FullName, null, null, providerTypes);
-                    if (!a.IsScene)
-                        needsLegacyProvider = true;
-                }
-            }
-
-            return needsLegacyProvider;
-        }
-
-        /// <summary>
         /// Utility method for deleting files.
         /// </summary>
         /// <param name="path">The file path to delete.</param>

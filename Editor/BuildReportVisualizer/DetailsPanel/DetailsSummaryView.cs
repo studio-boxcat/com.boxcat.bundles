@@ -95,7 +95,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 {
                     builder.With("Bundle", bundle.Name)
                            .With("Group", bundle.Group.Name)
-                           .With("Labels", string.Join(", ", reportAsset.ExplicitAsset.Labels))
                            .With("Load Path", bundle.LoadPath);
                 }
             }

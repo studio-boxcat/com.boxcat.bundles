@@ -44,10 +44,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 entries.Add(assetEntry);
             }
 
-            HashSet<string> collectionLabels = new HashSet<string>();
             if (collectionEntry != null)
             {
-                collectionLabels = collectionEntry.labels;
                 if (!settings.RemoveAssetEntry(collectionEntry))
                     return false;
             }
@@ -56,10 +54,6 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 var newEntry = settings.CreateOrMoveEntry(entry.guid, group);
                 newEntry.SetAddress(entry.address);
-                foreach (string label in collectionLabels)
-                    newEntry.SetLabel(label, true);
-                foreach (string label in entry.labels)
-                    newEntry.SetLabel(label, true);
             }
 
             return true;

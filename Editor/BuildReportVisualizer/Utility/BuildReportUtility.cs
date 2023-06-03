@@ -71,14 +71,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string AssetsContentViewColBundleSize = nameof(AssetsContentViewColBundleSize);
         public static readonly string AssetsContentViewColRefsTo = nameof(AssetsContentViewColRefsTo);
         public static readonly string AssetsContentViewColRefsBy = nameof(AssetsContentViewColRefsBy);
-        // Labels view
-        public static readonly string LabelsContentView = nameof(LabelsContentView);
-        public static readonly string LabelsContentViewColLabelName = nameof(LabelsContentViewColLabelName);
-        public static readonly string LabelsContentViewColSizePlusRefs = nameof(LabelsContentViewColSizePlusRefs);
-        public static readonly string LabelsContentViewColSizeUncompressed = nameof(LabelsContentViewColSizeUncompressed);
-        public static readonly string LabelsContentViewColSizeBundle = nameof(LabelsContentViewColSizeBundle);
-        public static readonly string LabelsContentViewColRefsTo = nameof(LabelsContentViewColRefsTo);
-        public static readonly string LabelsContentViewColRefsBy = nameof(LabelsContentViewColRefsBy);
 
         // Groups view
         public static readonly string GroupsContentView = nameof(GroupsContentView);

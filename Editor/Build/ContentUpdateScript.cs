@@ -804,24 +804,6 @@ namespace UnityEditor.AddressableAssets.Build
 
                             break;
 
-                        case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
-                            foreach (AddressableAssetEntry sharedGroupEntry in entry.parentGroup.entries)
-                            {
-                                //Check if one entry has 0 labels while the other contains labels.  The labels union check below will return true in this case.
-                                //That is not the behavior we want.  So to avoid that, we check here first.
-                                if (sharedGroupEntry.labels.Count == 0 ^ entry.labels.Count == 0)
-                                    continue;
-
-                                //Only add if labels are shared
-                                if (sharedGroupEntry.IsScene && !modifiedEntries.Contains(sharedGroupEntry) && sharedGroupEntry.labels.Union(entry.labels).Any())
-                                {
-                                    sharedGroupEntry.FlaggedDuringContentUpdateRestriction = true;
-                                    entriesToAdd.Add(sharedGroupEntry);
-                                }
-                            }
-
-                            break;
-
                         case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
                             //Do nothing.  The scene will be in a different bundle.
                             break;

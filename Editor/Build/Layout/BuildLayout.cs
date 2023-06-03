@@ -1113,12 +1113,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string AddressableName;
 
             /// <summary>
-            /// Addressable labels for this asset entry.
-            /// </summary>
-            [SerializeField]
-            public string[] Labels = Array.Empty<string>();
-
-            /// <summary>
             /// The size of the file on disk.
             /// </summary>
             public ulong SerializedSize;

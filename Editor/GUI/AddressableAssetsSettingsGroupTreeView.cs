@@ -30,7 +30,6 @@ namespace UnityEditor.AddressableAssets.GUI
             Id,
             Type,
             Path,
-            Labels
         }
 
         ColumnId[] m_SortOptions =
@@ -39,7 +38,6 @@ namespace UnityEditor.AddressableAssets.GUI
             ColumnId.Id,
             ColumnId.Type,
             ColumnId.Path,
-            ColumnId.Labels
         };
 
         internal AddressableAssetEntryTreeView(AddressableAssetSettings settings)
@@ -340,9 +338,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 case ColumnId.Path:
                     orderedKids = kids.Order(l => l.entry.AssetPath, ascending);
                     break;
-                case ColumnId.Labels:
-                    orderedKids = OrderByLabels(kids, ascending);
-                    break;
                 default:
                     orderedKids = kids.Order(l => l.displayName, ascending);
                     break;
@@ -357,35 +352,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (child != null && IsExpanded(child.id))
                     SortHierarchical(child.children);
             }
-        }
-
-        IEnumerable<AssetEntryTreeViewItem> OrderByLabels(List<AssetEntryTreeViewItem> kids, bool ascending)
-        {
-            var emptyHalf = new List<AssetEntryTreeViewItem>();
-            var namedHalf = new List<AssetEntryTreeViewItem>();
-            foreach (var k in kids)
-            {
-                if (k.entry == null || k.entry.labels == null || k.entry.labels.Count < 1)
-                    emptyHalf.Add(k);
-                else
-                    namedHalf.Add(k);
-            }
-
-            var orderedKids = namedHalf.Order(l => m_Editor.settings.labelTable.GetString(l.entry.labels, 200), ascending);
-
-            List<AssetEntryTreeViewItem> result = new List<AssetEntryTreeViewItem>();
-            if (ascending)
-            {
-                result.AddRange(emptyHalf);
-                result.AddRange(orderedKids);
-            }
-            else
-            {
-                result.AddRange(orderedKids);
-                result.AddRange(emptyHalf);
-            }
-
-            return result;
         }
 
         protected override bool DoesItemMatchSearch(TreeViewItem item, string search)
@@ -404,12 +370,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 return false;
             if (aeItem.entry.AssetPath.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
                 return true;
-
-            foreach (string label in aeItem.entry.labels)
-            {
-                if (label.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
-                    return true;
-            }
 
             return false;
         }
@@ -634,47 +594,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (item.assetIcon != null)
                         UnityEngine.GUI.DrawTexture(cellRect, item.assetIcon, ScaleMode.ScaleToFit, true);
                     break;
-                case ColumnId.Labels:
-                    if (item.entry != null && EditorGUI.DropdownButton(cellRect, new GUIContent(m_Editor.settings.labelTable.GetString(item.entry.labels, cellRect.width)), FocusType.Passive))
-                    {
-                        var selection = GetItemsForContext(args.item.id);
-                        Dictionary<string, int> labelCounts = new Dictionary<string, int>();
-                        List<AddressableAssetEntry> entries = new List<AddressableAssetEntry>();
-                        var newSelection = new List<int>();
-                        foreach (var s in selection)
-                        {
-                            var aeItem = FindItem(s, rootItem) as AssetEntryTreeViewItem;
-                            if (aeItem == null || aeItem.entry == null)
-                                continue;
-
-                            entries.Add(aeItem.entry);
-                            newSelection.Add(s);
-                            foreach (var label in aeItem.entry.labels)
-                            {
-                                int count;
-                                labelCounts.TryGetValue(label, out count);
-                                count++;
-                                labelCounts[label] = count;
-                            }
-                        }
-
-                        SetSelection(newSelection);
-                        PopupWindow.Show(cellRect, new LabelMaskPopupContent(cellRect, m_Editor.settings, entries, labelCounts));
-                    }
-
-                    break;
             }
-        }
-
-        IList<int> GetItemsForContext(int row)
-        {
-            var selection = GetSelection();
-            if (selection.Contains(row))
-                return selection;
-
-            selection = new List<int>();
-            selection.Add(row);
-            return selection;
         }
 
         public static MultiColumnHeaderState CreateDefaultMultiColumnHeaderState()
