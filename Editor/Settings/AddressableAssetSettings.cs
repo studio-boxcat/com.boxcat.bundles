@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.HostingServices;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
@@ -25,8 +24,6 @@ using Unity.Services.Ccd.Management.Models;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
-    using Object = UnityEngine.Object;
-
     /// <summary>
     /// Contains editor data for the addressables system.
     /// </summary>
@@ -1496,30 +1493,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        [FormerlySerializedAs("m_hostingServicesManager")]
-        [SerializeField]
-        HostingServicesManager m_HostingServicesManager;
-
-        /// <summary>
-        /// Get the HostingServicesManager object.
-        /// </summary>
-        public HostingServicesManager HostingServicesManager
-        {
-            get
-            {
-                if (m_HostingServicesManager == null)
-                    m_HostingServicesManager = new HostingServicesManager();
-
-                if (!m_HostingServicesManager.IsInitialized)
-                    m_HostingServicesManager.Initialize(this);
-
-                return m_HostingServicesManager;
-            }
-
-            // For unit tests
-            internal set { m_HostingServicesManager = value; }
-        }
-
 #if ENABLE_CCD
         /// <summary>
         /// Stores the CcdManager data in the ResourceManagerRuntimeData to set.
@@ -1596,17 +1569,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             profileSettings.OnAfterDeserialize(this);
             buildSettings.OnAfterDeserialize(this);
-            HostingServicesManager.OnAwake();
-        }
-
-        void OnEnable()
-        {
-            HostingServicesManager.OnEnable();
-        }
-
-        void OnDisable()
-        {
-            HostingServicesManager.OnDisable();
         }
 
         private string m_DefaultGroupTemplateName = "Packed Assets";

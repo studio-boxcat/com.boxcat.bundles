@@ -312,7 +312,6 @@ namespace UnityEditor.AddressableAssets.GUI
                         menu.AddItem(new GUIContent("Window/Profiles"), false, () => EditorWindow.GetWindow<ProfileWindow>().Show(true));
                         menu.AddItem(new GUIContent("Window/Labels"), false, () => EditorWindow.GetWindow<LabelWindow>(true).Intialize(settings));
                         menu.AddItem(new GUIContent("Window/Analyze"), false, AnalyzeWindow.ShowWindow);
-                        menu.AddItem(new GUIContent("Window/Hosting Services"), false, () => EditorWindow.GetWindow<HostingServicesWindow>().Show(settings));
                         menu.AddItem(new GUIContent("Window/Event Viewer"), false, ResourceProfilerWindow.ShowWindow);
 
 #if UNITY_2022_2_OR_NEWER

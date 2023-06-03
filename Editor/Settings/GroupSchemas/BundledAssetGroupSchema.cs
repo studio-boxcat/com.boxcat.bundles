@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using UnityEditor.AddressableAssets.HostingServices;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
@@ -15,7 +14,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
     /// </summary>
 //    [CreateAssetMenu(fileName = "BundledAssetGroupSchema.asset", menuName = "Addressables/Group Schemas/Bundled Assets")]
     [DisplayName("Content Packing & Loading")]
-    public class BundledAssetGroupSchema : AddressableAssetGroupSchema, IHostingServiceConfigurationProvider, ISerializationCallbackReceiver
+    public class BundledAssetGroupSchema : AddressableAssetGroupSchema, ISerializationCallbackReceiver
     {
         /// <summary>
         /// Defines how bundles are created.
