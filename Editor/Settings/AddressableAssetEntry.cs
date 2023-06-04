@@ -439,7 +439,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (AssetDatabase.IsValidFolder(AssetPath))
                 {
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(AssetPath);
                 }
                 else
                 {
@@ -580,7 +580,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 var folderEntry = settings.CreateSubEntryIfUnique(folderGuid, address + "/" + folderPath.Remove(assetPath.Length), this);
                 if (folderEntry != null)
                 {
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(folderPath);
                 }
                 else
                     return null;

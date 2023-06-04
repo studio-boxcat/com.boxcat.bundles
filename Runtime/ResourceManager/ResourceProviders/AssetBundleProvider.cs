@@ -306,7 +306,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:", StringComparison.Ordinal))
                 return;
             if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
-                throw new NotSupportedException();
+                throw new NotSupportedException(path);
         }
 
         private void BeginOperation()

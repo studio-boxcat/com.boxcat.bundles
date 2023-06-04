@@ -60,7 +60,7 @@ namespace UnityEditor.AddressableAssets.Settings
             foreach (AddressableAssetEntry e in entries)
             {
                 if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(e.AssetPath);
 #pragma warning disable 0618
                 else if (!string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
                     m_AssetCollectionEntryCache.Add(e);
@@ -608,7 +608,7 @@ namespace UnityEditor.AddressableAssets.Settings
             e.parentGroup = this;
             m_EntryMap[e.guid] = e;
             if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
-                throw new NotSupportedException();
+                throw new NotSupportedException(e.AssetPath);
 #pragma warning disable 0618
             else if (m_AssetCollectionEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
                 m_AssetCollectionEntryCache.Add(e);

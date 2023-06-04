@@ -43,7 +43,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             {
                                 if (AssetDatabase.IsValidFolder(e.AssetPath))
                                 {
-                                    throw new NotSupportedException();
+                                    throw new NotSupportedException(e.AssetPath);
                                 }
                                 else
                                 {

@@ -42,7 +42,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 var path = m_PI.Location.InternalId;
                 if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
                 {
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(path);
                 }
                 else if (File.Exists(path))
                 {
