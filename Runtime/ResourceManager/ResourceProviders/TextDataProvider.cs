@@ -1,6 +1,8 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using UnityEngine.Networking;
+using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
@@ -19,6 +21,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         internal class InternalOp
         {
             TextDataProvider m_Provider;
+            UnityWebRequestAsyncOperation m_RequestOperation;
             ProvideHandle m_PI;
             bool m_IgnoreFailures;
             private bool m_Complete = false;
@@ -42,7 +45,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 var path = m_PI.Location.InternalId;
                 if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
                 {
-                    throw new NotSupportedException(path);
+                    SendWebRequest(path);
                 }
                 else if (File.Exists(path))
                 {
@@ -75,7 +78,53 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             bool WaitForCompletionHandler()
             {
+                if (m_Complete)
+                    return true;
+
+                if (m_RequestOperation != null)
+                {
+                    if (m_RequestOperation.isDone && !m_Complete)
+                        RequestOperation_completed(m_RequestOperation);
+                    else if (!m_RequestOperation.isDone)
+                        return false;
+                }
+
                 return m_Complete;
+            }
+
+            private void RequestOperation_completed(AsyncOperation op)
+            {
+                if (m_Complete)
+                    return;
+
+                var webOp = op as UnityWebRequestAsyncOperation;
+                string textResult = null;
+                Exception exception = null;
+                if (webOp != null)
+                {
+                    var webReq = webOp.webRequest;
+                    if (!UnityWebRequestUtilities.RequestHasErrors(webReq))
+                        textResult = webReq.downloadHandler.text;
+                    else
+                        exception = new ProviderException($"{nameof(TextDataProvider)} : unable to load from url : {webReq.url}", m_PI.Location);
+                    webReq.Dispose();
+                }
+                else
+                {
+                    exception = new ProviderException(nameof(TextDataProvider) + " unable to load from unknown url", m_PI.Location);
+                }
+
+                CompleteOperation(textResult, exception);
+            }
+
+            protected void CompleteOperation(string text, Exception exception)
+            {
+                object result = null;
+                if (!string.IsNullOrEmpty(text))
+                    result = ConvertText(text);
+
+                m_PI.Complete(result, result != null || m_IgnoreFailures, exception);
+                m_Complete = true;
             }
 
             private object ConvertText(string text)
@@ -90,6 +139,17 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         Debug.LogException(e);
                     return null;
                 }
+            }
+
+            protected virtual void SendWebRequest(string path)
+            {
+                path = path.Replace('\\', '/');
+                UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
+                m_RequestOperation = request.SendWebRequest();
+                if (m_RequestOperation.isDone)
+                    RequestOperation_completed(m_RequestOperation);
+                else
+                    m_RequestOperation.completed += RequestOperation_completed;
             }
         }
 
