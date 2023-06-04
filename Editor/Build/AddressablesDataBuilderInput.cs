@@ -25,11 +25,6 @@ namespace UnityEditor.AddressableAssets.Build
         public BuildTarget Target { get; private set; }
 
         /// <summary>
-        /// Bool to signify if profiler events should be broadcast.
-        /// </summary>
-        public bool ProfilerEventsEnabled { get; private set; }
-
-        /// <summary>
         /// Registry of files created during the build
         /// </summary>
         public FileRegistry Registry { get; private set; }
@@ -69,7 +64,6 @@ namespace UnityEditor.AddressableAssets.Build
 
             TargetGroup = buildTargetGroup;
             Target = buildTarget;
-            ProfilerEventsEnabled = ProjectConfigData.PostProfilerEvents;
             Registry = new FileRegistry();
         }
 

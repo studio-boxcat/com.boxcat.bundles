@@ -21,8 +21,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static FoldoutSessionStateValue ProfilesFoldout = new FoldoutSessionStateValue("Addressables.ProfilesFoldout");
         GUIContent m_ProfilesHeader;
-        static FoldoutSessionStateValue DiagnosticsFoldout = new FoldoutSessionStateValue("Addressables.DiagnosticsFoldout");
-        GUIContent m_DiagnosticsHeader;
         static FoldoutSessionStateValue BuildFoldout = new FoldoutSessionStateValue("Addressables.BuildFoldout");
         GUIContent m_BuildHeader;
         static FoldoutSessionStateValue DataBuildersFoldout = new FoldoutSessionStateValue("Addressables.DataBuildersFoldout");
@@ -82,7 +80,6 @@ namespace UnityEditor.AddressableAssets.GUI
             m_GroupTemplateObjectsRl.onRemoveCallback = OnRemoveGroupTemplateObject;
 
             m_ProfilesHeader = new GUIContent("Profiles", "Settings affect profiles.");
-            m_DiagnosticsHeader = new GUIContent("Diagnostics", "Settings affect profiles.");
             m_BuildHeader = new GUIContent("Build", "Settings affect profiles.");
 
             m_DataBuildersHeader = new GUIContent("Build and Play Mode Scripts", "Settings affect profiles.");
@@ -97,14 +94,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         GUIContent m_ManageProfiles =
             new GUIContent("Manage Profiles", "Open the Addressables Profiles window");
-
-        GUIContent m_SendProfilerEvents =
-            new GUIContent("Send Profiler Events",
-                "Turning this on enables the use of the Addressables Event Viewer window.");
-
-        GUIContent m_LogRuntimeExceptions =
-            new GUIContent("Log Runtime Exceptions",
-                "Addressables does not throw exceptions at run time when there are loading issues, instead it adds to the error state of the IAsyncOperation.  With this flag enabled, exceptions will also be logged.");
 
         GUIContent m_UniqueBundles =
             new GUIContent("Unique Bundle IDs",
@@ -233,23 +222,6 @@ namespace UnityEditor.AddressableAssets.GUI
                     EditorGUILayout.LabelField("No valid profiles found");
                 }
 
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
-
-            DiagnosticsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(DiagnosticsFoldout.IsActive, m_DiagnosticsHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#diagnostics");
-                Application.OpenURL(url);
-            });
-            if (DiagnosticsFoldout.IsActive)
-            {
-                ProjectConfigData.PostProfilerEvents = EditorGUILayout.Toggle(m_SendProfilerEvents, ProjectConfigData.PostProfilerEvents);
-                bool logResourceManagerExceptions = EditorGUILayout.Toggle(m_LogRuntimeExceptions, m_AasTarget.buildSettings.LogResourceManagerExceptions);
-
-                if (logResourceManagerExceptions != m_AasTarget.buildSettings.LogResourceManagerExceptions)
-                    m_QueuedChanges.Add(() => m_AasTarget.buildSettings.LogResourceManagerExceptions = logResourceManagerExceptions);
                 GUILayout.Space(postBlockContentSpace);
             }
 

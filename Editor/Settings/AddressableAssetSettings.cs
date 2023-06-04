@@ -692,7 +692,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     var subHashes = new Hash128[]
                         {
                         selfHash,
-                        m_BuildSettings.currentHash,
                         m_ProfileSettings.currentHash,
                         groupsHash
                         };

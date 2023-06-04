@@ -48,26 +48,6 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         bool m_CleanupStreamingAssetsAfterBuilds = true;
 
-        [FormerlySerializedAs("m_logResourceManagerExceptions")]
-        [SerializeField]
-        bool m_LogResourceManagerExceptions = true;
-
-        /// <summary>
-        /// When enabled, the Addressables.ResourceManager.ExceptionHandler is set to (op, ex) => Debug.LogException(ex);
-        /// </summary>
-        public bool LogResourceManagerExceptions
-        {
-            get { return m_LogResourceManagerExceptions; }
-            set
-            {
-                if (m_LogResourceManagerExceptions != value)
-                {
-                    m_LogResourceManagerExceptions = value;
-                    SetDirty();
-                }
-            }
-        }
-
         /// <summary>
         /// //Specifies where to build asset bundles, this is usually a temporary folder (or a folder in the project).  Bundles are copied out of this location to their final destination.
         /// </summary>
@@ -85,23 +65,11 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         string m_BundleBuildPath = "Temp/com.unity.addressables/AssetBundles";
 
-        Hash128 m_CurrentHash;
-        internal Hash128 currentHash
-        {
-            get
-            {
-                if (!m_CurrentHash.isValid)
-                    HashUtilities.ComputeHash128(ref m_LogResourceManagerExceptions, ref m_CurrentHash);
-                return m_CurrentHash;
-            }
-        }
-
         [NonSerialized]
         AddressableAssetSettings m_Settings;
 
         void SetDirty()
         {
-            m_CurrentHash = default;
             if (m_Settings != null)
                 m_Settings.SetDirty(AddressableAssetSettings.ModificationEvent.BuildSettingsChanged, this, true, false);
         }

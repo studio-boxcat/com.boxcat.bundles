@@ -88,7 +88,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         protected internal AddressableAssetsBuildContext GetBuildContext(AddressableAssetSettings settings)
         {
             ResourceManagerRuntimeData runtimeData = new ResourceManagerRuntimeData();
-            runtimeData.LogResourceManagerExceptions = settings.buildSettings.LogResourceManagerExceptions;
 
             var aaContext = new AddressableAssetsBuildContext
             {

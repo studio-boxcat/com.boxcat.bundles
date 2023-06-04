@@ -129,11 +129,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #if ENABLE_CCD
                 CcdManagedData = aaSettings.m_CcdManagedData,
 #endif
-                ProfileEvents = builderInput.ProfilerEventsEnabled,
-                LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
-#if UNITY_2019_3_OR_NEWER
-                AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version,
-#endif
             };
             m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
             m_Linker.AddAssemblies(new[] {typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly});

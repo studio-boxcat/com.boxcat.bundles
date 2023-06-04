@@ -16,101 +16,6 @@ namespace UnityEngine.ResourceManagement
     public class ResourceManager : IDisposable
     {
         /// <summary>
-        /// Options for event types that will be sent by the ResourceManager
-        /// </summary>
-        public enum DiagnosticEventType
-        {
-            /// <summary>
-            /// Use to indicate that an operation failed.
-            /// </summary>
-            AsyncOperationFail,
-
-            /// <summary>
-            /// Use to indicate that an operation was created.
-            /// </summary>
-            AsyncOperationCreate,
-
-            /// <summary>
-            /// Use to indicate the percentage of completion for an operation was updated.
-            /// </summary>
-            AsyncOperationPercentComplete,
-
-            /// <summary>
-            /// Use to indicate that an operation has completed.
-            /// </summary>
-            AsyncOperationComplete,
-
-            /// <summary>
-            /// Use to indicate that the reference count of an operation was modified.
-            /// </summary>
-            AsyncOperationReferenceCount,
-
-            /// <summary>
-            /// Use to indicate that an operation was destroyed.
-            /// </summary>
-            AsyncOperationDestroy,
-        }
-
-        internal bool postProfilerEvents = false;
-
-        /// <summary>
-        /// Container for information associated with a Diagnostics event.
-        /// </summary>
-        public struct DiagnosticEventContext
-        {
-            /// <summary>
-            /// Operation handle for the event.
-            /// </summary>
-            public AsyncOperationHandle OperationHandle { get; }
-
-            /// <summary>
-            /// The type of diagnostic event.
-            /// </summary>
-            public DiagnosticEventType Type { get; }
-
-            /// <summary>
-            /// The value for this event.
-            /// </summary>
-            public int EventValue { get; }
-
-            /// <summary>
-            /// The IResourceLocation being provided by the operation triggering this event.
-            /// This value is null if the event is not while providing a resource.
-            /// </summary>
-            public IResourceLocation Location { get; }
-
-            /// <summary>
-            /// Addition data included with this event.
-            /// </summary>
-            public object Context { get; }
-
-            /// <summary>
-            /// Any error that occured.
-            /// </summary>
-            public string Error { get; }
-
-            /// <summary>
-            /// Construct a new DiagnosticEventContext.
-            /// </summary>
-            /// <param name="op">Operation handle for the event.</param>
-            /// <param name="type">The type of diagnostic event.</param>
-            /// <param name="eventValue">The value for this event.</param>
-            /// <param name="error">Any error that occured.</param>
-            /// <param name="context">Additional context data.</param>
-            public DiagnosticEventContext(AsyncOperationHandle op, DiagnosticEventType type, int eventValue = 0, string error = null, object context = null)
-            {
-                OperationHandle = op;
-                Type = type;
-                EventValue = eventValue;
-                Location = op.m_InternalOp != null && op.m_InternalOp is IGenericProviderOperation gen
-                    ? gen.Location
-                    : null;
-                Error = error;
-                Context = context;
-            }
-        }
-
-        /// <summary>
         /// Global exception handler.  This will be called whenever an IAsyncOperation.OperationException is set to a non-null value.
         /// </summary>
         /// <example>
@@ -161,8 +66,6 @@ namespace UnityEngine.ResourceManagement
             internal bool incrementRefCount;
         }
 
-        Action<AsyncOperationHandle, DiagnosticEventType, int, object> m_obsoleteDiagnosticsHandler; // For use in working with Obsolete RegisterDiagnosticCallback method.
-        Action<DiagnosticEventContext> m_diagnosticsHandler;
         Action<IAsyncOperation> m_ReleaseOpNonCached;
         Action<IAsyncOperation> m_ReleaseOpCached;
         Action<IAsyncOperation> m_ReleaseInstanceOp;
@@ -260,65 +163,6 @@ namespace UnityEngine.ResourceManagement
                 m_RegisteredForCallbacks = true;
                 MonoBehaviourCallbackHooks.Instance.OnUpdateDelegate += Update;
             }
-        }
-
-        /// <summary>
-        /// Clears out the diagnostics callback handler.
-        /// </summary>
-        [Obsolete("ClearDiagnosticsCallback is Obsolete, use ClearDiagnosticCallbacks instead.")]
-        public void ClearDiagnosticsCallback()
-        {
-            m_diagnosticsHandler = null;
-            m_obsoleteDiagnosticsHandler = null;
-        }
-
-        /// <summary>
-        /// Clears out the diagnostics callbacks handler.
-        /// </summary>
-        public void ClearDiagnosticCallbacks()
-        {
-            m_diagnosticsHandler = null;
-            m_obsoleteDiagnosticsHandler = null;
-        }
-
-        /// <summary>
-        /// Unregister a handler for diagnostic events.
-        /// </summary>
-        /// <param name="func">The event handler function.</param>
-        public void UnregisterDiagnosticCallback(Action<DiagnosticEventContext> func)
-        {
-            if (m_diagnosticsHandler != null)
-                m_diagnosticsHandler -= func;
-            else
-                Debug.LogError("No Diagnostic callbacks registered, cannot remove callback.");
-        }
-
-        /// <summary>
-        /// Register a handler for diagnostic events.
-        /// </summary>
-        /// <param name="func">The event handler function.</param>
-        [Obsolete]
-        public void RegisterDiagnosticCallback(Action<AsyncOperationHandle, ResourceManager.DiagnosticEventType, int, object> func)
-        {
-            m_obsoleteDiagnosticsHandler = func;
-        }
-
-        /// <summary>
-        /// Register a handler for diagnostic events.
-        /// </summary>
-        /// <param name="func">The event handler function.</param>
-        public void RegisterDiagnosticCallback(Action<DiagnosticEventContext> func)
-        {
-            m_diagnosticsHandler += func;
-        }
-
-        internal void PostDiagnosticEvent(DiagnosticEventContext context)
-        {
-            m_diagnosticsHandler?.Invoke(context);
-
-            if (m_obsoleteDiagnosticsHandler == null)
-                return;
-            m_obsoleteDiagnosticsHandler(context.OperationHandle, context.Type, context.EventValue, string.IsNullOrEmpty(context.Error) ? context.Context : context.Error);
         }
 
         /// <summary>

@@ -86,41 +86,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             if (LogRuntimeWarnings(buildLogsPath))
                 File.Delete(buildLogsPath);
 
-            List<AsyncOperationHandle> initOperations = new List<AsyncOperationHandle>();
-            foreach (var i in rtd.InitializationObjects)
-            {
-                if (i.ObjectType.Value == null)
-                {
-                    Addressables.LogFormat("Invalid initialization object type {0}.", i.ObjectType);
-                    continue;
-                }
-
-                try
-                {
-                    var o = i.GetAsyncInitHandle(m_Addressables.ResourceManager);
-                    initOperations.Add(o);
-                    Addressables.LogFormat("Initialization object {0} created instance {1}.", i, o);
-                }
-                catch (Exception ex)
-                {
-                    Addressables.LogErrorFormat("Exception thrown during initialization of object {0}: {1}", i,
-                        ex.ToString());
-                }
-            }
-            if (initOperations.Count > 0)
-            {
-                m_DepOp = m_Addressables.ResourceManager.CreateGenericGroupOperation(initOperations, true);
-                m_DepOp.Completed += (obj) =>
-                {
-                    bool success = obj.Status == AsyncOperationStatus.Succeeded;
-                    Complete(true, success, success ? "" : $"{obj.DebugName}, status={obj.Status}, result={obj.Result} failed initialization.");
-                    m_Addressables.Release(m_DepOp);
-                };
-            }
-            else
-            {
-                Complete(true, true, "");
-            }
+            Complete(true, true, "");
         }
     }
 }

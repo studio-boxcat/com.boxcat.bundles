@@ -490,16 +490,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public class AddressablesRuntimeData
         {
             /// <summary>
-            /// Runtime setting value set for if the runtime will submit profiler events
-            /// </summary>
-            public bool ProfilerEvents;
-
-            /// <summary>
-            /// Runtime setting value set for if resource manager exceptions are logged or not
-            /// </summary>
-            public bool LogResourceManagerExceptions;
-
-            /// <summary>
             /// Runtime setting value set for catalogs to load (First catalog found in the list is used)
             /// </summary>
             public List<string> CatalogLoadPaths = new List<string>();

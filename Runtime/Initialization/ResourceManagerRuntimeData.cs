@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.Networking;
-using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.AddressableAssets.Initialization
@@ -53,56 +51,6 @@ namespace UnityEngine.AddressableAssets.Initialization
         public List<ResourceLocationData> CatalogLocations
         {
             get { return m_CatalogLocations; }
-        }
-
-        [FormerlySerializedAs("m_profileEvents")]
-        [SerializeField]
-        bool m_ProfileEvents;
-
-        /// <summary>
-        /// Flag to control whether the ResourceManager sends profiler events.
-        /// </summary>
-        public bool ProfileEvents
-        {
-            get { return m_ProfileEvents; }
-            set { m_ProfileEvents = value; }
-        }
-
-        [FormerlySerializedAs("m_logResourceManagerExceptions")]
-        [SerializeField]
-        bool m_LogResourceManagerExceptions = true;
-
-        /// <summary>
-        /// When enabled, the Addressables.ResourceManager.ExceptionHandler is set to (op, ex) => Debug.LogException(ex);
-        /// </summary>
-        public bool LogResourceManagerExceptions
-        {
-            get { return m_LogResourceManagerExceptions; }
-            set { m_LogResourceManagerExceptions = value; }
-        }
-
-        [FormerlySerializedAs("m_extraInitializationData")]
-        [SerializeField]
-        List<ObjectInitializationData> m_ExtraInitializationData = new List<ObjectInitializationData>();
-
-        /// <summary>
-        /// The list of initialization data.  These objects will get deserialized and initialized during the Addressables initialization process.  This happens after resource providers have been set up but before any catalogs are loaded.
-        /// </summary>
-        public List<ObjectInitializationData> InitializationObjects
-        {
-            get { return m_ExtraInitializationData; }
-        }
-
-        [SerializeField]
-        string m_AddressablesVersion;
-
-        /// <summary>
-        /// The current active version of the Addressables package.
-        /// </summary>
-        public string AddressablesVersion
-        {
-            get { return m_AddressablesVersion; }
-            set { m_AddressablesVersion = value; }
         }
 
 #if ENABLE_CCD

@@ -22,13 +22,11 @@ namespace UnityEngine.AddressableAssets.Initialization
         AsyncOperationHandle<IResourceLocator> m_loadCatalogOp;
         string m_ProviderSuffix;
         AddressablesImpl m_Addressables;
-        ResourceManagerDiagnostics m_Diagnostics;
         InitalizationObjectsOperation m_InitGroupOps;
 
         public InitializationOperation(AddressablesImpl aa)
         {
             m_Addressables = aa;
-            m_Diagnostics = new ResourceManagerDiagnostics(aa.ResourceManager);
         }
 
         protected override string DebugName
@@ -90,7 +88,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                 return;
             }
 
-            Addressables.LogFormat("Initializing Addressables version {0}.", m_rtdOp.Result.AddressablesVersion);
+            Addressables.Log("Initializing Addressables version.");
             var rtd = m_rtdOp.Result;
 
 #if ENABLE_CCD
@@ -103,8 +101,6 @@ namespace UnityEngine.AddressableAssets.Initialization
             }
 #endif
 
-            m_Addressables.ResourceManager.postProfilerEvents = rtd.ProfileEvents;
-
             m_Addressables.Release(m_rtdOp);
 
 #if UNITY_EDITOR
@@ -113,15 +109,6 @@ namespace UnityEngine.AddressableAssets.Initialization
                     "Addressables - runtime data was built with a different build target.  Expected {0}, but data was built with {1}.  Certain assets may not load correctly including shaders.  You can rebuild player content via the Addressables window.",
                     UnityEditor.EditorUserBuildSettings.activeBuildTarget, rtd.BuildTarget);
 #endif
-            if (!rtd.LogResourceManagerExceptions)
-                ResourceManager.ExceptionHandler = null;
-
-            if (!rtd.ProfileEvents)
-            {
-                m_Diagnostics.Dispose();
-                m_Diagnostics = null;
-                m_Addressables.ResourceManager.ClearDiagnosticCallbacks();
-            }
 
             Addressables.Log("Addressables - loading initialization objects.");
 

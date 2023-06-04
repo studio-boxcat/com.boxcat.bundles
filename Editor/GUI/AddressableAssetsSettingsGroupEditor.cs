@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Diagnostics;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.IMGUI.Controls;
@@ -310,7 +309,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
                         menu.AddItem(new GUIContent("Window/Profiles"), false, () => EditorWindow.GetWindow<ProfileWindow>().Show(true));
                         menu.AddItem(new GUIContent("Window/Analyze"), false, AnalyzeWindow.ShowWindow);
-                        menu.AddItem(new GUIContent("Window/Event Viewer"), false, ResourceProfilerWindow.ShowWindow);
 
 #if UNITY_2022_2_OR_NEWER
                         menu.AddItem(new GUIContent("Window/Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);

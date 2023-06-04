@@ -98,14 +98,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             };
             m_AllBundleInputDefinitions = new List<AssetBundleBuild>();
             aaContext.runtimeData.BuildTarget = builderInput.Target.ToString();
-            aaContext.runtimeData.ProfileEvents = ProjectConfigData.PostProfilerEvents;
-            aaContext.runtimeData.LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions;
-            aaContext.runtimeData.ProfileEvents = ProjectConfigData.PostProfilerEvents;
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
                 new[] { ResourceManagerRuntimeData.kCatalogAddress },
                 GetCatalogPath("file://{UnityEngine.Application.dataPath}/../"),
                 typeof(ContentCatalogProvider), typeof(ContentCatalogData)));
-            aaContext.runtimeData.AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version;
             m_CreatedProviderIds = new Dictionary<string, VirtualAssetBundleRuntimeData>();
             m_ResourceProviderData = new List<ObjectInitializationData>();
 

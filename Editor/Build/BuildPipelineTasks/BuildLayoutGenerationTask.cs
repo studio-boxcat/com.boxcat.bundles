@@ -1127,8 +1127,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
 
             BuildLayout.AddressablesRuntimeData runtimeSettings = new BuildLayout.AddressablesRuntimeData();
-            runtimeSettings.ProfilerEvents = aaContext.runtimeData.ProfileEvents;
-            runtimeSettings.LogResourceManagerExceptions = aaContext.runtimeData.LogResourceManagerExceptions;
 
             runtimeSettings.CatalogLoadPaths = new List<string>();
             foreach (ResourceLocationData catalogLocation in aaContext.runtimeData.CatalogLocations)
