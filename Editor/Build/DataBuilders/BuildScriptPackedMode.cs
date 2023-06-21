@@ -19,7 +19,6 @@ using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.Build.Pipeline;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
-using static UnityEditor.AddressableAssets.Build.ContentUpdateScript;
 
 #if UNITY_2022_2_OR_NEWER
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
@@ -239,8 +238,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             AddressablesPlayerBuildResult addrResult = genericResult as AddressablesPlayerBuildResult;
 
             ExtractDataTask extractData = new ExtractDataTask();
-            List<CachedAssetState> carryOverCachedState = new List<CachedAssetState>();
-            var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
 
             var bundleRenameMap = new Dictionary<string, string>();
             if (m_AllBundleInputDefs.Count > 0)
@@ -413,54 +410,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             using (m_Log.ScopedStep(LogLevel.Info, "Generate Settings"))
                 WriteFile(settingsPath, JsonUtility.ToJson(aaContext.runtimeData), builderInput.Registry);
-
-            if (extractData.BuildCache != null)
-            {
-                using (m_Log.ScopedStep(LogLevel.Info, "Generate Content Update State"))
-                {
-                    var allEntries = new List<AddressableAssetEntry>();
-                    using (m_Log.ScopedStep(LogLevel.Info, "Get Assets"))
-                        aaContext.Settings.GetAllAssets(allEntries, false, ContentUpdateScript.GroupFilter);
-
-                    {
-                        string contentStatePath = ContentUpdateScript.GetContentStateDataPath(false, aaContext.Settings);
-                        if (ResourceManagerConfig.ShouldPathUseWebRequest(contentStatePath))
-                        {
-#if ENABLE_CCD
-                            contentStatePath = Path.Combine(aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings), Path.GetFileName(tempPath));
-#else
-                            contentStatePath = ContentUpdateScript.PreviousContentStateFileCachePath;
-#endif
-                        }
-
-                        try
-                        {
-                            string directory = Path.GetDirectoryName(contentStatePath);
-                            if (!Directory.Exists(directory))
-                                Directory.CreateDirectory(directory);
-                            if (File.Exists(contentStatePath))
-                                File.Delete(contentStatePath);
-
-                            File.Copy(tempPath, contentStatePath, true);
-                            if (addrResult != null)
-                                addrResult.ContentStateFilePath = contentStatePath;
-                            builderInput.Registry.AddFile(contentStatePath);
-                        }
-                        catch (UnauthorizedAccessException uae)
-                        {
-                            if (!AddressableAssetUtility.IsVCAssetOpenForEdit(contentStatePath))
-                                Debug.LogErrorFormat("Cannot access the file {0}. It may be locked by version control.",
-                                    contentStatePath);
-                            else
-                                Debug.LogException(uae);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogException(e);
-                        }
-                    }
-                }
-            }
 
             genericResult.LocationCount = aaContext.locations.Count;
             genericResult.OutputPath = settingsPath;

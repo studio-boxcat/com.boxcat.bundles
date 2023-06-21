@@ -587,38 +587,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         [SerializeField]
-        internal string m_ContentStateBuildPathProfileVariableName = "";
-
-        [SerializeField]
-        internal string m_CustomContentStateBuildPath = "";
-
-        [SerializeField]
-        internal string m_ContentStateBuildPath = "";
-
-        /// <summary>
-        /// The path used for saving the addressables_content_state.bin file.  If empty, this will be the addressable settings config folder in your project.
-        /// </summary>
-        public string ContentStateBuildPath
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(m_ContentStateBuildPath))
-                    return m_ContentStateBuildPath;
-                else if (m_ContentStateBuildPathProfileVariableName == AddressableAssetProfileSettings.customEntryString)
-                    return m_CustomContentStateBuildPath;
-                else if (m_ContentStateBuildPathProfileVariableName == AddressableAssetProfileSettings.defaultSettingsPathString)
-                    return $"{AddressableAssetSettingsDefaultObject.kDefaultConfigFolder}/{PlatformMappingService.GetPlatformPathSubFolder()}";
-                else
-                    return profileSettings.GetValueByName(activeProfileId, m_ContentStateBuildPathProfileVariableName);
-            }
-            set
-            {
-                m_ContentStateBuildPath = value;
-                m_CustomContentStateBuildPath = value;
-            }
-        }
-
-        [SerializeField]
         private PlayerBuildOption m_BuildAddressablesWithPlayerBuild = PlayerBuildOption.DoNotBuildWithPlayer;
 
         /// <summary>
@@ -633,15 +601,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get { return m_BuildAddressablesWithPlayerBuild; }
             set { m_BuildAddressablesWithPlayerBuild = value; }
-        }
-
-        internal string GetContentStateBuildPath()
-        {
-            string p = ConfigFolder;
-            if (!string.IsNullOrEmpty(m_ContentStateBuildPath))
-                p = m_ContentStateBuildPath;
-            p = Path.Combine(p, PlatformMappingService.GetPlatformPathSubFolder());
-            return p;
         }
 
         Hash128 selfHash
