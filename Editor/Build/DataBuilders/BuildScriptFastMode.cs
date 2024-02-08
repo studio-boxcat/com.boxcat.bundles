@@ -1,9 +1,6 @@
-using System;
-using System.IO;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Initialization;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -48,16 +45,20 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <inheritdoc />
         protected override TResult BuildDataImplementation<TResult>(AddressablesDataBuilderInput builderInput)
         {
-            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(builderInput.AddressableSettings, out var guid, out long _))
+            if (builderInput.AddressableSettings)
             {
-                IDataBuilderResult res = new AddressablesPlayModeBuildResult() {Error = "Invalid Settings asset."};
+                AddressablesEditorInitializer.CreatePlayModeInitializationOperation = obj =>
+                {
+                    return builderInput.AddressableSettings
+                        .CreatePlayModeInitializationOperation((AddressablesImpl) obj);
+                };
+                IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = "", Duration = 0};
+                m_DataBuilt = true;
                 return (TResult)res;
             }
             else
             {
-                PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, $"GUID:{guid}");
-                IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = "", Duration = 0};
-                m_DataBuilt = true;
+                IDataBuilderResult res = new AddressablesPlayModeBuildResult() {Error = "Invalid Settings asset."};
                 return (TResult)res;
             }
         }

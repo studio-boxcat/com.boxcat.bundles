@@ -1,26 +1,17 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
-using System.Threading.Tasks;
-
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
-using Unity.Services.Ccd.Management;
-using Unity.Services.Ccd.Management.Models;
-#endif
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -86,19 +77,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 EditorApplication.update += TryAddAssetPostprocessorOnNextUpdate;
         }
 
-        [InitializeOnLoadMethod]
-        static void CheckCCDStatus()
-        {
-#if !ENABLE_CCD
-            if (AddressableAssetSettingsDefaultObject.Settings != null && AddressableAssetSettingsDefaultObject.Settings.CCDEnabled)
-            {
-                AddressableAssetSettingsDefaultObject.Settings.CCDEnabled = false;
-                Debug.LogError("This version of Addressables no longer supports integration with the current installed version of the CCD package. " +
-                               "Please upgrade the CCD package to continue using the integration. Or, re-enable the Enable CCD Integration toggle in the AddressableAssetSettings.");
-            }
-#endif
-        }
-
         private static void TryAddAssetPostprocessorOnNextUpdate()
         {
             if (AddressableAssetSettingsDefaultObject.Settings != null)
@@ -107,59 +85,9 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Build Path Name
-        /// </summary>
-        public const string kBuildPath = "BuildPath";
-
-        /// <summary>
-        /// Load Path Name
-        /// </summary>
-        public const string kLoadPath = "LoadPath";
-
-        /// <summary>
         /// Default name of a newly created group.
         /// </summary>
         public const string kNewGroupName = "New Group";
-
-        /// <summary>
-        /// Default name of local build path.
-        /// </summary>
-        public const string kLocalBuildPath = "Local.BuildPath";
-
-        /// <summary>
-        /// Default name of local load path.
-        /// </summary>
-        public const string kLocalLoadPath = "Local.LoadPath";
-
-        private const string kLocalGroupTypePrefix = "Built-In";
-        internal static string LocalGroupTypePrefix => kLocalGroupTypePrefix;
-
-        /// <summary>
-        /// Default value of local build path.
-        /// </summary>
-        public const string kLocalBuildPathValue = "[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]";
-
-        /// <summary>
-        /// Default value of local load path.
-        /// </summary>
-        public const string kLocalLoadPathValue = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]";
-
-#if ENABLE_CCD
-        private const string kCcdManagerGroupTypePrefix = "Automatic";
-        internal static string CcdManagerGroupTypePrefix = kCcdManagerGroupTypePrefix;
-#endif
-
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
-        /// <summary>
-        /// Default path of build assets that are uploaded to Ccd.
-        /// </summary>
-        public const string kCCDBuildDataPath = "CCDBuildData";
-        /// <summary>
-        /// CCD Package Name
-        /// </summary>
-        public const string kCCDPackageName = "com.unity.services.ccd.management";
-#endif
-
 
         private const string kImportAssetEntryCollectionOptOutKey = "com.unity.addressables.importAssetEntryCollections.optOut";
         internal bool DenyEntryCollectionPermission { get; set; }
@@ -259,26 +187,6 @@ namespace UnityEditor.AddressableAssets.Settings
             /// Use to indicate that an asset entry was removed from a group.
             /// </summary>
             EntryRemoved,
-
-            /// <summary>
-            /// Use to indicate that a profile was added to the settings object.
-            /// </summary>
-            ProfileAdded,
-
-            /// <summary>
-            /// Use to indicate that a profile was removed from the settings object.
-            /// </summary>
-            ProfileRemoved,
-
-            /// <summary>
-            /// Use to indicate that a profile was modified.
-            /// </summary>
-            ProfileModified,
-
-            /// <summary>
-            /// Use to indicate that a profile has been set as the active profile.
-            /// </summary>
-            ActiveProfileSet,
 
             /// <summary>
             /// Use to indicate that an asset entry was modified.
@@ -438,21 +346,6 @@ namespace UnityEditor.AddressableAssets.Settings
         bool m_NonRecursiveBuilding = false;
 #endif
 
-#if UNITY_2019_4_OR_NEWER
-        [SerializeField]
-#if !ENABLE_CCD
-        bool m_CCDEnabled = false;
-#else
-        bool m_CCDEnabled = true;
-#endif
-
-        public bool CCDEnabled
-        {
-            get { return m_CCDEnabled; }
-            set { m_CCDEnabled = value; }
-        }
-#endif
-
         /// <summary>
         /// Set this to true to ensure unique bundle ids. Set to false to allow duplicate bundle ids.
         /// </summary>
@@ -603,18 +496,6 @@ namespace UnityEditor.AddressableAssets.Settings
             set { m_BuildAddressablesWithPlayerBuild = value; }
         }
 
-        Hash128 selfHash
-        {
-            get
-            {
-                if (!m_selfHash.isValid)
-                {
-                    m_selfHash.Append(m_ActiveProfileId);
-                }
-                return m_selfHash;
-            }
-        }
-
         Hash128 m_GroupsHash;
         Hash128 groupsHash
         {
@@ -650,8 +531,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     var subHashes = new Hash128[]
                         {
-                        selfHash,
-                        m_ProfileSettings.currentHash,
                         groupsHash
                         };
                     m_currentHash.Append(subHashes);
@@ -664,17 +543,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (OnDataBuilderComplete != null)
                 OnDataBuilderComplete(this, builder, result);
-        }
-
-        /// <summary>
-        /// Create an AssetReference object.  If the asset is not already addressable, it will be added.
-        /// </summary>
-        /// <param name="guid">The guid of the asset reference.</param>
-        /// <returns>Returns the newly created AssetReference.</returns>
-        public AssetReference CreateAssetReference(string guid)
-        {
-            CreateOrMoveEntry(guid, DefaultGroup);
-            return new AssetReference(guid);
         }
 
         [FormerlySerializedAs("m_groupAssets")]
@@ -699,18 +567,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public AddressableAssetBuildSettings buildSettings
         {
             get { return m_BuildSettings; }
-        }
-
-        [FormerlySerializedAs("m_profileSettings")]
-        [SerializeField]
-        AddressableAssetProfileSettings m_ProfileSettings = new AddressableAssetProfileSettings();
-
-        /// <summary>
-        /// Profile settings object.
-        /// </summary>
-        public AddressableAssetProfileSettings profileSettings
-        {
-            get { return m_ProfileSettings; }
         }
 
         [FormerlySerializedAs("m_schemaTemplates")]
@@ -981,41 +837,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        [FormerlySerializedAs("m_activeProfileId")]
-        [SerializeField]
-        string m_ActiveProfileId;
-
-        /// <summary>
-        /// The active profile id.
-        /// </summary>
-        public string activeProfileId
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_ActiveProfileId))
-                    m_ActiveProfileId = m_ProfileSettings.CreateDefaultProfile();
-                return m_ActiveProfileId;
-            }
-            set
-            {
-                var oldVal = m_ActiveProfileId;
-                m_ActiveProfileId = value;
-
-                if (oldVal != value)
-                {
-                    SetDirty(ModificationEvent.ActiveProfileSet, value, true, true);
-                }
-            }
-        }
-
-#if ENABLE_CCD
-        /// <summary>
-        /// Stores the CcdManager data in the ResourceManagerRuntimeData to set.
-        /// </summary>
-        [SerializeField]
-        internal CcdManagedData m_CcdManagedData = new CcdManagedData();
-#endif
-
         /// <summary>
         /// Gets all asset entries from all groups.
         /// </summary>
@@ -1030,23 +851,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 foreach (var g in groups)
                     if (g != null && (groupFilter == null || groupFilter(g)))
                         g.GatherAllAssets(assets, true, true, includeSubObjects, entryFilter);
-            }
-        }
-
-        internal void GatherAllAssetReferenceDrawableEntries(List<IReferenceEntryData> assets)
-        {
-            HashSet<string> processed = new HashSet<string>();
-            // gather all direct asset reference data
-            foreach (var g in groups)
-            {
-                if (g != null)
-                    g.GatherAllDirectAssetReferenceEntryData(assets, processed);
-            }
-            // gather all collections
-            foreach (var g in groups)
-            {
-                if (g != null)
-                    g.GatherAllAssetCollectionAssetReferenceEntryData(assets, processed);
             }
         }
 
@@ -1076,7 +880,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
         void Awake()
         {
-            profileSettings.OnAfterDeserialize(this);
             buildSettings.OnAfterDeserialize(this);
         }
 
@@ -1099,15 +902,10 @@ namespace UnityEditor.AddressableAssets.Settings
 
             if (m_BuildSettings == null)
                 m_BuildSettings = new AddressableAssetBuildSettings();
-            if (m_ProfileSettings == null)
-                m_ProfileSettings = new AddressableAssetProfileSettings();
-            if (string.IsNullOrEmpty(m_ActiveProfileId))
-                m_ActiveProfileId = m_ProfileSettings.CreateDefaultProfile();
             if (m_DataBuilders == null || m_DataBuilders.Count == 0)
             {
                 m_DataBuilders = new List<ScriptableObject>();
                 m_DataBuilders.Add(CreateScriptAsset<BuildScriptFastMode>());
-                m_DataBuilders.Add(CreateScriptAsset<BuildScriptVirtualMode>());
                 m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedPlayMode>());
                 m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMode>());
             }
@@ -1117,7 +915,6 @@ namespace UnityEditor.AddressableAssets.Settings
             if (ActivePlayModeDataBuilder != null && !ActivePlayModeDataBuilder.CanBuildData<AddressablesPlayModeBuildResult>())
                 ActivePlayModeDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == FastModeType));
 
-            profileSettings.Validate(this);
             buildSettings.Validate(this);
         }
 
@@ -1131,11 +928,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 AssetDatabase.CreateAsset(script, path);
             return AssetDatabase.LoadAssetAtPath<T>(path);
         }
-
-        /// <summary>
-        /// The default name of the built in player data AddressableAssetGroup
-        /// </summary>
-        public const string PlayerDataGroupName = "Built In Data";
 
         /// <summary>
         /// The default name of the local data AddressableAsssetGroup
@@ -1159,7 +951,6 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 aa = CreateInstance<AddressableAssetSettings>();
                 aa.m_IsTemporary = !isPersisted;
-                aa.activeProfileId = aa.profileSettings.Reset();
                 aa.name = configName;
                 // TODO: Uncomment after initial opt-in testing period
                 //aa.ContiguousBundles = true;
@@ -1175,7 +966,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (createDefaultGroups)
                 {
-                    CreateBuiltInData(aa);
                     CreateDefaultGroup(aa);
                 }
 
@@ -1327,21 +1117,10 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        internal static AddressableAssetGroup CreateBuiltInData(AddressableAssetSettings aa)
-        {
-            var playerData = aa.CreateGroup(PlayerDataGroupName, false, true, false, null, typeof(PlayerDataGroupSchema));
-            var resourceEntry = aa.CreateOrMoveEntry(AddressableAssetEntry.ResourcesName, playerData, false, false);
-            resourceEntry.IsInResources = true;
-            aa.CreateOrMoveEntry(AddressableAssetEntry.EditorSceneListName, playerData, false, false);
-            return playerData;
-        }
-
         private static AddressableAssetGroup CreateDefaultGroup(AddressableAssetSettings aa)
         {
             var localGroup = aa.CreateGroup(DefaultLocalGroupName, true, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = localGroup.GetSchema<BundledAssetGroupSchema>();
-            schema.BuildPath.SetVariableByName(aa, kLocalBuildPath);
-            schema.LoadPath.SetVariableByName(aa, kLocalLoadPath);
             schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
             aa.m_DefaultGroup = localGroup.Guid;
             return localGroup;
@@ -1383,9 +1162,6 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="settingsModified">If true, the settings asset will be marked as dirty.</param>
         public void SetDirty(ModificationEvent modificationEvent, object eventData, bool postEvent, bool settingsModified = false)
         {
-            if (modificationEvent == ModificationEvent.ProfileRemoved && eventData as string == activeProfileId)
-                activeProfileId = null;
-
             if (this != null)
             {
                 if (postEvent)
@@ -1605,10 +1381,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
                 else
                 {
-                    AddressableAssetEntry e = FindAssetEntry(item.Key);
-                    if (e != null)
-                        e.IsInResources = false;
-
                     var newEntry = CreateOrMoveEntry(item.Key, targetParent, false, false);
                     var index = oldPath.LastIndexOf("resources/", StringComparison.OrdinalIgnoreCase);
                     if (index >= 0)
@@ -1787,7 +1559,6 @@ namespace UnityEditor.AddressableAssets.Settings
             if (entry.IsSubAsset)
             {
                 entry.parentGroup = parentEntry.parentGroup;
-                entry.IsInResources = parentEntry.IsInResources;
                 entry.address = address;
                 entry.ReadOnly = true;
                 entry.BundleFileId = parentEntry.BundleFileId;
@@ -2247,11 +2018,11 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal AddressablesPlayerBuildResult BuildPlayerContentImpl(AddressablesDataBuilderInput buildContext = null, bool buildAndRelease = false)
         {
-            if (Directory.Exists(Addressables.BuildPath))
+            if (Directory.Exists(ResourcePath.BuildPath))
             {
                 try
                 {
-                    Directory.Delete(Addressables.BuildPath, true);
+                    Directory.Delete(ResourcePath.BuildPath, true);
                 }
                 catch (Exception e)
                 {

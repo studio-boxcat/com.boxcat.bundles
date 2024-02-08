@@ -4,9 +4,7 @@
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.ScriptableBuildPipeline.Editor",
-        "Unity.ScriptableBuildPipeline",
-        "Unity.Services.Core",
-        "Unity.Services.Ccd.Management"
+        "Unity.ScriptableBuildPipeline"
     ],
     "includePlatforms": [
         "Editor"
@@ -22,11 +20,6 @@
             "name": "Unity",
             "expression": "2019.4.19f1",
             "define": "NONRECURSIVE_DEPENDENCY_DATA"
-        },
-        {
-            "name": "com.unity.services.ccd.management",
-            "expression": "[2.0.0,3.0.0)",
-            "define": "ENABLE_CCD"
         },
         {
             "name": "com.unity.profiling.core",

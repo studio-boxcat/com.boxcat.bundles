@@ -5,14 +5,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Utilities;
-using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEditor.VersionControl;
 using UnityEngine;
 
@@ -474,36 +469,6 @@ namespace UnityEditor.AddressableAssets.Settings
             if (exitGUI)
                 GUIUtility.ExitGUI();
             return openedAsset;
-        }
-
-        internal static bool InstallCCDPackage()
-        {
-#if !ENABLE_CCD
-            var confirm = EditorUtility.DisplayDialog("Install CCD Management SDK Package",
-                "Are you sure you want to install the CCD Management SDK package and enable CCD features within Addressables?\nTo remove this package and its related features please use the Package manager, or uncheck the Addressable Asset Settings > Cloud Content Delivery > Enable CCD Features toggle.",
-                "Yes", "No");
-            if (confirm)
-            {
-                AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.InstallCCDManagementPackage);
-                Client.Add("com.unity.services.ccd.management@2.1.0");
-                AddressableAssetSettingsDefaultObject.Settings.CCDEnabled = true;
-            }
-#endif
-            return AddressableAssetSettingsDefaultObject.Settings.CCDEnabled;
-        }
-
-        internal static bool RemoveCCDPackage()
-        {
-            var confirm = EditorUtility.DisplayDialog("Remove CCD Management SDK Package", "Are you sure you want to remove the CCD Management SDK package?", "Yes", "No");
-            if (confirm)
-            {
-#if (UNITY_2019_4_OR_NEWER)
-                Client.Remove("com.unity.services.ccd.management");
-                AddressableAssetSettingsDefaultObject.Settings.CCDEnabled = false;
-#endif
-            }
-
-            return AddressableAssetSettingsDefaultObject.Settings.CCDEnabled;
         }
 
         internal static string GetMd5Hash(string path)

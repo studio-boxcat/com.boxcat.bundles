@@ -1,6 +1,5 @@
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -33,19 +32,9 @@ namespace UnityEditor.AddressableAssets.Build
         internal string PathSuffix = string.Empty;
 
         /// <summary>
-        /// The name of the default Runtime Settings file.
-        /// </summary>
-        public string RuntimeSettingsFilename = "settings.json";
-
-        /// <summary>
         /// The name of the default Runtime Catalog file.
         /// </summary>
-        public string RuntimeCatalogFilename =
-#if ENABLE_BINARY_CATALOG
-            "catalog.bin";
-#else
-            "catalog.json";
-#endif
+        public string RuntimeCatalogFilename = "catalog.bin";
 
         /// <summary>
         /// Creates a default context object with values taken from the AddressableAssetSettings parameter.

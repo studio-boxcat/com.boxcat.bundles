@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace UnityEngine.AddressableAssets.ResourceLocators
@@ -16,25 +15,18 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         /// <param name="id">The locator id.</param>
         /// <param name="capacity">The expected number of items.</param>
-        public ResourceLocationMap(string id, int capacity = 0)
+        public ResourceLocationMap(int capacity = 0)
         {
-            LocatorId = id;
             locations = new Dictionary<object, IList<IResourceLocation>>(capacity == 0 ? 100 : capacity);
         }
 
-        /// <summary>
-        /// Stores the resource locator id.
-        /// </summary>
-        public string LocatorId { get; private set; }
-
-        /// <summary>
+        // <summary>
         /// Construct a new ResourceLocationMap object with a list of locations.
         /// </summary>
         /// <param name="id">The locator id.</param>
         /// <param name="locations">The list of locations to initialize with.</param>
-        public ResourceLocationMap(string id, IList<ResourceLocationData> locations)
+        public ResourceLocationMap(IList<ResourceLocationData> locations)
         {
-            LocatorId = id;
             if (locations == null)
                 return;
             this.locations = new Dictionary<object, IList<IResourceLocation>>(locations.Count * 2);
@@ -44,22 +36,22 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             for (int i = 0; i < locations.Count; i++)
             {
                 var rlData = locations[i];
-                if (rlData.Keys == null || rlData.Keys.Length < 1)
+                if (rlData.Keys == null)
                 {
                     Addressables.LogErrorFormat("Address with id '{0}' does not have any valid keys, skipping...", rlData.InternalId);
                     continue;
                 }
 
-                if (locMap.ContainsKey(rlData.Keys[0]))
+                if (locMap.ContainsKey(rlData.Keys))
                 {
-                    Addressables.LogErrorFormat("Duplicate address '{0}' with id '{1}' found, skipping...", rlData.Keys[0], rlData.InternalId);
+                    Addressables.LogErrorFormat("Duplicate address '{0}' with id '{1}' found, skipping...", rlData.Keys, rlData.InternalId);
                     continue;
                 }
 
-                var loc = new ResourceLocationBase(rlData.Keys[0], Addressables.ResolveInternalId(rlData.InternalId), rlData.Provider, rlData.ResourceType);
+                var loc = new ResourceLocationBase(rlData.Keys, Addressables.ResolveInternalId(rlData.InternalId), rlData.Provider, rlData.ResourceType);
                 loc.Data = rlData.Data;
-                locMap.Add(rlData.Keys[0], loc);
-                dataMap.Add(rlData.Keys[0], rlData);
+                locMap.Add(rlData.Keys, loc);
+                dataMap.Add(rlData.Keys, rlData);
             }
 
             //fix up dependencies between them
@@ -77,8 +69,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             foreach (KeyValuePair<string, ResourceLocationBase> kvp in locMap)
             {
                 ResourceLocationData rlData = dataMap[kvp.Key];
-                foreach (var k in rlData.Keys)
-                    Add(k, kvp.Value);
+                Add(rlData.Keys, kvp.Value);
             }
         }
 
@@ -87,12 +78,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         Dictionary<object, IList<IResourceLocation>> locations;
 
-#if ENABLE_BINARY_CATALOG
         /// <summary>
         /// Enumeration of all locations for this locator.
         /// </summary>
         public IEnumerable<IResourceLocation> AllLocations => locations.SelectMany(k => k.Value);
-#endif
 
         /// <summary>
         /// Map of all locations for this locator.
@@ -116,8 +105,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <returns>Returns true if a location was found. Returns false otherwise.</returns>
         public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
         {
-            IList<IResourceLocation> locs = null;
-            if (!this.locations.TryGetValue(key, out locs))
+            if (!this.locations.TryGetValue(key, out var locs))
             {
                 locations = null;
                 return false;
@@ -161,7 +149,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         /// <param name="key">The key to reference the location.</param>
         /// <param name="location">The location to add.</param>
-        public void Add(object key, IResourceLocation location)
+        public void Add(string key, IResourceLocation location)
         {
             IList<IResourceLocation> locations;
             if (!this.locations.TryGetValue(key, out locations))

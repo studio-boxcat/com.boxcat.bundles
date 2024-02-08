@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine.ResourceManagement.Util;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
@@ -85,56 +84,28 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 else
                 {
                     var assetPath = m_ProvideHandle.Location.InternalId;
+#if DEBUG
+                    Debug.Log("[BundledAssetProvider] Load: " + m_ProvideHandle.Location.PrimaryKey);
+#endif
+
                     if (m_ProvideHandle.Type.IsArray)
                     {
-#if !UNITY_2021_1_OR_NEWER
-                        if (AsyncOperationHandle.IsWaitingForCompletion)
-                        {
-                            GetArrayResult(m_AssetBundle.LoadAssetWithSubAssets(assetPath, m_ProvideHandle.Type.GetElementType()));
-                            CompleteOperation();
-                        }
-                        else
-#endif
-                            m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetElementType());
+                        m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetElementType());
                     }
                     else if (m_ProvideHandle.Type.IsGenericType && typeof(IList<>) == m_ProvideHandle.Type.GetGenericTypeDefinition())
                     {
-#if !UNITY_2021_1_OR_NEWER
-                        if (AsyncOperationHandle.IsWaitingForCompletion)
-                        {
-                            GetListResult(m_AssetBundle.LoadAssetWithSubAssets(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]));
-                            CompleteOperation();
-                        }
-                        else
-#endif
-                            m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]);
+                        m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]);
                     }
                     else
                     {
                         if (ResourceManagerConfig.ExtractKeyAndSubKey(assetPath, out string mainPath, out string subKey))
                         {
                             subObjectName = subKey;
-#if !UNITY_2021_1_OR_NEWER
-                            if (AsyncOperationHandle.IsWaitingForCompletion)
-                            {
-                                GetAssetSubObjectResult(m_AssetBundle.LoadAssetWithSubAssets(mainPath, m_ProvideHandle.Type));
-                                CompleteOperation();
-                            }
-                            else
-#endif
-                                m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(mainPath, m_ProvideHandle.Type);
+                            m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(mainPath, m_ProvideHandle.Type);
                         }
                         else
                         {
-#if !UNITY_2021_1_OR_NEWER
-                            if (AsyncOperationHandle.IsWaitingForCompletion)
-                            {
-                                GetAssetResult(m_AssetBundle.LoadAsset(assetPath, m_ProvideHandle.Type));
-                                CompleteOperation();
-                            }
-                            else
-#endif
-                                m_RequestOperation = m_AssetBundle.LoadAssetAsync(assetPath, m_ProvideHandle.Type);
+                            m_RequestOperation = m_AssetBundle.LoadAssetAsync(assetPath, m_ProvideHandle.Type);
                         }
                     }
 
@@ -216,6 +187,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             void CompleteOperation()
             {
+#if DEBUG
+                Debug.Log($"[BundledAssetProvider] Complete: {m_ProvideHandle.Location.PrimaryKey} Result={(m_Result == null ? "null" : m_Result.ToString())}");
+#endif
+
 #if ENABLE_ADDRESSABLE_PROFILER
                 if (UnityEngine.Profiling.Profiler.enabled && m_Result != null && m_ProvideHandle.IsValid)
                     Profiling.ProfilerRuntime.AddAssetOperation(m_ProvideHandle, Profiling.ContentStatus.Active);

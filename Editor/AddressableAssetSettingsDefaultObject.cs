@@ -25,14 +25,6 @@ namespace UnityEditor.AddressableAssets
         /// </summary>
         public const string kDefaultConfigObjectName = "com.unity.addressableassets";
 
-        /// <summary>
-        /// Default path for addressable asset settings assets.
-        /// </summary>
-        public static string DefaultAssetPath
-        {
-            get { return kDefaultConfigFolder + "/" + kDefaultConfigAssetName + ".asset"; }
-        }
-
         [FormerlySerializedAs("m_addressableAssetSettingsGuid")]
         [SerializeField]
         internal string m_AddressableAssetSettingsGuid;

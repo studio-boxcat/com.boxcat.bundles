@@ -1,8 +1,7 @@
-using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Initialization;
+using UnityEngine.ResourceManagement;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -43,52 +42,27 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             var timer = new System.Diagnostics.Stopwatch();
             timer.Start();
-            var settingsPath = Addressables.BuildPath + "/settings.json";
-            var buildLogsPath = Addressables.BuildPath + "/buildLogs.json";
-            if (!File.Exists(settingsPath))
-            {
-                IDataBuilderResult resE = new AddressablesPlayModeBuildResult()
-                {
-                    Error = "Player content must be built before entering play mode with packed data.  This can be done from the Addressables window in the Build->Build Player Content menu command."
-                };
-                return (TResult)resE;
-            }
-
-            var rtd = JsonUtility.FromJson<ResourceManagerRuntimeData>(File.ReadAllText(settingsPath));
-            if (rtd == null)
-            {
-                IDataBuilderResult resE = new AddressablesPlayModeBuildResult()
-                {
-                    Error = string.Format("Unable to load initialization data from path {0}.  This can be done from the Addressables window in the Build->Build Player Content menu command.",
-                        settingsPath)
-                };
-                return (TResult)resE;
-            }
 
             PackedPlayModeBuildLogs buildLogs = new PackedPlayModeBuildLogs();
-            BuildTarget dataBuildTarget = BuildTarget.NoTarget;
-            if (!Enum.TryParse(rtd.BuildTarget, out dataBuildTarget))
-            {
-                buildLogs.RuntimeBuildLogs.Add(new PackedPlayModeBuildLogs.RuntimeBuildLog(LogType.Warning,
-                    $"Unable to parse build target from initialization data: '{rtd.BuildTarget}'."));
-            }
+            BuildTarget dataBuildTarget = builderInput.Target;
 
-            else if (BuildPipeline.GetBuildTargetGroup(dataBuildTarget) != BuildTargetGroup.Standalone)
+            if (BuildPipeline.GetBuildTargetGroup(dataBuildTarget) != BuildTargetGroup.Standalone)
             {
                 buildLogs.RuntimeBuildLogs.Add(new PackedPlayModeBuildLogs.RuntimeBuildLog(LogType.Warning,
                     $"Asset bundles built with build target {dataBuildTarget} may not be compatible with running in the Editor."));
             }
 
             if (buildLogs.RuntimeBuildLogs.Count > 0)
+            {
+                var buildLogsPath = ResourcePath.BuildPath_LogsJson;
                 File.WriteAllText(buildLogsPath, JsonUtility.ToJson(buildLogs));
+            }
 
             //TODO: detect if the data that does exist is out of date..
-            var runtimeSettingsPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings.json";
-            PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, runtimeSettingsPath);
-            PlayerPrefs.SetString(Addressables.kAddressablesRuntimeBuildLogPath, buildLogsPath);
-            IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = settingsPath, Duration = timer.Elapsed.TotalSeconds};
+            AddressablesEditorInitializer.CreatePlayModeInitializationOperation = null;
+            IDataBuilderResult res = new AddressablesPlayModeBuildResult() {Duration = timer.Elapsed.TotalSeconds};
             m_DataBuilt = true;
-            return (TResult)res;
+            return (TResult) res;
         }
     }
 }

@@ -14,7 +14,7 @@ using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
@@ -176,12 +176,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             foreach (string bundleName in m_WriteData.FileToBundle.Values.Distinct())
             {
                 BuildLayout.Bundle bundle = new BuildLayout.Bundle();
-                if (m_BuildBundleResults.BundleInfos.TryGetValue(bundleName, out var info))
-                {
-                    bundle.CRC = info.Crc;
-                    bundle.Hash = info.Hash;
-                }
-
                 bundle.Name = bundleName;
                 UnityEngine.BuildCompression compression = m_Parameters.GetCompressionForIdentifier(bundle.Name);
                 bundle.Compression = compression.compression.ToString();
@@ -679,8 +673,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             BuildLayout layout = new BuildLayout();
             layout.BuildStart = aaContext.buildStartTime;
 
-            layout.LocalCatalogBuildPath = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(aaContext.Settings);
-
             AddressableAssetSettings aaSettings = aaContext.Settings;
             if (m_ContentCatalogData != null)
                 layout.BuildResultHash = m_ContentCatalogData.m_BuildResultHash;
@@ -689,7 +681,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 SetLayoutMetaData(layout, aaSettings);
                 layout.AddressablesEditorSettings = GetAddressableEditorSettings(aaSettings);
-                layout.AddressablesRuntimeSettings = GetAddressableRuntimeSettings(aaContext, m_ContentCatalogData);
             }
 
             // Map from GUID to AddrssableAssetEntry
@@ -714,7 +705,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 foreach (AddressableAssetGroupSchema schema in group.Schemas)
                 {
-                    var sd = GenerateSchemaData(schema, aaSettings);
+                    var sd = GenerateSchemaData(schema);
 
                     BundledAssetGroupSchema bSchema = schema as BundledAssetGroupSchema;
                     if (bSchema != null)
@@ -729,8 +720,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                                 break;
                             }
                         }
-
-                        lookup.GroupNameToBuildPath[group.name] = bSchema.BuildPath.GetValue(aaSettings);
                     }
 
                     grp.Schemas.Add(sd);
@@ -738,16 +727,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 lookup.GroupLookup.Add(group.Guid, grp);
                 layout.Groups.Add(grp);
-            }
-
-            // Create a lookup for bundle update states
-            foreach (ContentCatalogDataEntry entry in aaContext.locations)
-            {
-                if (entry.Data is AssetBundleRequestOptions options)
-                {
-                    lookup.BundleNameToRequestOptions.Add(options.BundleName, options);
-                    lookup.BundleNameToCatalogEntry.Add(options.BundleName, entry);
-                }
             }
 
             using (m_Log.ScopedStep(LogLevel.Info, "Correlate Bundles to groups"))
@@ -767,7 +746,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return layout;
         }
 
-        BuildLayout.SchemaData GenerateSchemaData(AddressableAssetGroupSchema schema, AddressableAssetSettings aaSettings)
+        BuildLayout.SchemaData GenerateSchemaData(AddressableAssetGroupSchema schema)
         {
             var sd = new BuildLayout.SchemaData();
             sd.Guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(schema));
@@ -800,12 +779,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     SerializedType serializeTypeValue = (SerializedType)property.GetValue(schema);
                     sd.KvpDetails.Add(new Tuple<string, string>(propertyName, serializeTypeValue.ClassName));
                 }
-                else if (property.PropertyType == typeof(ProfileValueReference))
-                {
-                    if (property.GetValue(schema) is ProfileValueReference profileValue)
-                        sd.KvpDetails.Add(
-                            new Tuple<string, string>(propertyName, profileValue.GetValue(aaSettings)));
-                }
             }
 
             return sd;
@@ -822,7 +795,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 b.Name = m_BundleNameRemap[b.Name];
                 b.Group = assetGroup;
                 lookup.FilenameToBundle[b.Name] = b;
-                var filePath = Path.Combine(lookup.GroupNameToBuildPath[assetGroup.Name], b.Name);
+                var filePath = Path.Combine(ResourcePath.BuildPath, b.Name);
 
                 b.FileSize = GetFileSizeFromPath(filePath, out bool success);
                 if (!success)
@@ -838,7 +811,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 b.Group = lookup.GroupLookup[defaultGroup.Guid]; // should this be set?
                 lookup.FilenameToBundle[b.Name] = b;
 
-                b.FileSize = GetFileSizeFromPath(Path.Combine(lookup.GroupNameToBuildPath[defaultGroup.Name], b.Name), out bool success);
+                b.FileSize = GetFileSizeFromPath(Path.Combine(ResourcePath.BuildPath, b.Name), out bool success);
                 if (!success)
                     Debug.LogWarning($"Built in assetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
 
@@ -934,26 +907,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             if (lookup.BundleNameToCatalogEntry.TryGetValue(b.InternalName, out var entry))
             {
                 b.LoadPath = entry.InternalId;
-                b.Provider = entry.Provider;
                 b.ResultType = entry.ResourceType.Name;
-            }
-
-            if (lookup.BundleNameToPreviousRequestOptions.TryGetValue(b.InternalName, out var prevOptions))
-            {
-                if (m_BuildBundleResults.BundleInfos.TryGetValue(b.Name, out var currentBundleDetails))
-                {
-                    if (currentBundleDetails.Hash.ToString() != prevOptions.Hash)
-                    {
-                        b.BuildStatus = BundleBuildStatus.Modified;
-                        if (entry?.Data is AssetBundleRequestOptions currentOptions)
-                            if (currentOptions.Hash == prevOptions.Hash)
-                                b.BuildStatus = BundleBuildStatus.ModifiedUpdatePrevented;
-                    }
-                    else
-                    {
-                        b.BuildStatus = BundleBuildStatus.Unmodified;
-                    }
-                }
             }
         }
 
@@ -980,7 +934,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         {
             rootAsset.AddressableName = rootEntry.address;
             rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.MainAssetType);
-            rootAsset.InternalId = rootEntry.GetAssetLoadPath(true, loadPathsForBundle);
+            rootAsset.InternalId = rootEntry.GetAssetLoadPath(loadPathsForBundle);
             rootAsset.GroupGuid = rootEntry.parentGroup.Guid;
 
             if (rootAsset.Bundle == null)
@@ -1093,18 +1047,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 editorSettings.MonoScriptBundleNaming = aaSettings.MonoScriptBundleNaming.ToString();
             editorSettings.StripUnityVersionFromBundleBuild = aaSettings.StripUnityVersionFromBundleBuild;
 
-            var profile = aaSettings.profileSettings.GetProfile(aaSettings.activeProfileId);
-            editorSettings.ActiveProfile = new BuildLayout.Profile()
-            {
-                Id = profile.id,
-                Name = profile.profileName
-            };
-
-            editorSettings.ActiveProfile.Values = new BuildLayout.StringPair[profile.values.Count];
-            for (int i = 0; i < profile.values.Count; ++i)
-                editorSettings.ActiveProfile.Values[i] = (new BuildLayout.StringPair()
-                    {Key = profile.values[i].id, Value = profile.values[i].value});
-
             return editorSettings;
         }
 
@@ -1116,23 +1058,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 layoutOut.PackageVersion = $"{info.name}: {info.version}";
             layoutOut.BuildTarget = EditorUserBuildSettings.activeBuildTarget;
             layoutOut.BuildScript = aaSettings.ActivePlayerDataBuilder.Name;
-        }
-
-        static BuildLayout.AddressablesRuntimeData GetAddressableRuntimeSettings(AddressableAssetsBuildContext aaContext, ContentCatalogData contentCatalog)
-        {
-            if (aaContext.runtimeData == null)
-            {
-                Debug.LogError("Could not get runtime data for Addressables BuildReport");
-                return null;
-            }
-
-            BuildLayout.AddressablesRuntimeData runtimeSettings = new BuildLayout.AddressablesRuntimeData();
-
-            runtimeSettings.CatalogLoadPaths = new List<string>();
-            foreach (ResourceLocationData catalogLocation in aaContext.runtimeData.CatalogLocations)
-                runtimeSettings.CatalogLoadPaths.Add(catalogLocation.InternalId);
-
-            return runtimeSettings;
         }
 
         /// <summary>

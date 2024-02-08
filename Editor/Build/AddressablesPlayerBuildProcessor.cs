@@ -1,16 +1,14 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement;
 
-#if UNITY_2021_2_OR_NEWER
 /// <summary>
 /// Maintains Addresssables build data when processing a player build.
 /// </summary>
@@ -106,15 +104,11 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
 
         if (buildPlayerContext != null)
         {
-            var streamingAssetValues = GetStreamingAssetPaths();
-            foreach (KeyValuePair<string, string> streamingAssetValue in streamingAssetValues)
-            {
-                buildPlayerContext.AddAdditionalPathToStreamingAssets(streamingAssetValue.Key,
-                    streamingAssetValue.Value);
-            }
+            if (Directory.Exists(ResourcePath.BuildPath))
+                buildPlayerContext.AddAdditionalPathToStreamingAssets(ResourcePath.BuildPath, "aa");
         }
 
-        string buildPath = Addressables.BuildPath + "/AddressablesLink/link.xml";
+        string buildPath = ResourcePath.BuildPath_LinkXML;
         if (File.Exists(buildPath))
         {
             string projectPath = GetLinkPath(settings, true);
@@ -142,75 +136,4 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
 
         return true;
     }
-
-    /// <summary>
-    /// Gets a list of StreamingAsset files managed through Addressables, and relative path in StreamingAssets.
-    /// </summary>
-    internal static List<KeyValuePair<string, string>> GetStreamingAssetPaths()
-    {
-        List<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>(1);
-        if (Directory.Exists(Addressables.BuildPath))
-            pairs.Add(new KeyValuePair<string, string>(Addressables.BuildPath, "aa"));
-        return pairs;
-    }
 }
-#else
-/// <summary>
-/// Maintains Addresssables build data when processing a player build.
-/// </summary>
-public class AddressablesPlayerBuildProcessor : IPreprocessBuildWithReport, IPostprocessBuildWithReport
-{
-    /// <summary>
-    /// Returns the player build processor callback order.
-    /// </summary>
-    public int callbackOrder
-    {
-        get { return 1; }
-    }
-
-    /// <summary>
-    /// Restores temporary data created as part of a build.
-    /// </summary>
-    /// <param name="report">Stores temporary player build data.</param>
-    public void OnPostprocessBuild(BuildReport report)
-    {
-        CleanTemporaryPlayerBuildData();
-    }
-
-    [InitializeOnLoadMethod]
-    internal static void CleanTemporaryPlayerBuildData()
-    {
-        if (Directory.Exists(Addressables.PlayerBuildDataPath))
-        {
-            DirectoryUtility.DirectoryMove(Addressables.PlayerBuildDataPath, Addressables.BuildPath);
-            DirectoryUtility.DeleteDirectory(Application.streamingAssetsPath, onlyIfEmpty: true);
-        }
-    }
-
-    ///<summary>
-    /// Initializes temporary build data.
-    /// </summary>
-    /// <param name="report">Contains build data information.</param>
-    public void OnPreprocessBuild(BuildReport report)
-    {
-        CopyTemporaryPlayerBuildData();
-    }
-
-    internal static void CopyTemporaryPlayerBuildData()
-    {
-        if (Directory.Exists(Addressables.BuildPath))
-        {
-            if (Directory.Exists(Addressables.PlayerBuildDataPath))
-            {
-                Debug.LogWarning($"Found and deleting directory \"{Addressables.PlayerBuildDataPath}\", directory is managed through Addressables.");
-                DirectoryUtility.DeleteDirectory(Addressables.PlayerBuildDataPath, false);
-            }
-
-            string parentDir = Path.GetDirectoryName(Addressables.PlayerBuildDataPath);
-            if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
-                Directory.CreateDirectory(parentDir);
-            Directory.Move(Addressables.BuildPath, Addressables.PlayerBuildDataPath );
-        }
-    }
-}
-#endif

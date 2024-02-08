@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
@@ -9,10 +8,9 @@ using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.ResourceManagement.Util;
-using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
 
 namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 {
@@ -79,10 +77,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 aaContext.GuidToCatalogLocation[pair.Key] = pair.Value;
             
             aaContext.assetGroupToBundles = output.AssetGroupToBundles;
-            if (aaContext.providerTypes == null)
-                aaContext.providerTypes = output.ProviderTypes;
-            else
-                aaContext.providerTypes.UnionWith(output.ProviderTypes);
             aaContext.bundleToExpandedBundleDependencies = output.BundleToExpandedBundleDependencies;
             aaContext.bundleToImmediateBundleDependencies = output.BundleToImmediateBundleDependencies;
 
@@ -154,11 +148,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             /// A mapping of AddressableAssetGroups to the AssetBundles generated from its data.
             /// </summary>
             public Dictionary<AddressableAssetGroup, List<string>> AssetGroupToBundles;
-
-            /// <summary>
-            /// A hash set of all the provider types included in the build.
-            /// </summary>
-            public HashSet<Type> ProviderTypes;
 
             /// <summary>
             /// A mapping of AssetBundles to the direct dependencies
@@ -235,7 +224,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             var locations = new List<ContentCatalogDataEntry>();
             var assetGroupToBundles = new Dictionary<AddressableAssetGroup, List<string>>();
             var bundleToEntry = new Dictionary<string, BundleEntry>();
-            var providerTypes = new HashSet<Type>();
 
             // Create a bundle entry for every bundle that our assets could reference
             foreach (List<string> files in input.AssetToFiles.Values)
@@ -267,9 +255,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Create a location for each bundle
             foreach (BundleEntry bEntry in bundleToEntry.Values)
             {
-                string bundleProvider = GetBundleProviderName(bEntry.Group);
-                string bundleInternalId = GetLoadPath(bEntry.Group, bEntry.BundleName, input.Target);
-                locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bundleInternalId, bundleProvider, new object[] {bEntry.BundleName}));
+                locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bEntry.BundleName, bEntry.BundleName));
             }
 
             Dictionary<GUID, List<ContentCatalogDataEntry>> guidToLocation = new Dictionary<GUID, List<ContentCatalogDataEntry>>();
@@ -280,14 +266,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 foreach (BundleEntry bEntry in bundleToEntry.Values)
                 {
-                    string assetProvider = GetAssetProviderName(bEntry.Group);
                     var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
                     foreach (GUID assetGUID in bEntry.Assets)
                     {
                         if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry))
                         {
                             int indexAddedStart = locations.Count;
-                            entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes,
+                            entry.CreateCatalogEntries(locations, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo,
                                 schema.IncludeAddressInCatalog, bEntry.AssetInternalIds);
                             if (indexAddedStart < locations.Count)
                                 guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count-indexAddedStart));
@@ -303,82 +288,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             var output = new Output();
             output.Locations = locations;
             output.GuidToLocation = guidToLocation;
-            output.ProviderTypes = providerTypes;
             output.AssetGroupToBundles = assetGroupToBundles;
             output.BundleToImmediateBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.Dependencies.Select(y => y.BundleName).ToList());
             output.BundleToExpandedBundleDependencies =
                 bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.ExpandedDependencies.Where(y => !x.Dependencies.Contains(y)).Select(y => y.BundleName).ToList());
             return output;
-        }
-
-        /// <summary>
-        /// Runs the build task with a give context and write data.
-        /// </summary>
-        /// <param name="aaBuildContext">The addressables build context.</param>
-        /// <param name="writeData">The write data used to generate the location lists.</param>
-        /// <returns>The success or failure ReturnCode</returns>
-        [Obsolete("This method uses nonoptimized code. Use nonstatic version Run() instead.")]
-        public static ReturnCode Run(IAddressableAssetsBuildContext aaBuildContext, IBundleWriteData writeData)
-        {
-            var task = new GenerateLocationListsTask();
-            task.m_AaBuildContext = aaBuildContext;
-            task.m_WriteData = writeData;
-            return task.Run();
-        }
-
-        internal static string GetBundleProviderName(AddressableAssetGroup group)
-        {
-            return group.GetSchema<BundledAssetGroupSchema>().GetBundleCachedProviderId();
-        }
-
-        internal static string GetAssetProviderName(AddressableAssetGroup group)
-        {
-            return group.GetSchema<BundledAssetGroupSchema>().GetAssetCachedProviderId();
-        }
-
-        internal static string GetLoadPath(AddressableAssetGroup group, string name, BuildTarget target)
-        {
-            var bagSchema = group.GetSchema<BundledAssetGroupSchema>();
-            if (bagSchema == null || bagSchema.LoadPath == null)
-            {
-                Debug.LogError("Unable to determine load path for " + name + ". Check that your default group is not '" + AddressableAssetSettings.PlayerDataGroupName + "'");
-                return string.Empty;
-            }
-
-            string loadPath = bagSchema.LoadPath.GetValue(group.Settings);
-            loadPath = loadPath.Replace('\\', '/');
-            if (loadPath.EndsWith("/"))
-                loadPath += name;
-            else
-                loadPath = loadPath + "/" + name;
-
-            if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
-                loadPath += bagSchema.UrlSuffix;
-            if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPath))
-            {
-                char separator = PathSeparatorForPlatform(target);
-                if (separator != '/')
-                    loadPath = loadPath.Replace('/', separator);
-            }
-
-            return loadPath;
-        }
-
-        internal static char PathSeparatorForPlatform(BuildTarget target)
-        {
-            switch (target)
-            {
-                case BuildTarget.StandaloneWindows64:
-                case BuildTarget.StandaloneWindows:
-                case BuildTarget.XboxOne:
-                    return '\\';
-                case BuildTarget.GameCoreXboxOne:
-                    return '\\';
-                case BuildTarget.Android:
-                    return '\\';
-                default:
-                    return '/';
-            }
         }
     }
 }

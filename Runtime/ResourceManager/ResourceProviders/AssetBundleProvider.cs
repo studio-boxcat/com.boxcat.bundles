@@ -8,28 +8,10 @@ using System.ComponentModel;
 using System.Linq;
 using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
-using UnityEngine.ResourceManagement.Util;
-using UnityEngine.Serialization;
 
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
-    /// <summary>
-    /// Used to indication how Assets are loaded from the AssetBundle on the first load request.
-    /// </summary>
-    public enum AssetLoadMode
-    {
-        /// <summary>
-        /// Only load the requested Asset and Dependencies
-        /// </summary>
-        RequestedAssetAndDependencies = 0,
-
-        /// <summary>
-        /// Load all assets inside the AssetBundle
-        /// </summary>
-        AllPackedAssetsAndDependencies,
-    }
-
     /// <summary>
     /// Wrapper for asset bundles.
     /// </summary>
@@ -43,77 +25,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     }
 
     /// <summary>
-    /// Contains cache information to be used by the AssetBundleProvider
-    /// </summary>
-    [Serializable]
-    public class AssetBundleRequestOptions : ILocationSizeData
-    {
-        [FormerlySerializedAs("m_hash")]
-        [SerializeField]
-        string m_Hash = "";
-
-        /// <summary>
-        /// Hash value of the asset bundle.
-        /// </summary>
-        public string Hash
-        {
-            get { return m_Hash; }
-            set { m_Hash = value; }
-        }
-
-        [SerializeField]
-        string m_BundleName = null;
-
-        /// <summary>
-        /// The name of the original bundle.  This does not contain the appended hash.
-        /// </summary>
-        public string BundleName
-        {
-            get { return m_BundleName; }
-            set { m_BundleName = value; }
-        }
-
-        [SerializeField]
-        AssetLoadMode m_AssetLoadMode = AssetLoadMode.RequestedAssetAndDependencies;
-
-        /// <summary>
-        /// Determines how Assets are loaded when accessed.
-        /// </summary>
-        /// <remarks>
-        /// Requested Asset And Dependencies, will only load the requested Asset (Recommended).
-        /// All Packed Assets And Dependencies, will load all Assets that are packed together. Best used when loading all Assets into memory is required.
-        ///</remarks>
-        public AssetLoadMode AssetLoadMode
-        {
-            get { return m_AssetLoadMode; }
-            set { m_AssetLoadMode = value; }
-        }
-
-        [SerializeField]
-        long m_BundleSize;
-
-        /// <summary>
-        /// The size of the bundle, in bytes.
-        /// </summary>
-        public long BundleSize
-        {
-            get { return m_BundleSize; }
-            set { m_BundleSize = value; }
-        }
-
-        /// <summary>
-        /// Computes the amount of data needed to be downloaded for this bundle.
-        /// </summary>
-        /// <param name="location">The location of the bundle.</param>
-        /// <param name="resourceManager">The object that contains all the resource locations.</param>
-        /// <returns>The size in bytes of the bundle that is needed to be downloaded.  If the local cache contains the bundle or it is a local bundle, 0 will be returned.</returns>
-        public virtual long ComputeSize(IResourceLocation location, ResourceManager resourceManager)
-        {
-            return 0;
-        }
-    }
-
-    /// <summary>
     /// Provides methods for loading an AssetBundle from a local or remote location.
     /// </summary>
     public class AssetBundleResource : IAssetBundleResource
@@ -121,7 +32,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         AssetBundle m_AssetBundle;
         AsyncOperation m_RequestOperation;
         internal ProvideHandle m_ProvideHandle;
-        internal AssetBundleRequestOptions m_Options;
 
         [NonSerialized]
         bool m_RequestCompletedCallbackCalled = false;
@@ -143,25 +53,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             if (m_PreloadCompleted || GetAssetBundle() == null)
                 return null;
-
-            if (m_Options.AssetLoadMode == AssetLoadMode.AllPackedAssetsAndDependencies)
-            {
-#if !UNITY_2021_1_OR_NEWER
-                if (AsyncOperationHandle.IsWaitingForCompletion)
-                {
-                    m_AssetBundle.LoadAllAssets();
-                    m_PreloadCompleted = true;
-                    return null;
-                }
-#endif
-                if (m_PreloadRequest == null)
-                {
-                    m_PreloadRequest = m_AssetBundle.LoadAllAssetsAsync();
-                    m_PreloadRequest.completed += operation => m_PreloadCompleted = true;
-                }
-
-                return m_PreloadRequest;
-            }
 
             return null;
         }
@@ -226,7 +117,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             m_RequestOperation = null;
             m_RequestCompletedCallbackCalled = false;
             m_ProvideHandle = provideHandle;
-            m_Options = m_ProvideHandle.Location.Data as AssetBundleRequestOptions;
             m_ProvideHandle.SetWaitForCompletionCallback(WaitForCompletionHandler);
 #if UNLOAD_BUNDLE_ASYNC
             m_UnloadOperation = unloadOp;
@@ -282,51 +172,21 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 operation.completed += callback;
         }
 
-        /// <summary>
-        /// Determines where an AssetBundle can be loaded from.
-        /// </summary>
-        /// <param name="handle">The container for AssetBundle loading information.</param>
-        /// <param name="loadType">Specifies where an AssetBundle can be loaded from.</param>
-        /// <param name="path">The file path or url where the AssetBundle is located.</param>
-        public static void GetLoadInfo(ProvideHandle handle, out string path)
-        {
-            GetLoadInfo(handle.Location, handle.ResourceManager, out path);
-        }
-
-        internal static void GetLoadInfo(IResourceLocation location, ResourceManager resourceManager, out string path)
-        {
-            var options = location?.Data as AssetBundleRequestOptions;
-            if (options == null)
-            {
-                path = null;
-                return;
-            }
-
-            path = location.InternalId;
-            if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:", StringComparison.Ordinal))
-                return;
-            if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
-                throw new NotSupportedException(path);
-        }
-
         private void BeginOperation()
         {
-            GetLoadInfo(m_ProvideHandle, out m_TransformedInternalId);
+            m_TransformedInternalId = m_ProvideHandle.Location.InternalId;
 
-            {
-#if !UNITY_2021_1_OR_NEWER
-                if (AsyncOperationHandle.IsWaitingForCompletion)
-                    CompleteBundleLoad(AssetBundle.LoadFromFile(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc));
-                else
+#if DEBUG
+            Debug.Log("[AssetBundleResource] Load AssetBundle: " + m_TransformedInternalId);
 #endif
-                {
-                    m_RequestOperation = AssetBundle.LoadFromFileAsync(m_TransformedInternalId);
+
+            var assetBundlePath = ResourcePath.GetAssetBundleLoadPath(m_TransformedInternalId);
+            m_RequestOperation = AssetBundle.LoadFromFileAsync(assetBundlePath);
+
 #if ENABLE_ADDRESSABLE_PROFILER
-                    AddBundleToProfiler(Profiling.ContentStatus.Loading, m_Source);
+            AddBundleToProfiler(Profiling.ContentStatus.Loading, m_Source);
 #endif
-                    AddCallbackInvokeIfDone(m_RequestOperation, LocalRequestOperationCompleted);
-                }
-            }
+            AddCallbackInvokeIfDone(m_RequestOperation, LocalRequestOperationCompleted);
         }
 
         private void LocalRequestOperationCompleted(AsyncOperation op)
@@ -337,20 +197,25 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
 
             m_RequestCompletedCallbackCalled = true;
-            CompleteBundleLoad((op as AssetBundleCreateRequest).assetBundle);
-        }
 
-        private void CompleteBundleLoad(AssetBundle bundle)
-        {
-            m_AssetBundle = bundle;
+            m_AssetBundle = (op as AssetBundleCreateRequest).assetBundle;
 #if ENABLE_ADDRESSABLE_PROFILER
             AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
 #endif
+
             if (m_AssetBundle != null)
+            {
+#if DEBUG
+                Debug.Log("[AssetBundleResource] Load AssetBundle: " + m_TransformedInternalId + " Succeeded");
+#endif
                 m_ProvideHandle.Complete(this, true, null);
+            }
             else
+            {
                 m_ProvideHandle.Complete<AssetBundleResource>(null, false,
                     new ProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
+            }
+
             m_Completed = true;
         }
 

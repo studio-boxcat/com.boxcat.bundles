@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -20,7 +19,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="id">The id of the object.</param>
         /// <param name="data">Serialized data for the object.</param>
         /// <returns>The result of the initialization.</returns>
-        bool Initialize(string id, string data);
+        bool Initialize(string id);
 
         /// <summary>
         /// Async operation for initializing a constructed object.
@@ -29,7 +28,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="id">The id of the object.</param>
         /// <param name="data">Serialized data for the object.</param>
         /// <returns>Async operation</returns>
-        AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id, string data);
+        AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id);
     }
 
 
@@ -340,192 +339,6 @@ namespace UnityEngine.ResourceManagement.Util
     }
 
     /// <summary>
-    /// Contains data used to construct and initialize objects at runtime.
-    /// </summary>
-    [Serializable]
-    public struct ObjectInitializationData
-    {
-#pragma warning disable 0649
-        [FormerlySerializedAs("m_id")]
-        [SerializeField]
-        string m_Id;
-
-        /// <summary>
-        /// The object id.
-        /// </summary>
-        public string Id
-        {
-            get { return m_Id; }
-        }
-
-        [FormerlySerializedAs("m_objectType")]
-        [SerializeField]
-        SerializedType m_ObjectType;
-
-        /// <summary>
-        /// The object type that will be created.
-        /// </summary>
-        public SerializedType ObjectType
-        {
-            get { return m_ObjectType; }
-        }
-
-        [FormerlySerializedAs("m_data")]
-        [SerializeField]
-        string m_Data;
-
-        /// <summary>
-        /// String representation of the data that will be passed to the IInitializableObject.Initialize method of the created object.  This is usually a JSON string of the serialized data object.
-        /// </summary>
-        public string Data
-        {
-            get { return m_Data; }
-        }
-#pragma warning restore 0649
-
-#if ENABLE_BINARY_CATALOG
-        internal class Serializer : BinaryStorageBuffer.ISerializationAdapter<ObjectInitializationData>
-        {
-            struct Data
-            {
-                public uint id;
-                public uint type;
-                public uint data;
-            }
-
-            public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => null;
-
-
-            public object Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset)
-            {
-                var d = reader.ReadValue<Data>(offset);
-                return new ObjectInitializationData { m_Id = reader.ReadString(d.id), m_ObjectType = new SerializedType { Value = reader.ReadObject<Type>(d.type) }, m_Data = reader.ReadString(d.data) };
-            }
-
-            public uint Serialize(BinaryStorageBuffer.Writer writer, object val)
-            {
-                var oid = (ObjectInitializationData)val;
-                var d = new Data
-                {
-                    id = writer.WriteString(oid.m_Id),
-                    type = writer.WriteObject(oid.ObjectType.Value, false),
-                    data = writer.WriteString(oid.m_Data)
-                };
-                return writer.Write(d);
-            }
-        }
-#endif
-        /// <summary>
-        /// Converts information about the initialization data to a formatted string.
-        /// </summary>
-        /// <returns>Returns information about the initialization data.</returns>
-        public override string ToString()
-        {
-            return string.Format("ObjectInitializationData: id={0}, type={1}", m_Id, m_ObjectType);
-        }
-
-        /// <summary>
-        /// Create an instance of the defined object.  Initialize will be called on it with the id and data if it implements the IInitializableObject interface.
-        /// </summary>
-        /// <typeparam name="TObject">The instance type.</typeparam>
-        /// <param name="idOverride">Optional id to assign to the created object.  This only applies to objects that inherit from IInitializableObject.</param>
-        /// <returns>Constructed object.  This object will already be initialized with its serialized data and id.</returns>
-        public TObject CreateInstance<TObject>(string idOverride = null)
-        {
-            try
-            {
-                var objType = m_ObjectType.Value;
-                if (objType == null)
-                    return default(TObject);
-                var obj = Activator.CreateInstance(objType, true);
-                var serObj = obj as IInitializableObject;
-                if (serObj != null)
-                {
-                    if (!serObj.Initialize(idOverride == null ? m_Id : idOverride, m_Data))
-                        return default(TObject);
-                }
-
-                return (TObject)obj;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                return default(TObject);
-            }
-        }
-
-        /// <summary>
-        /// Create an instance of the defined object.  This will get the AsyncOperationHandle for the async Initialization operation if the object implements the IInitializableObject interface.
-        /// </summary>
-        /// <param name="rm">The current instance of Resource Manager</param>
-        /// <param name="idOverride">Optional id to assign to the created object.  This only applies to objects that inherit from IInitializableObject.</param>
-        /// <returns>AsyncOperationHandle for the async initialization operation if the defined type implements IInitializableObject, otherwise returns a default AsyncOperationHandle.</returns>
-        public AsyncOperationHandle GetAsyncInitHandle(ResourceManager rm, string idOverride = null)
-        {
-            try
-            {
-                var objType = m_ObjectType.Value;
-                if (objType == null)
-                    return default(AsyncOperationHandle);
-                var obj = Activator.CreateInstance(objType, true);
-                var serObj = obj as IInitializableObject;
-                if (serObj != null)
-                    return serObj.InitializeAsync(rm, idOverride == null ? m_Id : idOverride, m_Data);
-                return default(AsyncOperationHandle);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                return default(AsyncOperationHandle);
-            }
-        }
-
-#if UNITY_EDITOR
-        Type[] m_RuntimeTypes;
-
-        /// <summary>
-        /// Construct a serialized data for the object.
-        /// </summary>
-        /// <param name="objectType">The type of object to create.</param>
-        /// <param name="id">The object id.</param>
-        /// <param name="dataObject">The serializable object that will be saved into the Data string via the JSONUtility.ToJson method.</param>
-        /// <returns>Contains data used to construct and initialize an object at runtime.</returns>
-        public static ObjectInitializationData CreateSerializedInitializationData(Type objectType, string id = null, object dataObject = null)
-        {
-            return new ObjectInitializationData
-            {
-                m_ObjectType = new SerializedType {Value = objectType},
-                m_Id = string.IsNullOrEmpty(id) ? objectType.FullName : id,
-                m_Data = dataObject == null ? null : JsonUtility.ToJson(dataObject),
-                m_RuntimeTypes = dataObject == null ? null : new[] {dataObject.GetType()}
-            };
-        }
-
-        /// <summary>
-        /// Construct a serialized data for the object.
-        /// </summary>
-        /// <typeparam name="T">The type of object to create.</typeparam>
-        /// <param name="id">The ID for the object</param>
-        /// <param name="dataObject">The serializable object that will be saved into the Data string via the JSONUtility.ToJson method.</param>
-        /// <returns>Contains data used to construct and initialize an object at runtime.</returns>
-        public static ObjectInitializationData CreateSerializedInitializationData<T>(string id = null, object dataObject = null)
-        {
-            return CreateSerializedInitializationData(typeof(T), id, dataObject);
-        }
-
-        /// <summary>
-        /// Get the set of runtime types need to deserialized this object.  This is used to ensure that types are not stripped from player builds.
-        /// </summary>
-        /// <returns></returns>
-        public Type[] GetRuntimeTypes()
-        {
-            return m_RuntimeTypes;
-        }
-
-#endif
-    }
-
-    /// <summary>
     /// Resource Manager Config utility class.
     /// </summary>
     public static class ResourceManagerConfig
@@ -558,34 +371,6 @@ namespace UnityEngine.ResourceManagement.Util
             mainKey = null;
             subKey = null;
             return false;
-        }
-
-        /// <summary>
-        /// Check if path should use WebRequest.  A path should use WebRequest for remote paths and platforms that require WebRequest to load locally.
-        /// </summary>
-        /// <param name="path">The path to check.</param>
-        /// <returns>Returns true if path should use WebRequest.</returns>
-        public static bool ShouldPathUseWebRequest(string path)
-        {
-            if (PlatformCanLoadLocallyFromUrlPath() && File.Exists(path))
-                return false;
-            return path != null && path.Contains("://");
-        }
-
-        /// <summary>
-        /// Checks if the current platform can use urls for load loads.
-        /// </summary>
-        /// <returns>True if the current platform can use urls for local loads, false otherwise.</returns>
-        private static bool PlatformCanLoadLocallyFromUrlPath()
-        {
-            //For something so simple, this is pretty over engineered.  But, if more platforms come up that do this, it'll be easy to account for them.
-            //Just add runtime platforms to this list that do the same thing Android does.
-            List<RuntimePlatform> platformsThatUseUrlForLocalLoads = new List<RuntimePlatform>()
-            {
-                RuntimePlatform.Android
-            };
-
-            return platformsThatUseUrlForLocalLoads.Contains((Application.platform));
         }
 
         /// <summary>

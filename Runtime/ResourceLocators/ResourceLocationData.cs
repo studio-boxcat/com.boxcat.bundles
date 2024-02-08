@@ -12,12 +12,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
     {
         [FormerlySerializedAs("m_keys")]
         [SerializeField]
-        string[] m_Keys;
+        string m_Keys;
 
         /// <summary>
         /// The collection of keys for this location.
         /// </summary>
-        public string[] Keys
+        public string Keys
         {
             get { return m_Keys; }
         }
@@ -106,7 +106,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <param name="provider">The provider id.</param>
         /// <param name="t">The resource object type.</param>
         /// <param name="dependencies">Optional array of dependencies.</param>
-        public ResourceLocationData(string[] keys, string id, Type provider, Type t, string[] dependencies = null)
+        public ResourceLocationData(string keys, string id, Type provider, Type t, string[] dependencies = null)
         {
             m_Keys = keys;
             m_InternalId = id;

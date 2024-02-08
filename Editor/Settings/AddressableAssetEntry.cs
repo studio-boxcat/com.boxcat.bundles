@@ -2,47 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
+using JetBrains.Annotations;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
-    interface IReferenceEntryData
-    {
-        string AssetPath { get; }
-        string address { get; set; }
-        bool IsInResources { get; set; }
-    }
-
-    internal struct ImplicitAssetEntry : IReferenceEntryData
-    {
-        public string AssetPath { get; set; }
-        public string address { get; set; }
-        public bool IsInResources { get; set; }
-    }
-
     /// <summary>
     /// Contains data for an addressable asset entry.
     /// </summary>
     [Serializable]
-    public class AddressableAssetEntry : ISerializationCallbackReceiver, IReferenceEntryData
+    public class AddressableAssetEntry : ISerializationCallbackReceiver
     {
 #pragma warning disable 0618
         static Type typeof_AddressableAssetEntryCollection = typeof(AddressableAssetEntryCollection);
 #pragma warning restore 0618
-
-        internal const string EditorSceneListName = "EditorSceneList";
-        internal const string EditorSceneListPath = "Scenes In Build";
-
-        internal const string ResourcesName = "Resources";
-        internal const string ResourcesPath = "*/Resources/";
 
         [FormerlySerializedAs("m_guid")]
         [SerializeField]
@@ -136,11 +114,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Is the asset in a resource folder.
-        /// </summary>
-        public bool IsInResources { get; set; }
-
-        /// <summary>
         /// Is a sub asset.  For example an asset in an addressable folder.
         /// </summary>
         public bool IsSubAsset { get; set; }
@@ -194,20 +167,10 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Creates a list of keys that can be used to load this entry.
         /// </summary>
         /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        public List<object> CreateKeyList() => CreateKeyList(true);
-
-        /// <summary>
-        /// Creates a list of keys that can be used to load this entry.
-        /// </summary>
-        /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        internal List<object> CreateKeyList(bool includeAddress)
+        [CanBeNull]
+        internal string CreateKeyList(bool includeAddress)
         {
-            var keys = new List<object>();
-            //the address must be the first key
-            if (includeAddress)
-                keys.Add(address);
-
-            return keys;
+            return includeAddress ? address : null;
         }
 
         internal AddressableAssetEntry(string guid, string address, AddressableAssetGroup parent, bool readOnly)
@@ -218,7 +181,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_Address = address;
             m_ReadOnly = readOnly;
             parentGroup = parent;
-            IsInResources = false;
         }
 
         Hash128 m_CurrentHash;
@@ -230,7 +192,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     m_CurrentHash.Append(m_GUID);
                     m_CurrentHash.Append(m_Address);
-                    var flags = (m_ReadOnly ? 1 : 0) | (IsInResources ? 2 : 0) | (IsSubAsset ? 8 : 0);
+                    var flags = (m_ReadOnly ? 1 : 0) | (IsSubAsset ? 8 : 0);
                     m_CurrentHash.Append(flags);
                 }
                 return m_CurrentHash;
@@ -272,10 +234,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     if (string.IsNullOrEmpty(guid))
                         SetCachedPath(string.Empty);
-                    else if (guid == EditorSceneListName)
-                        SetCachedPath(EditorSceneListPath);
-                    else if (guid == ResourcesName)
-                        SetCachedPath(ResourcesPath);
                     else
                         SetCachedPath(AssetDatabase.GUIDToAssetPath(guid));
                 }
@@ -359,45 +317,23 @@ namespace UnityEditor.AddressableAssets.Settings
         /// The asset load path.  This is used to determine the internal id of resource locations.
         /// </summary>
         /// <param name="isBundled">True if the asset will be contained in an asset bundle.</param>
-        /// <returns>Return the runtime path that should be used to load this entry.</returns>
-        public string GetAssetLoadPath(bool isBundled)
-        {
-            return GetAssetLoadPath(isBundled, null);
-        }
-
-        /// <summary>
-        /// The asset load path.  This is used to determine the internal id of resource locations.
-        /// </summary>
-        /// <param name="isBundled">True if the asset will be contained in an asset bundle.</param>
         /// <param name="otherLoadPaths">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
         /// <returns>Return the runtime path that should be used to load this entry.</returns>
-        public string GetAssetLoadPath(bool isBundled, HashSet<string> otherLoadPaths)
+        public string GetAssetLoadPath(HashSet<string> otherLoadPaths)
         {
-            if (!IsScene)
+            return GetShortestUniqueString(guid, otherLoadPaths);
+
+            static string GetShortestUniqueString(string guid, HashSet<string> otherLoadPaths)
             {
-                if (IsInResources)
-                {
-                    return GetResourcesPath(AssetPath);
-                }
-                else
-                {
-                    if (isBundled)
-                        return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, guid, otherLoadPaths);
-                    return AssetPath;
-                }
-            }
-            else
-            {
-                if (isBundled)
-                    return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, guid, otherLoadPaths);
-                var path = AssetPath;
-                int i = path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase);
-                if (i > 0)
-                    path = path.Substring(0, i);
-                i = path.IndexOf("assets/", StringComparison.OrdinalIgnoreCase);
-                if (i == 0)
-                    path = path.Substring("assets/".Length);
-                return path;
+                var g = guid;
+                if (otherLoadPaths == null)
+                    return g;
+                var len = 1;
+                var p = g.Substring(0, len);
+                while (otherLoadPaths.Contains(p))
+                    p = g.Substring(0, ++len);
+                otherLoadPaths.Add(p);
+                return p;
             }
         }
 
@@ -426,13 +362,6 @@ namespace UnityEditor.AddressableAssets.Settings
             if (assets == null)
                 assets = new List<AddressableAssetEntry>();
 
-            if (guid == EditorSceneListName)
-            {
-            }
-            else if (guid == ResourcesName)
-            {
-            }
-            else
             {
                 if (string.IsNullOrEmpty(AssetPath))
                     return;
@@ -487,7 +416,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     var newEntry = parentGroup.Settings.CreateEntry("", namedAddress, parentGroup, true);
                     newEntry.IsSubAsset = true;
                     newEntry.ParentEntry = this;
-                    newEntry.IsInResources = IsInResources;
                     newEntry.SetSubObjectType(o.GetType());
                     assets.Add(newEntry);
                 }
@@ -518,7 +446,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     var newEntry = settings.CreateEntry("", namedAddress, parentGroup, true);
                     newEntry.IsSubAsset = true;
                     newEntry.ParentEntry = this;
-                    newEntry.IsInResources = IsInResources;
                     assets.Add(newEntry);
                 }
             }
@@ -536,7 +463,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     var entry = settings.CreateSubEntryIfUnique(e.guid, e.address, this);
                     if (entry != null)
                     {
-                        entry.IsInResources = e.IsInResources;
                         if (entryFilter == null || entryFilter(entry))
                             assets.Add(entry);
                     }
@@ -663,38 +589,20 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="entries">The list of entries to fill in.</param>
         /// <param name="isBundled">Whether the entry is bundles or not.  This will affect the load path.</param>
-        /// <param name="providerType">The provider type for the main entry.</param>
-        /// <param name="dependencies">Keys of dependencies</param>
-        /// <param name="extraData">Extra data to append to catalog entries.</param>
-        /// <param name="providerTypes">Any unknown provider types are added to this set in order to ensure they are not stripped.</param>
-        public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, bool isBundled, string providerType, IEnumerable<object> dependencies, object extraData, HashSet<Type> providerTypes)
-        {
-            CreateCatalogEntries(entries, isBundled, providerType, dependencies, extraData, null, providerTypes, true, null);
-        }
-
-        /// <summary>
-        /// Create all entries for this addressable asset.  This will expand subassets (Sprites, Meshes, etc) and also different representations.
-        /// </summary>
-        /// <param name="entries">The list of entries to fill in.</param>
-        /// <param name="isBundled">Whether the entry is bundles or not.  This will affect the load path.</param>
-        /// <param name="providerType">The provider type for the main entry.</param>
         /// <param name="dependencies">Keys of dependencies</param>
         /// <param name="extraData">Extra data to append to catalog entries.</param>
         /// <param name="depInfo">Map of guids to AssetLoadInfo for object identifiers in an Asset.  If null, ContentBuildInterface gathers object ids automatically.</param>
-        /// <param name="providerTypes">Any unknown provider types are added to this set in order to ensure they are not stripped.</param>
         /// <param name="includeAddress">Flag indicating if address locations should be included</param>
-        /// <param name="includeGUID">Flag indicating if guid locations should be included</param>
-        /// <param name="includeLabels">Flag indicating if label locations should be included</param>
         /// <param name="assetsInBundle">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
-        public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, bool isBundled, string providerType, IEnumerable<object> dependencies, object extraData,
-            Dictionary<GUID, AssetLoadInfo> depInfo, HashSet<Type> providerTypes, bool includeAddress, HashSet<string> assetsInBundle)
+        public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, IEnumerable<string> dependencies, object extraData,
+            Dictionary<GUID, AssetLoadInfo> depInfo, bool includeAddress, HashSet<string> assetsInBundle)
         {
             if (string.IsNullOrEmpty(AssetPath))
                 return;
 
-            string assetPath = GetAssetLoadPath(isBundled, assetsInBundle);
-            List<object> keyList = CreateKeyList(includeAddress);
-            if (keyList.Count == 0)
+            string assetPath = GetAssetLoadPath(assetsInBundle);
+            string key = CreateKeyList(includeAddress);
+            if (key is null)
                 return;
 
             //The asset may have previously been invalid. Since then, it may have been re-imported.
@@ -704,16 +612,12 @@ namespace UnityEditor.AddressableAssets.Settings
                 m_cachedMainAssetType = null;
 
             Type mainType = AddressableAssetUtility.MapEditorTypeToRuntimeType(MainAssetType, false);
-            if ((mainType == null || mainType == typeof(DefaultAsset)) && !IsInResources)
+            if (mainType == null || mainType == typeof(DefaultAsset))
             {
                 var t = MainAssetType;
                 Debug.LogWarningFormat("Type {0} is in editor assembly {1}.  Asset location with internal id {2} will be stripped and not included in the build.", t.Name, t.Assembly.FullName, assetPath);
                 return;
             }
-
-            Type runtimeProvider = GetRuntimeProviderType(providerType, mainType);
-            if (runtimeProvider != null)
-                providerTypes.Add(runtimeProvider);
 
             if (!IsScene)
             {
@@ -722,11 +626,11 @@ namespace UnityEditor.AddressableAssets.Settings
                     : ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(new GUID(guid), EditorUserBuildSettings.activeBuildTarget);
 
                 foreach (var t in GatherMainAndReferencedSerializedTypes(ids))
-                    entries.Add(new ContentCatalogDataEntry(t, assetPath, providerType, keyList, dependencies, extraData));
+                    entries.Add(new ContentCatalogDataEntry(t, assetPath, key, dependencies, extraData));
             }
             else if (mainType != null && mainType != typeof(DefaultAsset))
             {
-                entries.Add(new ContentCatalogDataEntry(mainType, assetPath, providerType, keyList, dependencies, extraData));
+                entries.Add(new ContentCatalogDataEntry(mainType, assetPath, key, dependencies, extraData));
             }
         }
 
@@ -766,16 +670,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return typesSeen;
-        }
-
-        internal Type GetRuntimeProviderType(string providerType, Type mainEntryType)
-        {
-            if (string.IsNullOrEmpty(providerType))
-                return null;
-
-            if (mainEntryType == typeof(SpriteAtlas))
-                return typeof(AtlasSpriteProvider);
-            return Assembly.GetAssembly(typeof(ResourceProviderBase)).GetType(providerType);
         }
     }
 }

@@ -172,11 +172,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public AddressablesEditorData AddressablesEditorSettings;
 
         /// <summary>
-        /// Values used by the Addressables runtime
-        /// </summary>
-        public AddressablesRuntimeData AddressablesRuntimeSettings;
-
-        /// <summary>
         /// Name of the build script to build
         /// </summary>
         public string BuildScript;
@@ -203,12 +198,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// List of assets with implicitly included Objects
         /// </summary>
         public List<AssetDuplicationData> DuplicatedAssets = new List<AssetDuplicationData>();
-
-        /// <summary>
-        /// The build path on disk of the default local content catalog
-        /// </summary>
-        [SerializeField]
-        internal string LocalCatalogBuildPath;
 
         internal string m_FilePath;
 
@@ -442,11 +431,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string SettingsHash;
 
             /// <summary>
-            /// Active Addressables profile set at time of Building
-            /// </summary>
-            public Profile ActiveProfile;
-
-            /// <summary>
             /// Addressables setting value set for if the build created unique bundle ids
             /// </summary>
             public bool UniqueBundleIds;
@@ -484,18 +468,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         }
 
         /// <summary>
-        /// Values set for runtime initialisation of Addressables
-        /// </summary>
-        [Serializable]
-        public class AddressablesRuntimeData
-        {
-            /// <summary>
-            /// Runtime setting value set for catalogs to load (First catalog found in the list is used)
-            /// </summary>
-            public List<string> CatalogLoadPaths = new List<string>();
-        }
-
-        /// <summary>
         /// Information about the AssetBundleObject
         /// </summary>
         [Serializable]
@@ -522,28 +494,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// String value
             /// </summary>
             public string Value;
-        }
-
-        /// <summary>
-        /// Addressables Profile data
-        /// </summary>
-        [Serializable]
-        public class Profile
-        {
-            /// <summary>
-            /// Name of the profile
-            /// </summary>
-            public string Name;
-
-            /// <summary>
-            /// ID assigned within the ProfileSettings of the profile
-            /// </summary>
-            public string Id;
-
-            /// <summary>
-            /// Profile variables assigned to the profile
-            /// </summary>
-            public StringPair[] Values;
         }
 
         /// <summary>
@@ -645,11 +595,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The file size of the AssetBundle on disk, in bytes
             /// </summary>
             public ulong FileSize;
-
-            /// <summary>
-            /// Status of the bundle after an update build
-            /// </summary>
-            public BundleBuildStatus BuildStatus;
 
             /// <summary>
             /// The file size of all of the Expanded Dependencies of this AssetBundle, in bytes
@@ -807,18 +752,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string Compression;
 
             /// <summary>
-            /// Cyclic redundancy check of the content contained inside of the asset bundle.
-            /// This value will not change between identical asset bundles with different compression options.
-            /// </summary>
-            public uint CRC;
-
-            /// <summary>
-            /// The hash version of the contents contained inside of the asset bundle.
-            /// This value will not change between identical asset bundles with different compression options.
-            /// </summary>
-            public Hash128 Hash;
-
-            /// <summary>
             /// A reference to the Group data that this AssetBundle was generated from
             /// </summary>
             [SerializeReference]
@@ -828,11 +761,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Path Provider uses to load the Asset Bundle
             /// </summary>
             public string LoadPath;
-
-            /// <summary>
-            /// Provider used to load the Asset Bundle
-            /// </summary>
-            public string Provider;
 
             /// <summary>
             /// Result provided by the Provider loading the Asset Bundle
@@ -1242,13 +1170,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Maps used for lookups while building the BuildLayout
         internal Dictionary<string, List<BuildLayout.DataFromOtherAsset>> UsedImplicits = new Dictionary<string, List<BuildLayout.DataFromOtherAsset>>();
 
-        internal Dictionary<string, AssetBundleRequestOptions> BundleNameToRequestOptions = new Dictionary<string, AssetBundleRequestOptions>();
-
-        internal Dictionary<string, AssetBundleRequestOptions> BundleNameToPreviousRequestOptions = new Dictionary<string, AssetBundleRequestOptions>();
-
         internal Dictionary<string, ContentCatalogDataEntry> BundleNameToCatalogEntry = new Dictionary<string, ContentCatalogDataEntry>();
-
-        internal Dictionary<string, string> GroupNameToBuildPath = new Dictionary<string, string>();
 
         internal Dictionary<string, AddressableAssetEntry> GuidToEntry = new Dictionary<string, AddressableAssetEntry>();
         internal Dictionary<string, AssetType> AssetPathToTypeMap = new Dictionary<string, AssetType>();

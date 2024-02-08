@@ -34,9 +34,7 @@ namespace UnityEditor.AddressableAssets
 
                 foreach (var assetEntry in group.entries)
                 {
-                    if (assetEntry == null ||
-                        assetEntry.address == AddressableAssetEntry.EditorSceneListName ||
-                        assetEntry.address == AddressableAssetEntry.ResourcesName)
+                    if (assetEntry == null)
                         continue;
 
                     if (!string.IsNullOrEmpty(assetEntry.AssetPath))

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
-using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -21,12 +20,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     public class AddressableAssetsBuildContext : IAddressableAssetsBuildContext
     {
         private AddressableAssetSettings m_Settings;
-
-        /// <summary>
-        /// The settings object to use.
-        /// </summary>
-        [Obsolete("Use Settings property instead.")]
-        public AddressableAssetSettings settings;
 
         /// <summary>
         /// The settings object to use.
@@ -57,10 +50,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         public DateTime buildStartTime;
 
-        /// <summary>
-        /// The current runtime data being built.
-        /// </summary>
-        public ResourceManagerRuntimeData runtimeData;
+        public BuildTarget buildTarget;
 
         /// <summary>
         /// The list of catalog locations.
@@ -76,11 +66,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// Mapping of asset group to bundles.
         /// </summary>
         public Dictionary<AddressableAssetGroup, List<string>> assetGroupToBundles;
-
-        /// <summary>
-        /// Set of provider types needed in this build.
-        /// </summary>
-        public HashSet<Type> providerTypes;
 
         /// <summary>
         /// The list of all AddressableAssetEntry objects.
@@ -156,8 +141,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 m_PrimaryKeyToLocation = new Dictionary<string, ContentCatalogDataEntry>();
                 foreach (var loc in locations)
                 {
-                    if (loc != null && loc.Keys[0] != null && loc.Keys[0] is string && !m_PrimaryKeyToLocation.ContainsKey((string)loc.Keys[0]))
-                        m_PrimaryKeyToLocation[(string)loc.Keys[0]] = loc;
+                    if (loc != null && loc.Key != null && loc.Key is string && !m_PrimaryKeyToLocation.ContainsKey((string)loc.Key))
+                        m_PrimaryKeyToLocation[(string)loc.Key] = loc;
                 }
 
                 return m_PrimaryKeyToLocation;

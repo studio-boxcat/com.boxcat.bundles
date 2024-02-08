@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -14,7 +12,6 @@ namespace UnityEngine.AddressableAssets
     internal class DynamicResourceLocator : IResourceLocator
     {
         AddressablesImpl m_Addressables;
-        public string LocatorId => nameof(DynamicResourceLocator);
         public virtual IEnumerable<object> Keys => new object[0];
         private string m_AtlasSpriteProviderId = null;
 

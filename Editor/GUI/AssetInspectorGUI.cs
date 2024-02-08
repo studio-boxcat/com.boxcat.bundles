@@ -109,8 +109,6 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (t is AddressableAssetGroupSchema)
                     {
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label("Profile: " + AddressableAssetSettingsDefaultObject.GetSettings(true).profileSettings
-                            .GetProfileName(AddressableAssetSettingsDefaultObject.GetSettings(true).activeProfileId));
 
                         GUILayout.FlexibleSpace();
                         if (GUILayout.Button(s_SystemSettingsGUIContent, "MiniButton"))

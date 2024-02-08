@@ -1,6 +1,3 @@
-using System;
-using UnityEngine;
-
 namespace UnityEditor.AddressableAssets.Build
 {
     /// <summary>

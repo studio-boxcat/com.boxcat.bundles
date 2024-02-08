@@ -24,7 +24,6 @@ namespace UnityEditor.AddressableAssets
         [Serializable]
         internal struct BuildData
         {
-            public bool IsUsingCCD;
             public bool IsContentUpdateBuild;
             public bool DebugBuildLayoutEnabled;
             public bool AutoOpenBuildReportEnabled;
@@ -42,16 +41,6 @@ namespace UnityEditor.AddressableAssets
             public int MaxNumberOfAddressableAssetsInAGroup;
             public int MinNumberOfAddressableAssetsInAGroup;
             public int BuildTarget;
-
-            public int NumberOfGroupsUsingEditorHosted;
-            public int NumberOfGroupsUsingBuiltIn;
-            public int NumberOfGroupsUsingCCD;
-            public int NumberOfGroupsUsingLocalCustomPaths;
-
-            public int NumberOfAssetsInEditorHostedPaths;
-            public int NumberOfAssetsInBuiltInPaths;
-            public int NumberOfAssetsInCCDPaths;
-            public int NumberOfAssetsInLocalCustomPaths;
 
             public int IsIncrementalBuild;
             public int ErrorCode;
@@ -80,7 +69,6 @@ namespace UnityEditor.AddressableAssets
         internal struct UsageData
         {
             public int UsageEventType;
-            public bool IsUsingCCD;
         }
 
         internal enum UsageEventType
@@ -94,7 +82,6 @@ namespace UnityEditor.AddressableAssets
             RunCheckBundleDupeDependenciesRule = 6,
             RunCheckResourcesDupeDependenciesRule = 7,
             RunCheckSceneDupeDependenciesRule = 8,
-            InstallCCDManagementPackage = 9,
             ContentUpdateCancelled = 10,
             ContentUpdateHasChangesInUpdateRestrictionWindow = 11,
             ContentUpdateContinuesWithoutChanges = 12,
@@ -118,17 +105,7 @@ namespace UnityEditor.AddressableAssets
             PackedMode = 0,
             PackedPlayMode = 1,
             FastMode = 2,
-            VirtualMode = 3,
             CustomBuildScript = 4
-        }
-
-        internal enum PathType
-        {
-            BuiltIn = 0,
-            EditorHosted = 1,
-            CCD = 2,
-            Custom = 3,
-            Automatic = 4
         }
 
         internal enum BuildType
@@ -142,14 +119,6 @@ namespace UnityEditor.AddressableAssets
         {
             NoError = 0,
             GenericError = 1
-        }
-
-        internal enum AnalyticsContentUpdateRestriction
-        {
-            NotApplicable = -1,
-            ListUpdatedAssetsWithRestrictions = 0,
-            FailBuild = 1,
-            Disabled = 2
         }
 
         private static bool EventIsRegistered(string eventName)
@@ -190,8 +159,6 @@ namespace UnityEditor.AddressableAssets
                 return BuildScriptType.FastMode;
             if (type == typeof(BuildScriptPackedPlayMode))
                 return BuildScriptType.PackedPlayMode;
-            if (type == typeof(BuildScriptVirtualMode))
-                return BuildScriptType.VirtualMode;
             return BuildScriptType.CustomBuildScript;
         }
 
@@ -208,8 +175,6 @@ namespace UnityEditor.AddressableAssets
             bool isContentUpdateBuild = builderInput.IsContentUpdateBuild;
             bool isBuildAndRelease = builderInput.IsBuildAndRelease;
 
-            bool usingCCD = false;
-
             string error = result.Error;
             bool isPlayModeBuild = result is AddressablesPlayModeBuildResult;
             double totalBuildDurationSeconds = result.Duration;
@@ -219,10 +184,6 @@ namespace UnityEditor.AddressableAssets
             {
                 numberOfAssetBundles = buildRes.AssetBundleBuildResults.Count;
             }
-
-#if ENABLE_CCD
-            usingCCD = true;
-#endif
 
             ErrorType errorCode = ParseError(error);
 
@@ -251,37 +212,6 @@ namespace UnityEditor.AddressableAssets
             int minNumberOfAssetsInAGroup = -1;
             int maxNumberOfAssetsInAGroup = -1;
 
-            int numberOfGroupsUsingEditorHosted = 0;
-            int numberOfGroupsUsingBuiltIn = 0;
-            int numberOfGroupsUsingCCD = 0;
-            int numberOfGroupsUsingLocalCustomPaths = 0;
-
-            int numberOfAssetsInEditorHostedPaths = 0;
-            int numberOfAssetsInBuiltInPaths = 0;
-            int numberOfAssetsInCCDPaths = 0;
-            int numberOfAssetsInLocalCustomPaths = 0;
-
-
-            List<ProfileGroupType> groupTypes = ProfileGroupType.CreateGroupTypes(currentSettings.profileSettings.GetProfile(currentSettings.activeProfileId), currentSettings);
-            var dataSourceSettings = ProfileDataSourceSettings.GetSettings();
-            Dictionary<string, PathType> prefixToTypeMap = new Dictionary<string, PathType>();
-
-            foreach (var groupType in groupTypes)
-            {
-                ProfileGroupType groupTypeArchetype = dataSourceSettings.FindGroupType(groupType);
-                if (groupTypeArchetype == null)
-                    prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.Custom);
-                else if (groupTypeArchetype.GroupTypePrefix == "Built-In")
-                    prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.BuiltIn);
-                else if (groupTypeArchetype.GroupTypePrefix == "Editor Hosted")
-                    prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.EditorHosted);
-                else if (groupTypeArchetype.GroupTypePrefix.StartsWith("CCD", StringComparison.Ordinal))
-                    prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.CCD);
-                else if (groupTypeArchetype.GroupTypePrefix.StartsWith("Automatic", StringComparison.Ordinal))
-                    prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.CCD);
-            }
-
-            HashSet<string> vars = currentSettings.profileSettings.GetAllVariableIds();
 
             foreach (var group in currentSettings.groups)
             {
@@ -293,44 +223,6 @@ namespace UnityEditor.AddressableAssets
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
                 if (schema == null)
                     continue;
-
-                int selected = schema.DetermineSelectedIndex(groupTypes, -1, currentSettings, vars);
-
-                PathType pathType;
-                if (selected == -1)
-                    pathType = PathType.Custom;
-                else
-                    pathType = prefixToTypeMap[groupTypes[selected].GroupTypePrefix];
-
-                if (pathType == PathType.Custom)
-                {
-                    numberOfGroupsUsingLocalCustomPaths += 1;
-                    numberOfAssetsInLocalCustomPaths += group.entries.Count;
-                }
-
-                if (pathType == PathType.BuiltIn)
-                {
-                    numberOfGroupsUsingBuiltIn += 1;
-                    numberOfAssetsInBuiltInPaths += group.entries.Count;
-                }
-
-                if (pathType == PathType.EditorHosted)
-                {
-                    numberOfGroupsUsingEditorHosted += 1;
-                    numberOfAssetsInEditorHostedPaths += group.entries.Count;
-                }
-
-                if (pathType == PathType.CCD)
-                {
-                    numberOfGroupsUsingCCD += 1;
-                    numberOfAssetsInCCDPaths += group.entries.Count;
-                }
-
-                if (pathType == PathType.Automatic)
-                {
-                    numberOfGroupsUsingCCD += 1;
-                    numberOfAssetsInCCDPaths += group.entries.Count;
-                }
 
                 var bundleMode = schema.BundleMode;
                 var compressionType = schema.Compression;
@@ -366,7 +258,6 @@ namespace UnityEditor.AddressableAssets
 
             BuildData data = new BuildData()
             {
-                IsUsingCCD = usingCCD,
                 IsContentUpdateBuild = isContentUpdateBuild,
                 IsPlayModeBuild = false,
                 BuildScript = (int)buildScriptType,
@@ -387,14 +278,6 @@ namespace UnityEditor.AddressableAssets
                 NumberOfGroupsUncompressed = numberOfGroupsUncompressed,
                 NumberOfGroupsPackedTogether = numberOfGroupsPackedTogether,
                 NumberOfGroupsPackedSeparately = numberOfGroupsPackedSeparately,
-                NumberOfGroupsUsingBuiltIn = numberOfGroupsUsingBuiltIn,
-                NumberOfGroupsUsingEditorHosted = numberOfGroupsUsingEditorHosted,
-                NumberOfGroupsUsingLocalCustomPaths = numberOfGroupsUsingLocalCustomPaths,
-                NumberOfGroupsUsingCCD = numberOfGroupsUsingCCD,
-                NumberOfAssetsInLocalCustomPaths = numberOfAssetsInLocalCustomPaths,
-                NumberOfAssetsInBuiltInPaths = numberOfAssetsInBuiltInPaths,
-                NumberOfAssetsInEditorHostedPaths = numberOfAssetsInEditorHostedPaths,
-                NumberOfAssetsInCCDPaths = numberOfAssetsInCCDPaths,
                 BuildTarget = (int)EditorUserBuildSettings.activeBuildTarget,
                 ErrorCode = (int)errorCode
             };
@@ -417,16 +300,9 @@ namespace UnityEditor.AddressableAssets
 
         internal static UsageData GenerateUsageData(UsageEventType eventType)
         {
-            bool usingCCD = false;
-
-#if ENABLE_CCD
-            usingCCD = true;
-#endif
-
             var data = new UsageData()
             {
                 UsageEventType = (int)eventType,
-                IsUsingCCD = usingCCD,
             };
 
             return data;

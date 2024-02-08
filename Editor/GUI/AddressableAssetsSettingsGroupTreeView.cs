@@ -435,7 +435,7 @@ namespace UnityEditor.AddressableAssets.GUI
             item.checkedForChildren = true;
             var subAssets = new List<AddressableAssetEntry>();
             bool includeSubObjects = ProjectConfigData.ShowSubObjectsInGroupView && !string.IsNullOrEmpty(entry.guid);
-            entry.GatherAllAssets(subAssets, false, entry.IsInResources, includeSubObjects);
+            entry.GatherAllAssets(subAssets, false, false, includeSubObjects);
             if (subAssets.Count > 0)
             {
                 foreach (var e in subAssets)
@@ -768,8 +768,6 @@ namespace UnityEditor.AddressableAssets.GUI
             bool isGroup = false;
             bool isEntry = false;
             bool hasReadOnly = false;
-            int resourceCount = 0;
-            bool isResourcesHeader = false;
             bool isMissingPath = false;
             foreach (var item in selectedNodes)
             {
@@ -780,21 +778,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
                 else if (item.entry != null)
                 {
-                    if (item.entry.AssetPath == AddressableAssetEntry.ResourcesPath)
-                    {
-                        if (selectedNodes.Count > 1)
-                            return;
-                        isResourcesHeader = true;
-                    }
-                    else if (item.entry.AssetPath == AddressableAssetEntry.EditorSceneListPath)
-                    {
-                        return;
-                    }
-
                     hasReadOnly |= item.entry.ReadOnly;
                     hasReadOnly |= item.entry.parentGroup.ReadOnly;
                     isEntry = true;
-                    resourceCount += item.entry.IsInResources ? 1 : 0;
                     isMissingPath |= string.IsNullOrEmpty(item.entry.AssetPath);
                 }
                 else if (!string.IsNullOrEmpty(item.folderPath))
@@ -807,11 +793,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
 
             GenericMenu menu = new GenericMenu();
-            if (isResourcesHeader)
-            {
-                menu.AddItem(new GUIContent("Move All Resources to Group..."), false, MoveAllResourcesToGroup, Event.current);
-            }
-            else if (!hasReadOnly)
+            if (!hasReadOnly)
             {
                 if (isGroup)
                 {
@@ -853,14 +835,6 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 if (isEntry)
                 {
-                    if (!isMissingPath)
-                    {
-                        if (resourceCount == selectedNodes.Count)
-                        {
-                            menu.AddItem(new GUIContent("Move Resources to Group..."), false, MoveResourcesToGroup, new Tuple<Event, List<AssetEntryTreeViewItem>>(Event.current, selectedNodes));
-                        }
-                    }
-
                     if (selectedNodes.Count == 1)
                         menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
                     else if (selectedNodes.Count > 1)
@@ -902,68 +876,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             buffer = buffer.TrimEnd(',');
             GUIUtility.systemCopyBuffer = buffer;
-        }
-
-        void MoveAllResourcesToGroup(object context)
-        {
-            var mouseEvent = context as Event;
-            var entries = new List<AddressableAssetEntry>();
-
-            var targetGroup = context as AddressableAssetGroup;
-            var firstId = GetSelection().First();
-            var item = FindItemInVisibleRows(firstId);
-            if (item != null && item.children != null)
-            {
-                foreach(AssetEntryTreeViewItem child in item.children)
-                {
-                    entries.Add(child.entry);
-                }
-            }
-            else
-                Debug.LogWarning("No Resources found to move");
-
-            if (entries.Count > 0)
-            {
-                var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
-                if (mouseEvent == null)
-                    window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, SafeMoveResourcesToGroup);
-                else
-                    window.Initialize(m_Editor.settings, entries, false, false, mouseEvent.mousePosition, SafeMoveResourcesToGroup);
-            }
-            else
-                Debug.LogWarning("No Resources found to move");
-        }
-
-        void MoveResourcesToGroup(object context)
-        {
-            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
-            var entries = new List<AddressableAssetEntry>();
-            foreach (AssetEntryTreeViewItem item in pair.Item2)
-            {
-                if (item.entry != null)
-                    entries.Add(item.entry);
-            }
-
-            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
-            if (pair.Item1 == null)
-                window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, SafeMoveResourcesToGroup);
-            else
-                window.Initialize(m_Editor.settings, entries, false, false, pair.Item1.mousePosition, SafeMoveResourcesToGroup);
-        }
-
-        void SafeMoveResourcesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
-        {
-            var guids = new List<string>();
-            var paths = new List<string>();
-            foreach (AddressableAssetEntry entry in entries)
-            {
-                if (entry != null)
-                {
-                    guids.Add(entry.guid);
-                    paths.Add(entry.AssetPath);
-                }
-            }
-            AddressableAssetUtility.SafeMoveResourcesToGroup(settings, group, paths, guids);
         }
 
         void MoveEntriesToNewGroupWithSettings(object context)
@@ -1218,7 +1130,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         protected override bool CanStartDrag(CanStartDragArgs args)
         {
-            int resourcesCount = 0;
             foreach (var id in args.draggedItemIDs)
             {
                 var item = FindItemInVisibleRows(id);
@@ -1226,27 +1137,12 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     if (item.entry != null)
                     {
-                        //can't drag the root "EditorSceneList" entry
-                        if (item.entry.guid == AddressableAssetEntry.EditorSceneListName)
-                            return false;
-
-                        //can't drag the root "Resources" entry
-                        if (item.entry.guid == AddressableAssetEntry.ResourcesName)
-                            return false;
-
-                        //if we're dragging resources, we should _only_ drag resources.
-                        if (item.entry.IsInResources)
-                            resourcesCount++;
-
                         //if it's missing a path, it can't be moved.  most likely this is a sub-asset.
                         if (string.IsNullOrEmpty(item.entry.AssetPath))
                             return false;
                     }
                 }
             }
-
-            if ((resourcesCount > 0) && (resourcesCount < args.draggedItemIDs.Count))
-                return false;
 
             return true;
         }
@@ -1348,11 +1244,6 @@ namespace UnityEditor.AddressableAssets.GUI
                                 entries.Add(node.entry);
                             }
 
-                            if (entries.First().IsInResources)
-                            {
-                                SafeMoveResourcesToGroup(m_Editor.settings, entries, parent);
-                            }
-                            else
                             {
                                 var modifiedGroups = new HashSet<AddressableAssetGroup>();
                                 modifiedGroups.Add(parent);

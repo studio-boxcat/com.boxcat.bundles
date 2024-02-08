@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.Networking;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -38,16 +37,6 @@ namespace UnityEngine.ResourceManagement
 
         //this prevents re-entrance into the Update method, which can cause stack overflow and infinite loops
         bool m_InsideUpdateMethod = false;
-
-        internal int OperationCacheCount
-        {
-            get { return m_AssetOperationCache.Count; }
-        }
-
-        internal int InstanceOperationCount
-        {
-            get { return m_TrackedInstanceOperations.Count; }
-        }
 
         //cache of type + providerId to IResourceProviders for faster lookup
         internal Dictionary<int, IResourceProvider> m_providerMap = new Dictionary<int, IResourceProvider>();
@@ -456,11 +445,6 @@ namespace UnityEngine.ResourceManagement
         internal bool IsOperationCached(IOperationCacheKey key)
         {
             return m_AssetOperationCache.ContainsKey(key);
-        }
-
-        internal int CachedOperationCount()
-        {
-            return m_AssetOperationCache.Count;
         }
 
         /// <summary>

@@ -56,7 +56,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 case AddressableAssetSettings.ModificationEvent.GroupRemoved:
                 case AddressableAssetSettings.ModificationEvent.GroupRenamed:
                 case AddressableAssetSettings.ModificationEvent.BatchModification:
-                case AddressableAssetSettings.ModificationEvent.ActiveProfileSet:
                 case AddressableAssetSettings.ModificationEvent.GroupSchemaAdded:
                 case AddressableAssetSettings.ModificationEvent.GroupSchemaModified:
                 case AddressableAssetSettings.ModificationEvent.GroupSchemaRemoved:
@@ -138,22 +137,12 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             GUILayout.Space(6);
 
-            EditorGUILayout.BeginHorizontal();
-            var activeProfileName = m_GroupTarget.Settings.profileSettings.GetProfileName(m_GroupTarget.Settings.activeProfileId);
-            if (string.IsNullOrEmpty(activeProfileName))
-            {
-                m_GroupTarget.Settings.activeProfileId = null; //this will reset it to default.
-                activeProfileName = m_GroupTarget.Settings.profileSettings.GetProfileName(m_GroupTarget.Settings.activeProfileId);
-            }
-
-            EditorGUILayout.PrefixLabel("Active Profile: " + activeProfileName);
             if (GUILayout.Button(m_InspectAASettings))
             {
                 EditorGUIUtility.PingObject(AddressableAssetSettingsDefaultObject.Settings);
                 Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
             }
 
-            EditorGUILayout.EndHorizontal();
             GUILayout.Space(6);
             bool doDrawDivider = false;
 

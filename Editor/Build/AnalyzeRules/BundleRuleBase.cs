@@ -10,9 +10,7 @@ using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
@@ -87,19 +85,15 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <returns> The build context information </returns>
         protected internal AddressableAssetsBuildContext GetBuildContext(AddressableAssetSettings settings)
         {
-            ResourceManagerRuntimeData runtimeData = new ResourceManagerRuntimeData();
-
-            var aaContext = new AddressableAssetsBuildContext
+            return new AddressableAssetsBuildContext
             {
                 Settings = settings,
-                runtimeData = runtimeData,
+                buildTarget = default,
                 bundleToAssetGroup = m_BundleToAssetGroup,
                 locations = m_Locations,
-                providerTypes = new HashSet<Type>(),
                 assetEntries = m_AssetEntries,
                 assetGroupToBundles = new Dictionary<AddressableAssetGroup, List<string>>()
             };
-            return aaContext;
         }
 
         /// <summary>

@@ -22,20 +22,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     public class BuildScriptBase : ScriptableObject, IDataBuilder
     {
         /// <summary>
-        /// The type of instance provider to create for the Addressables system.
-        /// </summary>
-        [FormerlySerializedAs("m_InstanceProviderType")]
-        [SerializedTypeRestrictionAttribute(type = typeof(IInstanceProvider))]
-        public SerializedType instanceProviderType = new SerializedType() {Value = typeof(InstanceProvider)};
-
-        /// <summary>
-        /// The type of scene provider to create for the addressables system.
-        /// </summary>
-        [FormerlySerializedAs("m_SceneProviderType")]
-        [SerializedTypeRestrictionAttribute(type = typeof(ISceneProvider))]
-        public SerializedType sceneProviderType = new SerializedType() {Value = typeof(SceneProvider)};
-
-        /// <summary>
         /// Stores the logged information of all the build tasks.
         /// </summary>
         public IBuildLogger Log
@@ -75,13 +61,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 var message = "Data builder " + Name + " cannot build requested type: " + typeof(TResult);
                 Debug.LogError(message);
-                return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, message);
+                return AddressableAssetBuildResult.CreateResult<TResult>(0, message);
             }
 
             AddressableAnalytics.BuildType buildType = AddressableAnalytics.DetermineBuildType();
             m_Log = (builderInput.Logger != null) ? builderInput.Logger : new BuildLog();
-
-            AddressablesRuntimeProperties.ClearCachedPropertyValues();
 
             TResult result = default;
             // Append the file registry to the results
@@ -100,7 +84,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         errMessage = e.Message;
 
                     Debug.LogError(errMessage);
-                    return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errMessage);
+                    return AddressableAssetBuildResult.CreateResult<TResult>(0, errMessage);
                 }
 
                 if (result != null)
@@ -152,12 +136,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     AddressableAssetGroup assetGroup = aaContext.Settings.groups[index];
                     if (assetGroup == null)
                         continue;
-
-                    if (assetGroup.Schemas.Find((x) => x.GetType() == typeof(PlayerDataGroupSchema)) &&
-                        assetGroup.Schemas.Find((x) => x.GetType() == typeof(BundledAssetGroupSchema)))
-                    {
-                        return $"Addressable group {assetGroup.Name} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchema).Name}";
-                    }
 
                     EditorUtility.DisplayProgressBar($"Processing Addressable Group", assetGroup.Name, (float)index / aaContext.Settings.groups.Count);
                     var errorString = ProcessGroup(assetGroup, aaContext);

@@ -8,7 +8,6 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
     /// </summary>
     public class ResourceLocationBase : IResourceLocation
     {
-        string m_Name;
         string m_Id;
         string m_ProviderId;
         object m_Data;
@@ -117,7 +116,6 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
                 throw new ArgumentNullException(nameof(providerId));
             m_PrimaryKey = name;
             m_HashCode = (name.GetHashCode() * 31 + id.GetHashCode()) * 31 + providerId.GetHashCode();
-            m_Name = name;
             m_Id = id;
             m_ProviderId = providerId;
             m_Dependencies = new List<IResourceLocation>(dependencies);

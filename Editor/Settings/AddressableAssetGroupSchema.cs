@@ -134,22 +134,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     return;
                 }
 
-                if (type == typeof(ProfileValueReference))
-                {
-                    var field = property.serializedObject.targetObject.GetType().GetField(property.name,
-                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance |
-                        BindingFlags.DeclaredOnly);
-
-                    string lhsId = (field?.GetValue(property.serializedObject.targetObject) as ProfileValueReference)?.Id;
-                    string rhsId = (field?.GetValue(s_prop.serializedObject.targetObject) as ProfileValueReference)?.Id;
-
-                    if (lhsId != null && rhsId != null && lhsId != rhsId)
-                    {
-                        EditorGUI.showMixedValue = true;
-                        return;
-                    }
-                }
-
                 if (type == typeof(SerializedType))
                 {
                     var field = property.serializedObject.targetObject.GetType().GetField(property.name,

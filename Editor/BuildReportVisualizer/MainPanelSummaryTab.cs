@@ -1,13 +1,9 @@
 #if UNITY_2022_2_OR_NEWER
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using UnityEditor;
 using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEngine.UIElements;
+
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal class MainPanelSummaryTab : IAddressableView, IBuildReportConsumer
@@ -64,21 +60,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
             BuildLayoutSummary summary = BuildLayoutSummary.GetSummaryWithoutAssetTypes(buildReport);
 
-            //This is a little overengineered, but if we do building multiple catalogs then this should help.
-            HashSet<string> localCatalogNames = new HashSet<string>();
-
-            foreach (var catalog in buildReport.AddressablesRuntimeSettings.CatalogLoadPaths)
-            {
-                string name = Path.GetFileName(catalog);
-                localCatalogNames.Add(name);
-            }
-
             SummaryRowBuilder generalInfo = new SummaryRowBuilder("General Information");
-            if (localCatalogNames.Count > 0)
-                generalInfo.With("Local Catalog(s)", string.Join(", ", localCatalogNames));
-
-            generalInfo.With("Local catalog build location", buildReport.LocalCatalogBuildPath)
-                .With("Profile", buildReport.AddressablesEditorSettings.ActiveProfile.Name)
+            generalInfo
                 .With("Platform", buildReport.BuildTarget.ToString())
                 .With("Build Duration", TimeSpan.FromSeconds(buildReport.Duration).ToString("g"))
                 .With("Package Version", buildReport.PackageVersion)

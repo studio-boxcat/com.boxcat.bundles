@@ -462,19 +462,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
 
-            var editorList = GetAssetEntry(AddressableAssetEntry.EditorSceneListName);
-            if (editorList != null)
-            {
-                if (m_GroupName == null)
-                    m_GroupName = AddressableAssetSettings.PlayerDataGroupName;
-                if (m_Data != null)
-                {
-                    if (!HasSchema<PlayerDataGroupSchema>())
-                        AddSchema<PlayerDataGroupSchema>();
-                    m_Data = null;
-                }
-            }
-            else if (m_Settings != null)
+            if (m_Settings != null)
             {
                 if (m_GroupName == null)
                     m_GroupName = Settings.FindUniqueGroupName("Packed Content Group");
@@ -532,75 +520,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (entryFilter == null || entryFilter(e))
                     e.GatherAllAssets(results, includeSelf, recurseAll, includeSubObjects, entryFilter);
         }
-
-        internal void GatherAllDirectAssetReferenceEntryData(List<IReferenceEntryData> results, HashSet<string> processed)
-        {
-            if (processed == null)
-                processed = new HashSet<string>();
-
-            // go through all entries that are not in folder/collections
-            foreach (AddressableAssetEntry entry in entries)
-            {
-                var path = entry.AssetPath;
-                if (string.IsNullOrEmpty(path))
-                    return;
-
-                if (processed.Contains(path))
-                    continue;
-                if (entry.guid == AddressableAssetEntry.EditorSceneListName || entry.guid == AddressableAssetEntry.ResourcesName)
-                    continue;
-
-                processed.Add(path);
-                var reference = new ImplicitAssetEntry()
-                {
-                    address = entry.address,
-                    AssetPath = entry.AssetPath,
-                    IsInResources = entry.IsInResources,
-                };
-                results.Add(reference);
-            }
-        }
-
-#pragma warning disable 0618
-        internal void GatherAllAssetCollectionAssetReferenceEntryData(List<IReferenceEntryData> results, HashSet<string> processed)
-        {
-            if (processed == null)
-                processed = new HashSet<string>();
-
-            if (AssetCollectionEntries.Count != 0)
-            {
-                foreach (var e in m_AssetCollectionEntryCache)
-                {
-                    var entries = new List<AddressableAssetEntry>();
-                    e.GatherAssetEntryCollectionEntries(entries, null);
-
-                    foreach (AddressableAssetEntry entry in entries)
-                    {
-                        // do entries
-                        string assetPath = entry.AssetPath;
-                        if (string.IsNullOrEmpty(assetPath))
-                            return;
-                        if (processed.Contains(assetPath))
-                            continue;
-                        processed.Add(assetPath);
-
-                        if (AssetDatabase.IsValidFolder(assetPath))
-                            continue;
-                        if (!AddressableAssetUtility.IsPathValidForEntry(assetPath))
-                            continue;
-
-                        var reference = new ImplicitAssetEntry()
-                        {
-                            address = entry.address,
-                            AssetPath = entry.AssetPath,
-                            IsInResources = entry.IsInResources,
-                        };
-                        results.Add(reference);
-                    }
-                }
-            }
-        }
-#pragma warning restore 0618
 
         internal void AddAssetEntry(AddressableAssetEntry e, bool postEvent = true)
         {

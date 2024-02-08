@@ -1,17 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.AddressableAssets.ResourceProviders;
-using UnityEngine.Networking;
+using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
@@ -23,8 +18,6 @@ namespace UnityEngine.AddressableAssets
     {
         ResourceManager m_ResourceManager;
         IInstanceProvider m_InstanceProvider;
-
-        internal const string kCacheDataFolder = "{UnityEngine.Application.persistentDataPath}/com.unity.addressables/";
 
         public IInstanceProvider InstanceProvider
         {
@@ -50,7 +43,7 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
-        internal List<ResourceLocatorInfo> m_ResourceLocators = new List<ResourceLocatorInfo>();
+        internal List<IResourceLocator> m_ResourceLocators = new();
         AsyncOperationHandle<IResourceLocator> m_InitializationOperation;
         AsyncOperationHandle<List<string>> m_ActiveCheckUpdateOperation;
         internal AsyncOperationHandle<List<IResourceLocator>> m_ActiveUpdateOperation;
@@ -59,8 +52,8 @@ namespace UnityEngine.AddressableAssets
         Action<AsyncOperationHandle> m_OnHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnSceneHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnHandleDestroyedAction;
-        Dictionary<object, AsyncOperationHandle> m_resultToHandle = new Dictionary<object, AsyncOperationHandle>();
-        internal HashSet<AsyncOperationHandle> m_SceneInstances = new HashSet<AsyncOperationHandle>();
+        Dictionary<object, AsyncOperationHandle> m_resultToHandle = new();
+        internal HashSet<AsyncOperationHandle> m_SceneInstances = new();
 
         internal int SceneOperationCount
         {
@@ -139,33 +132,6 @@ namespace UnityEngine.AddressableAssets
             m_ResourceManager.CleanupSceneInstances(scene);
         }
 
-        public string StreamingAssetsSubFolder
-        {
-            get { return "aa"; }
-        }
-
-        public string BuildPath
-        {
-            get { return Addressables.LibraryPath + StreamingAssetsSubFolder + "/" + PlatformMappingService.GetPlatformPathSubFolder(); }
-        }
-
-        public string PlayerBuildDataPath
-        {
-            get { return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder; }
-        }
-
-        public string RuntimePath
-        {
-            get
-            {
-#if UNITY_EDITOR
-                return BuildPath;
-#else
-                return PlayerBuildDataPath;
-#endif
-            }
-        }
-
         public void Log(string msg)
         {
             Debug.Log(msg);
@@ -214,7 +180,7 @@ namespace UnityEngine.AddressableAssets
 
         public string ResolveInternalId(string id)
         {
-            var path = AddressablesRuntimeProperties.EvaluateString(id);
+            var path = id;
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE || UNITY_PS5 || UNITY_PS4 || UNITY_ANDROID
             if (path.Length >= 260 && path.StartsWith(Application.dataPath, StringComparison.Ordinal))
                 path = path.Substring(Application.dataPath.Length + 1);
@@ -222,40 +188,21 @@ namespace UnityEngine.AddressableAssets
             return path;
         }
 
-        public IEnumerable<IResourceLocator> ResourceLocators
-        {
-            get { return m_ResourceLocators.Select(l => l.Locator); }
-        }
+        public List<IResourceLocator> ResourceLocators => m_ResourceLocators;
 
-        public void AddResourceLocator(IResourceLocator loc, IResourceLocation remoteCatalogLocation = null)
-        {
-            m_ResourceLocators.Add(new ResourceLocatorInfo(loc, remoteCatalogLocation));
-        }
+        public void AddResourceLocator(IResourceLocator loc) => m_ResourceLocators.Add(loc);
 
-        public void RemoveResourceLocator(IResourceLocator loc)
-        {
-            m_ResourceLocators.RemoveAll(l => l.Locator == loc);
-        }
+        public void RemoveResourceLocator(IResourceLocator loc) => m_ResourceLocators.Remove(loc);
 
-        public void ClearResourceLocators()
-        {
-            m_ResourceLocators.Clear();
-        }
+        public void ClearResourceLocators() => m_ResourceLocators.Clear();
 
         internal bool GetResourceLocations(object key, Type type, out IList<IResourceLocation> locations)
         {
-            if (type == null && (key is AssetReference))
-                type = (key as AssetReference).SubOjbectType;
-
-            key = EvaluateKey(key);
-
             locations = null;
             HashSet<IResourceLocation> current = null;
-            foreach (var locatorInfo in m_ResourceLocators)
+            foreach (var locator in m_ResourceLocators)
             {
-                var locator = locatorInfo.Locator;
-                IList<IResourceLocation> locs;
-                if (locator.Locate(key, type, out locs))
+                if (locator.Locate(key, type, out var locs))
                 {
                     if (locations == null)
                     {
@@ -284,15 +231,14 @@ namespace UnityEngine.AddressableAssets
             return true;
         }
 
-        public AsyncOperationHandle<IResourceLocator> InitializeAsync(string runtimeDataPath, string providerSuffix = null, bool autoReleaseHandle = true)
+        public AsyncOperationHandle<IResourceLocator> InitializeAsync()
         {
             if (hasStartedInitialization)
             {
                 if (m_InitializationOperation.IsValid())
                     return m_InitializationOperation;
-                var completedOperation = ResourceManager.CreateCompletedOperation(m_ResourceLocators[0].Locator, errorMsg: null);
-                if (autoReleaseHandle)
-                    AutoReleaseHandleOnCompletion(completedOperation);
+                var completedOperation = ResourceManager.CreateCompletedOperation(m_ResourceLocators[0], errorMsg: null);
+                AutoReleaseHandleOnCompletion(completedOperation);
                 return completedOperation;
             }
 
@@ -309,122 +255,22 @@ namespace UnityEngine.AddressableAssets
 #if !UNITY_SWITCH
             GC.KeepAlive(Application.persistentDataPath);
 #endif
-            if (string.IsNullOrEmpty(runtimeDataPath))
-                return ResourceManager.CreateCompletedOperation<IResourceLocator>(null, string.Format("Invalid Key: {0}", runtimeDataPath));
 
             m_OnHandleCompleteAction = OnHandleCompleted;
             m_OnSceneHandleCompleteAction = OnSceneHandleCompleted;
             m_OnHandleDestroyedAction = OnHandleDestroyed;
 
 #if UNITY_EDITOR
-            Object settingsObject = null;
-            string settingsPath = null;
             //this indicates that a specific addressables settings asset is being used for the runtime locations
-            if (runtimeDataPath.StartsWith("GUID:", StringComparison.Ordinal))
-                settingsPath = UnityEditor.AssetDatabase.GUIDToAssetPath(runtimeDataPath.Substring(runtimeDataPath.IndexOf(':') + 1));
-
-            var assembly = Assembly.Load("Unity.Addressables.Editor");
-            if (string.IsNullOrEmpty(settingsPath) && !UnityEditor.EditorApplication.isPlaying)
-            {
-                var rtp = runtimeDataPath.StartsWith("file://", StringComparison.Ordinal) ? runtimeDataPath.Substring("file://".Length) : runtimeDataPath;
-                if (!File.Exists(rtp))
-                {
-                    var defaultSettingsObjectType = assembly.GetType("UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject");
-                    var prop = defaultSettingsObjectType.GetProperty("DefaultAssetPath", BindingFlags.Public | BindingFlags.Static);
-                    settingsPath = prop.GetValue(null) as string;
-                    UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
-                }
-            }
-
-            if (!string.IsNullOrEmpty(settingsPath))
-            {
-                var settingsType = assembly.GetType("UnityEditor.AddressableAssets.Settings.AddressableAssetSettings");
-                settingsObject = UnityEditor.AssetDatabase.LoadAssetAtPath(settingsPath, settingsType);
-                if (settingsObject != null)
-                {
-                    var settingsSetupMethod = settingsType.GetMethod("CreatePlayModeInitializationOperation", BindingFlags.Instance | BindingFlags.NonPublic);
-                    m_InitializationOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] {this});
-                }
-            }
+            var createPlayModeInitializationOperation = AddressablesEditorInitializer.CreatePlayModeInitializationOperation;
+            if (createPlayModeInitializationOperation != null)
+                m_InitializationOperation = createPlayModeInitializationOperation(this);
 #endif
             if (!m_InitializationOperation.IsValid())
-                m_InitializationOperation = Initialization.InitializationOperation.CreateInitializationOperation(this, runtimeDataPath, providerSuffix);
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(m_InitializationOperation);
+                m_InitializationOperation = InitializationOperation.CreateInitializationOperation(this);
+            AutoReleaseHandleOnCompletion(m_InitializationOperation);
 
             return m_InitializationOperation;
-        }
-
-        public AsyncOperationHandle<IResourceLocator> InitializeAsync()
-        {
-            var settingsPath =
-#if UNITY_EDITOR
-                PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, RuntimePath + "/settings.json");
-#else
-                RuntimePath + "/settings.json";
-#endif
-
-            return InitializeAsync(ResolveInternalId(settingsPath));
-        }
-
-        public AsyncOperationHandle<IResourceLocator> InitializeAsync(bool autoReleaseHandle)
-        {
-            var settingsPath =
-#if UNITY_EDITOR
-                PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, RuntimePath + "/settings.json");
-#else
-                RuntimePath + "/settings.json";
-#endif
-
-            return InitializeAsync(ResolveInternalId(settingsPath), null, autoReleaseHandle);
-        }
-
-        public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(IResourceLocation catalogLocation) where T : IResourceProvider
-        {
-            return CreateCatalogLocationWithHashDependencies<T>(catalogLocation.InternalId);
-        }
-
-        public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string catalogLocation) where T : IResourceProvider
-        {
-#if ENABLE_BINARY_CATALOG
-            string hashFilePath = catalogLocation.Replace(".bin", ".hash");
-#else
-            string hashFilePath = catalogLocation.Replace(".json", ".hash");
-#endif
-            return CreateCatalogLocationWithHashDependencies<T>(catalogLocation, hashFilePath);
-        }
-
-        public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string catalogPath, string hashFilePath) where T : IResourceProvider
-        {
-            var catalogLoc = new ResourceLocationBase(catalogPath, catalogPath, typeof(T).FullName, typeof(IResourceLocator));
-            catalogLoc.Data = new ProviderLoadRequestOptions()
-            {
-                IgnoreFailures = false,
-            };
-
-            if (!string.IsNullOrEmpty(hashFilePath))
-            {
-                ProviderLoadRequestOptions hashOptions = new ProviderLoadRequestOptions()
-                {
-                    IgnoreFailures = true,
-                };
-
-                string tmpPath = hashFilePath;
-#if UNITY_SWITCH
-                string cacheHashFilePath = hashFilePath; // ResourceLocationBase does not allow empty string id
-#else
-                // The file name of the local cached catalog + hash file is the hash code of the remote hash path, without query parameters (if any).
-                string cacheHashFilePath = ResolveInternalId(kCacheDataFolder + tmpPath.GetHashCode() + ".hash");
-#endif
-                var hashResourceLocation = new ResourceLocationBase(hashFilePath, hashFilePath, typeof(TextDataProvider).FullName, typeof(string));
-                hashResourceLocation.Data = hashOptions.Copy();
-                catalogLoc.Dependencies.Add(hashResourceLocation);
-                var cacheResourceLocation = new ResourceLocationBase(cacheHashFilePath, cacheHashFilePath, typeof(TextDataProvider).FullName, typeof(string));
-                cacheResourceLocation.Data = hashOptions.Copy();
-                catalogLoc.Dependencies.Add(cacheResourceLocation);
-            }
-
-            return catalogLoc;
         }
 
         [Conditional("UNITY_EDITOR")]
@@ -434,18 +280,6 @@ namespace UnityEngine.AddressableAssets
             if (!UnityEditor.EditorApplication.isPlaying)
                 UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
 #endif
-        }
-
-        public AsyncOperationHandle<IResourceLocator> LoadContentCatalogAsync(string catalogPath, bool autoReleaseHandle = true, string providerSuffix = null)
-        {
-            var catalogLoc = CreateCatalogLocationWithHashDependencies<ContentCatalogProvider>(catalogPath);
-            if (ShouldChainRequest)
-                return ResourceManager.CreateChainOperation(ChainOperation, op => LoadContentCatalogAsync(catalogPath, autoReleaseHandle, providerSuffix));
-            var handle = Initialization.InitializationOperation.LoadContentCatalog(this, catalogLoc, providerSuffix);
-            if (autoReleaseHandle)
-                AutoReleaseHandleOnCompletion(handle);
-            QueueEditorUpdateIfNeeded();
-            return handle;
         }
 
         AsyncOperationHandle<SceneInstance> TrackHandle(AsyncOperationHandle<SceneInstance> handle)
@@ -491,22 +325,20 @@ namespace UnityEngine.AddressableAssets
 
         public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(object key)
         {
+            Assert.IsNotNull(key, "Cannot load asset with null key");
+
             QueueEditorUpdateIfNeeded();
             if (ShouldChainRequest)
                 return TrackHandle(LoadAssetWithChain<TObject>(ChainOperation, key));
 
-            key = EvaluateKey(key);
-
-            IList<IResourceLocation> locs;
             var t = typeof(TObject);
             if (t.IsArray)
                 t = t.GetElementType();
             else if (t.IsGenericType && typeof(IList<>) == t.GetGenericTypeDefinition())
                 t = t.GetGenericArguments()[0];
-            foreach (var locatorInfo in m_ResourceLocators)
+            foreach (var locator in m_ResourceLocators)
             {
-                var locator = locatorInfo.Locator;
-                if (locator.Locate(key, t, out locs))
+                if (locator.Locate(key, t, out var locs))
                 {
                     foreach (var loc in locs)
                     {
@@ -518,43 +350,6 @@ namespace UnityEngine.AddressableAssets
             }
 
             return ResourceManager.CreateCompletedOperationWithException<TObject>(default(TObject), new InvalidKeyException(key, t, this));
-        }
-
-        class LoadResourceLocationKeyOp : AsyncOperationBase<IList<IResourceLocation>>
-        {
-            object m_Keys;
-            IList<IResourceLocation> m_locations;
-            AddressablesImpl m_Addressables;
-            Type m_ResourceType;
-
-            protected override string DebugName
-            {
-                get { return m_Keys.ToString(); }
-            }
-
-            public void Init(AddressablesImpl aa, Type t, object keys)
-            {
-                m_Keys = keys;
-                m_ResourceType = t;
-                m_Addressables = aa;
-            }
-
-            /// <inheritdoc />
-            protected override bool InvokeWaitForCompletion()
-            {
-                m_RM?.Update(Time.unscaledDeltaTime);
-                if (!HasExecuted)
-                    InvokeExecute();
-                return true;
-            }
-
-            protected override void Execute()
-            {
-                m_Addressables.GetResourceLocations(m_Keys, m_ResourceType, out m_locations);
-                if (m_locations == null)
-                    m_locations = new List<IResourceLocation>();
-                Complete(m_locations, true, string.Empty);
-            }
         }
 
         void OnHandleDestroyed(AsyncOperationHandle handle)
@@ -632,27 +427,6 @@ namespace UnityEngine.AddressableAssets
             m_ResourceManager.Release(handle);
         }
 
-        static List<IResourceLocation> GatherDependenciesFromLocations(IList<IResourceLocation> locations)
-        {
-            var locHash = new HashSet<IResourceLocation>();
-            foreach (var loc in locations)
-            {
-                if (loc.ResourceType == typeof(IAssetBundleResource))
-                {
-                    locHash.Add(loc);
-                }
-
-                if (loc.HasDependencies)
-                {
-                    foreach (var dep in loc.Dependencies)
-                        if (dep.ResourceType == typeof(IAssetBundleResource))
-                            locHash.Add(dep);
-                }
-            }
-
-            return new List<IResourceLocation>(locHash);
-        }
-
         internal void AutoReleaseHandleOnCompletion(AsyncOperationHandle handle)
         {
             handle.Completed += op => Release(op);
@@ -712,11 +486,9 @@ namespace UnityEngine.AddressableAssets
             if (ShouldChainRequest)
                 return InstantiateWithChain(ChainOperation, key, instantiateParameters, trackHandle);
 
-            key = EvaluateKey(key);
             IList<IResourceLocation> locs;
-            foreach (var locatorInfo in m_ResourceLocators)
+            foreach (var locator in m_ResourceLocators)
             {
-                var locator = locatorInfo.Locator;
                 if (locator.Locate(key, typeof(GameObject), out locs))
                     return InstantiateAsync(locs[0], instantiateParameters, trackHandle);
             }
@@ -867,21 +639,6 @@ namespace UnityEngine.AddressableAssets
             if (autoReleaseHandle)
                 AutoReleaseHandleOnCompletion(relOp, true);
             return relOp;
-        }
-
-        private object EvaluateKey(object obj)
-        {
-            if (obj is IKeyEvaluator)
-                return (obj as IKeyEvaluator).RuntimeKey;
-            return obj;
-        }
-
-        public ResourceLocatorInfo GetLocatorInfo(string c)
-        {
-            foreach (var l in m_ResourceLocators)
-                if (l.Locator.LocatorId == c)
-                    return l;
-            return null;
         }
 
         //needed for IEqualityComparer<IResourceLocation> interface

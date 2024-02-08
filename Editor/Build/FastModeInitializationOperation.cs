@@ -4,12 +4,8 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.AddressableAssets.ResourceProviders;
-using UnityEngine.AddressableAssets.Utility;
-using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -76,15 +72,10 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.AddResourceLocator(new DynamicResourceLocator(m_addressables));
 
             //NOTE: for some reason, the data builders can get lost from the settings asset during a domain reload - this only happens in tests and custom instance and scene providers are not needed
-            m_addressables.InstanceProvider =
-                db == null ? new InstanceProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.instanceProviderType.Value).CreateInstance<IInstanceProvider>();
-            m_addressables.SceneProvider = db == null ? new SceneProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.sceneProviderType.Value).CreateInstance<ISceneProvider>();
+            m_addressables.InstanceProvider = new InstanceProvider();
+            m_addressables.SceneProvider = new SceneProvider();
             m_addressables.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new TextDataProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider());
 
             Complete(locator, true, null);
         }

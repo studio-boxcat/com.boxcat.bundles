@@ -1,15 +1,10 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace UnityEngine.AddressableAssets
+namespace UnityEngine.ResourceManagement
 {
     /// <summary>
     /// Options for the Addressables build platform.
@@ -78,8 +73,7 @@ namespace UnityEngine.AddressableAssets
     public class PlatformMappingService
     {
 #if UNITY_EDITOR
-        internal static readonly Dictionary<BuildTarget, AddressablesPlatform> s_BuildTargetMapping =
-            new Dictionary<BuildTarget, AddressablesPlatform>()
+        internal static readonly Dictionary<BuildTarget, AddressablesPlatform> s_BuildTargetMapping = new()
             {
                 {BuildTarget.XboxOne, AddressablesPlatform.XboxOne},
                 {BuildTarget.Switch, AddressablesPlatform.Switch},
@@ -94,8 +88,7 @@ namespace UnityEngine.AddressableAssets
                 {BuildTarget.WSAPlayer, AddressablesPlatform.WindowsUniversal},
             };
 #endif
-        internal static readonly Dictionary<RuntimePlatform, AddressablesPlatform> s_RuntimeTargetMapping =
-            new Dictionary<RuntimePlatform, AddressablesPlatform>()
+        internal static readonly Dictionary<RuntimePlatform, AddressablesPlatform> s_RuntimeTargetMapping = new()
             {
                 {RuntimePlatform.XboxOne, AddressablesPlatform.XboxOne},
                 {RuntimePlatform.Switch, AddressablesPlatform.Switch},
@@ -115,47 +108,17 @@ namespace UnityEngine.AddressableAssets
             };
 
 #if UNITY_EDITOR
-        internal static AddressablesPlatform GetAddressablesPlatformInternal(BuildTarget target)
-        {
-            if (s_BuildTargetMapping.ContainsKey(target))
-                return s_BuildTargetMapping[target];
-            return AddressablesPlatform.Unknown;
-        }
-
         internal static string GetAddressablesPlatformPathInternal(BuildTarget target)
         {
-            if (s_BuildTargetMapping.ContainsKey(target))
-                return s_BuildTargetMapping[target].ToString();
-            return target.ToString();
+            return s_BuildTargetMapping.TryGetValue(target, out var value)
+                ? value.ToString() : target.ToString();
         }
 
 #endif
-        internal static AddressablesPlatform GetAddressablesPlatformInternal(RuntimePlatform platform)
-        {
-            if (s_RuntimeTargetMapping.ContainsKey(platform))
-                return s_RuntimeTargetMapping[platform];
-            return AddressablesPlatform.Unknown;
-        }
-
         internal static string GetAddressablesPlatformPathInternal(RuntimePlatform platform)
         {
-            if (s_RuntimeTargetMapping.ContainsKey(platform))
-                return s_RuntimeTargetMapping[platform].ToString();
-            return platform.ToString();
-        }
-
-        /// <summary>
-        /// Retrieves the Addressables build platform that is being used.
-        /// </summary>
-        /// <returns>Returns the Addressables build platform that is being used.</returns>
-        [Obsolete("This API doesn't adapt to the addition of new platforms.  Use GetPlatformPathSubFolder instead.")]
-        public static AddressablesPlatform GetPlatform()
-        {
-#if UNITY_EDITOR
-            return GetAddressablesPlatformInternal(EditorUserBuildSettings.activeBuildTarget);
-#else
-            return GetAddressablesPlatformInternal(Application.platform);
-#endif
+            return s_RuntimeTargetMapping.TryGetValue(platform, out var value)
+                ? value.ToString() : platform.ToString();
         }
 
         /// <summary>

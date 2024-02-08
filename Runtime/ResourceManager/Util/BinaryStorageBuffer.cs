@@ -3,21 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using Unity.Collections;
+using JetBrains.Annotations;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.ResourceManagement.Util
 {
     internal class BinaryStorageBuffer
     {
         class BuiltinTypesSerializer :
-            ISerializationAdapter<int>,
-            ISerializationAdapter<bool>,
-            ISerializationAdapter<long>,
-            ISerializationAdapter<string>,
-            ISerializationAdapter<Hash128>
+             ISerializationAdapter<string>
         {
             public IEnumerable<ISerializationAdapter> Dependencies => null;
 
@@ -29,21 +25,13 @@ namespace UnityEngine.ResourceManagement.Util
 
             public object Deserialize(Reader reader, Type t, uint offset)
             {
-                if (offset == uint.MaxValue)
-                    return null;
-                if (t == typeof(int)) return reader.ReadValue<int>(offset);
-                if (t == typeof(bool)) return reader.ReadValue<bool>(offset);
-                if (t == typeof(long)) return reader.ReadValue<long>(offset);
-                if (t == typeof(Hash128)) return reader.ReadValue<Hash128>(offset);
-                if (t == typeof(string))
-                {
-                    var remap = reader.ReadValue<ObjectToStringRemap>(offset);
-                    return reader.ReadString(remap.stringId, remap.separator, false);
-                }
-                return null;
+                Assert.AreEqual(typeof(string), t, "Invalid type.");
+                Assert.AreNotEqual(uint.MaxValue, offset, "Invalid offset.");
+                var remap = reader.ReadValue<ObjectToStringRemap>(offset);
+                return reader.ReadString(remap.stringId, remap.separator, false);
             }
 
-            char FindBestSeparator(string str, params char[] seps)
+            static char FindBestSeparator(string str, params char[] seps)
             {
                 int bestCount = 0;
                 char bestSep = (char)0;
@@ -71,21 +59,12 @@ namespace UnityEngine.ResourceManagement.Util
 
             public uint Serialize(Writer writer, object val)
             {
-                if (val == null)
-                    return uint.MaxValue;
+                Assert.IsTrue(val is string, "Value is not a string.");
+                Assert.IsNotNull(val, "String to serialize is null.");
 
-                var t = val.GetType();
-                if (t == typeof(int)) return writer.Write((int)val);
-                if (t == typeof(bool)) return writer.Write((bool)val);
-                if (t == typeof(long)) return writer.Write((long)val);
-                if (t == typeof(Hash128)) return writer.Write((Hash128)val);
-                if (t == typeof(string))
-                {
-                    var str = val as string;
-                    var bestSep = FindBestSeparator(str, '/', '.', '-', '_', '\\', ',');
-                    return writer.Write(new ObjectToStringRemap { stringId = writer.WriteString((string)val), separator = bestSep });
-                }
-                return uint.MaxValue;
+                var str = (string) val;
+                var bestSep = FindBestSeparator(str, '/', '.', '-', '_', '\\', ',');
+                return writer.Write(new ObjectToStringRemap { stringId = writer.WriteString(str), separator = bestSep });
             }
         }
 
@@ -97,7 +76,7 @@ namespace UnityEngine.ResourceManagement.Util
                 public uint assemblyId;
                 public uint classId;
             }
-            public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => null;
+            public IEnumerable<ISerializationAdapter> Dependencies => null;
 
             public object Deserialize(Reader reader, Type type, uint offset)
             {
@@ -265,28 +244,7 @@ namespace UnityEngine.ResourceManagement.Util
                 return false;
             }
 
-            public object[] ReadObjectArray(uint id, bool cacheValues = true)
-            {
-                if (id == uint.MaxValue)
-                    return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new object[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject(ids[i], cacheValues);
-                return objs;
-            }
-
-            public object[] ReadObjectArray(Type t, uint id, bool cacheValues = true)
-            {
-                if (id == uint.MaxValue)
-                    return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new object[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject(t, ids[i], cacheValues);
-                return objs;
-            }
-
+            [CanBeNull]
             public T[] ReadObjectArray<T>(uint id, bool cacheValues = true)
             {
                 if (id == uint.MaxValue)
@@ -526,54 +484,9 @@ namespace UnityEngine.ResourceManagement.Util
                 return totalBytes - dataSize;
             }
 
-            void WriteInternal(uint id, void* pData, uint dataSize, bool prefixSize)
-            {
-                //reserved data cannot reuse previously hashed values, but it can be reused for future writes
-                var addedBytes = prefixSize ? dataSize + sizeof(uint) : dataSize;
-                Hash128 hash;
-                ComputeHash(pData, (ulong)dataSize, &hash);
-                existingValues[hash] = id;
-                var chunkOffset = id;
-                foreach (var c in chunks)
-                {
-                    if (chunkOffset < c.position)
-                    {
-                        fixed (byte* pChunkData = c.data)
-                        {
-                            if (prefixSize)
-                                UnsafeUtility.MemCpy(&pChunkData[chunkOffset - sizeof(uint)], &dataSize, sizeof(uint));
-                            UnsafeUtility.MemCpy(&pChunkData[chunkOffset], pData, dataSize);
-                            return;
-                        }
-                    }
-                    chunkOffset -= c.position;
-                }
-            }
-
-            public uint Reserve<T>() where T : unmanaged => ReserveInternal((uint)sizeof(T), false);
-
-            public uint Write<T>(in T val) where T : unmanaged
-            {
-                fixed (T* pData = &val)
-                    return WriteInternal(pData, (uint)sizeof(T), false);
-            }
-
             public uint Write<T>(T val) where T : unmanaged
             {
                 return WriteInternal(&val, (uint)sizeof(T), false);
-            }
-
-            public uint Write<T>(uint offset, in T val) where T : unmanaged
-            {
-                fixed (T* pData = &val)
-                    WriteInternal(offset, pData, (uint)sizeof(T), false);
-                return offset;
-            }
-
-            public uint Write<T>(uint offset, T val) where T : unmanaged
-            {
-                WriteInternal(offset, &val, (uint)sizeof(T), false);
-                return offset;
             }
 
             public uint Reserve<T>(uint count) where T : unmanaged => ReserveInternal((uint)sizeof(T) * count, true);
@@ -647,18 +560,6 @@ namespace UnityEngine.ResourceManagement.Util
                 return uint.MaxValue;
             }
 
-            public uint WriteObjects<T>(IEnumerable<T> objs, bool serizalizeTypeData)
-            {
-                if (objs == null)
-                    return uint.MaxValue;
-                var count = objs.Count();
-                var ids = new uint[count];
-                var index = 0;
-                foreach (var o in objs)
-                    ids[index++] = WriteObject(o, serizalizeTypeData);
-                return Write(ids);
-            }
-
             public uint WriteObject(object obj, bool serializeTypeData)
             {
                 if (obj == null)
@@ -706,13 +607,6 @@ namespace UnityEngine.ResourceManagement.Util
                     }
                 }
                 return data;
-            }
-
-            public uint SerializeToStream(Stream str)
-            {
-                foreach (var c in chunks)
-                    str.Write(c.data, 0, (int)c.position);
-                return totalBytes;
             }
 
             static bool IsUnicode(string str)

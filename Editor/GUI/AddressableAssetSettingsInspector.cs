@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditorInternal;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -19,27 +15,17 @@ namespace UnityEditor.AddressableAssets.GUI
     {
         AddressableAssetSettings m_AasTarget;
 
-        static FoldoutSessionStateValue ProfilesFoldout = new FoldoutSessionStateValue("Addressables.ProfilesFoldout");
-        GUIContent m_ProfilesHeader;
         static FoldoutSessionStateValue BuildFoldout = new FoldoutSessionStateValue("Addressables.BuildFoldout");
         GUIContent m_BuildHeader;
         static FoldoutSessionStateValue DataBuildersFoldout = new FoldoutSessionStateValue("Addressables.DataBuildersFoldout");
         GUIContent m_DataBuildersHeader;
         static FoldoutSessionStateValue GroupTemplateObjectsFoldout = new FoldoutSessionStateValue("Addressables.GroupTemplateObjectsFoldout");
         GUIContent m_GroupTemplateObjectsHeader;
-#if UNITY_2019_4_OR_NEWER
-        static FoldoutSessionStateValue CCDEnabledFoldout = new FoldoutSessionStateValue("Addressables.CCDEnabledFoldout");
-        GUIContent m_CCDEnabledHeader;
-#endif
 
         //Used for displaying path pairs
         bool m_UseCustomPaths = false;
         bool m_ShowPaths = true;
         bool m_ShowContentStatePath = true;
-
-        [FormerlySerializedAs("m_profileEntriesRL")]
-        [SerializeField]
-        ReorderableList m_ProfileEntriesRl;
 
         [FormerlySerializedAs("m_dataBuildersRL")]
         [SerializeField]
@@ -48,10 +34,6 @@ namespace UnityEditor.AddressableAssets.GUI
         [SerializeField]
         ReorderableList m_GroupTemplateObjectsRl;
 
-        [FormerlySerializedAs("m_currentProfileIndex")]
-        [SerializeField]
-        int m_CurrentProfileIndex = -1;
-
         List<Action> m_QueuedChanges = new List<Action>();
 
         void OnEnable()
@@ -59,13 +41,6 @@ namespace UnityEditor.AddressableAssets.GUI
             m_AasTarget = target as AddressableAssetSettings;
             if (m_AasTarget == null)
                 return;
-
-            var names = m_AasTarget.profileSettings.profileEntryNames;
-            m_ProfileEntriesRl = new ReorderableList(names, typeof(AddressableAssetProfileSettings.ProfileIdData), true, true, true, true);
-            m_ProfileEntriesRl.drawElementCallback = DrawProfileEntriesCallback;
-            m_ProfileEntriesRl.drawHeaderCallback = DrawProfileEntriesHeader;
-            m_ProfileEntriesRl.onAddCallback = OnAddProfileEntry;
-            m_ProfileEntriesRl.onRemoveCallback = OnRemoveProfileEntry;
 
             m_DataBuildersRl = new ReorderableList(m_AasTarget.DataBuilders, typeof(ScriptableObject), true, true, true, true);
             m_DataBuildersRl.drawElementCallback = DrawDataBuilderCallback;
@@ -79,14 +54,10 @@ namespace UnityEditor.AddressableAssets.GUI
             m_GroupTemplateObjectsRl.onAddDropdownCallback = OnAddGroupTemplateObject;
             m_GroupTemplateObjectsRl.onRemoveCallback = OnRemoveGroupTemplateObject;
 
-            m_ProfilesHeader = new GUIContent("Profiles", "Settings affect profiles.");
             m_BuildHeader = new GUIContent("Build", "Settings affect profiles.");
 
             m_DataBuildersHeader = new GUIContent("Build and Play Mode Scripts", "Settings affect profiles.");
             m_GroupTemplateObjectsHeader = new GUIContent("Asset Group Templates", "Settings affect profiles.");
-#if UNITY_2019_4_OR_NEWER
-            m_CCDEnabledHeader = new GUIContent("Cloud Content Delivery", "Settings affect profiles.");
-#endif
         }
 
         GUIContent m_ManageGroups =
@@ -110,9 +81,6 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_NonRecursiveBundleBuilding =
             new GUIContent("Non-Recursive Dependency Calculation", "If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods. This approach helps reduce asset bundle rebuilds and runtime memory consumption.\n*Requires Unity 2019.4.19f1 or above");
 #endif
-
-        GUIContent m_ProfileInUse =
-            new GUIContent("Profile In Use", "This is the active profile that will be used to evaluate all profile variables during a build and when entering play mode.");
 
         GUIContent m_IgnoreUnsupportedFilesInBuild =
             new GUIContent("Ignore Invalid/Unsupported Files in Build", "If enabled, files that cannot be built will be ignored.");
@@ -145,9 +113,6 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("For Build & Release", "Determines where the system attempts to pull the previous content state file from for the Content Update.");
 #endif
 
-#if UNITY_2019_4_OR_NEWER
-        GUIContent m_CCDEnabled = new GUIContent("Enable CCD Features", "If enabled, will add options to upload bundles to CCD.");
-#endif
 #if UNITY_2021_2_OR_NEWER
         GUIContent m_BuildAddressablesWithPlayerBuild =
             new GUIContent("Build Addressables on Player Build", "Determines if a new Addressables build will be built with a Player Build.");
@@ -177,55 +142,6 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 AddressableAssetsWindow.Init();
             }
-
-            GUILayout.Space(12);
-            ProfilesFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(ProfilesFoldout.IsActive, m_ProfilesHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#profile");
-                Application.OpenURL(url);
-            });
-            if (ProfilesFoldout.IsActive)
-            {
-                if (m_AasTarget.profileSettings.profiles.Count > 0)
-                {
-                    if (m_CurrentProfileIndex < 0 || m_CurrentProfileIndex >= m_AasTarget.profileSettings.profiles.Count)
-                        m_CurrentProfileIndex = 0;
-                    var profileNames = m_AasTarget.profileSettings.GetAllProfileNames();
-
-                    int currentProfileIndex = m_CurrentProfileIndex;
-                    // Current profile in use was changed by different window
-                    if (AddressableAssetSettingsDefaultObject.Settings.profileSettings.profiles[m_CurrentProfileIndex].id != AddressableAssetSettingsDefaultObject.Settings.activeProfileId)
-                    {
-                        currentProfileIndex =
-                            profileNames.IndexOf(AddressableAssetSettingsDefaultObject.Settings.profileSettings.GetProfileName(AddressableAssetSettingsDefaultObject.Settings.activeProfileId));
-                        if (currentProfileIndex != m_CurrentProfileIndex)
-                            m_QueuedChanges.Add(() => m_CurrentProfileIndex = currentProfileIndex);
-                    }
-
-                    currentProfileIndex = EditorGUILayout.Popup(m_ProfileInUse, currentProfileIndex, profileNames.ToArray());
-                    if (currentProfileIndex != m_CurrentProfileIndex)
-                        m_QueuedChanges.Add(() => m_CurrentProfileIndex = currentProfileIndex);
-
-                    AddressableAssetSettingsDefaultObject.Settings.activeProfileId = AddressableAssetSettingsDefaultObject.Settings.profileSettings.GetProfileId(profileNames[currentProfileIndex]);
-
-                    EditorGUILayout.BeginHorizontal();
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button(m_ManageProfiles, "Minibutton"))
-                    {
-                        EditorWindow.GetWindow<ProfileWindow>().Show(true);
-                    }
-
-                    EditorGUILayout.EndHorizontal();
-                }
-                else
-                {
-                    EditorGUILayout.LabelField("No valid profiles found");
-                }
-
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
 
             BuildFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(BuildFoldout.IsActive, m_BuildHeader, () =>
             {
@@ -331,35 +247,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             EditorGUI.EndFoldoutHeaderGroup();
 
-#if UNITY_2019_4_OR_NEWER
-            CCDEnabledFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(CCDEnabledFoldout.IsActive, m_CCDEnabledHeader, () =>
-            {
-                string url = AddressableAssetUtility.GenerateDocsURL("content-distribution/AddressablesCCD.html");
-                Application.OpenURL(url);
-            });
-            if (CCDEnabledFoldout.IsActive)
-            {
-                var toggle = EditorGUILayout.Toggle(m_CCDEnabled, m_AasTarget.CCDEnabled);
-                if (toggle != m_AasTarget.CCDEnabled)
-                {
-                    if (toggle)
-                    {
-                        toggle = AddressableAssetUtility.InstallCCDPackage();
-                    }
-                    else
-                    {
-                        toggle = AddressableAssetUtility.RemoveCCDPackage();
-                    }
-
-                    m_QueuedChanges.Add(() => m_AasTarget.CCDEnabled = toggle);
-                }
-
-                GUILayout.Space(postBlockContentSpace);
-            }
-
-            EditorGUI.EndFoldoutHeaderGroup();
-#endif
-
             if (EditorGUI.EndChangeCheck() || m_QueuedChanges.Count > 0)
             {
                 Undo.RecordObject(m_AasTarget, "AddressableAssetSettings before changes");
@@ -370,45 +257,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 m_AasTarget.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
                 serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        void DrawProfileEntriesHeader(Rect rect)
-        {
-            EditorGUI.LabelField(rect, "Profile Entries");
-        }
-
-        void DrawProfileEntriesCallback(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            float halfW = rect.width * 0.4f;
-            var currentEntry = m_AasTarget.profileSettings.profileEntryNames[index];
-            var newName = EditorGUI.DelayedTextField(new Rect(rect.x, rect.y, halfW, rect.height), currentEntry.ProfileName);
-            if (newName != currentEntry.ProfileName)
-                currentEntry.SetName(newName, m_AasTarget.profileSettings);
-
-            var currProfile = m_AasTarget.profileSettings.profiles[m_CurrentProfileIndex];
-            var oldValue = m_AasTarget.profileSettings.GetValueById(currProfile.id, currentEntry.Id);
-            var newValue = EditorGUI.TextField(new Rect(rect.x + halfW, rect.y, rect.width - halfW, rect.height), oldValue);
-            if (oldValue != newValue)
-            {
-                m_AasTarget.profileSettings.SetValue(currProfile.id, currentEntry.ProfileName, newValue);
-            }
-        }
-
-        void OnAddProfileEntry(ReorderableList list)
-        {
-            var uniqueProfileEntryName = m_AasTarget.profileSettings.GetUniqueProfileEntryName("New Entry");
-            if (!string.IsNullOrEmpty(uniqueProfileEntryName))
-                m_AasTarget.profileSettings.CreateValue(uniqueProfileEntryName, "");
-        }
-
-        void OnRemoveProfileEntry(ReorderableList list)
-        {
-            if (list.index >= 0 && list.index < m_AasTarget.profileSettings.profileEntryNames.Count)
-            {
-                var entry = m_AasTarget.profileSettings.profileEntryNames[list.index];
-                if (entry != null)
-                    m_AasTarget.profileSettings.RemoveValue(entry.Id);
             }
         }
 

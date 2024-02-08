@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
@@ -36,7 +33,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         }
 
         /// <inheritdoc/>
-        public virtual bool Initialize(string id, string data)
+        public virtual bool Initialize(string id)
         {
             m_ProviderId = id;
             return !string.IsNullOrEmpty(m_ProviderId);
@@ -83,10 +80,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         public abstract void Provide(ProvideHandle provideHandle);
 
         /// <inheritdoc/>
-        public virtual AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id, string data)
+        public virtual AsyncOperationHandle<bool> InitializeAsync(ResourceManager rm, string id)
         {
             BaseInitAsyncOp baseInitOp = new BaseInitAsyncOp();
-            baseInitOp.Init(() => Initialize(id, data));
+            baseInitOp.Init(() => Initialize(id));
             return rm.StartOperation(baseInitOp, default);
         }
 

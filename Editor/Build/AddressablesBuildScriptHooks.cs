@@ -36,7 +36,7 @@ namespace UnityEditor.AddressableAssets.Build
 
                     if (BuildScript.buildCompleted != null)
                     {
-                        var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(null, 0, err);
+                        var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(0, err);
                         BuildScript.buildCompleted(result);
                     }
 
@@ -49,7 +49,7 @@ namespace UnityEditor.AddressableAssets.Build
                     Debug.LogError(err);
                     if (BuildScript.buildCompleted != null)
                     {
-                        var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(null, 0, err);
+                        var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(0, err);
                         BuildScript.buildCompleted(result);
                     }
 

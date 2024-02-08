@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.U2D;
@@ -32,7 +32,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     RebuildInternalData();
                 if (m_Keys == null)
                 {
-                    var visitedFolders = new HashSet<string>();
                     using (new AddressablesFileEnumerationScope(m_AddressableAssetTree))
                     {
                         m_Keys = new HashSet<object>();
@@ -104,16 +103,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
                     foreach (AddressableAssetEntry e in g.entries)
                     {
-                        if (e.guid == AddressableAssetEntry.EditorSceneListName)
-                        {
-                        }
-                        else if (e.guid == AddressableAssetEntry.ResourcesName)
-                        {
-                        }
-                        else
-                        {
-                            AddEntriesToTables(m_keyToEntries, e);
-                        }
+                        AddEntriesToTables(m_keyToEntries, e);
                     }
                 }
             }
@@ -195,6 +185,8 @@ namespace UnityEditor.AddressableAssets.Settings
 
         public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
         {
+            Assert.IsNotNull(key, "Key cannot be null");
+
             if (m_dirty)
                 RebuildInternalData();
             CacheKey cacheKey = new CacheKey() {m_key = key, m_type = type};

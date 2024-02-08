@@ -291,9 +291,6 @@ namespace UnityEditor.AddressableAssets.GUI
                     }
                 }
 
-                if (toolbarPos.width > 430)
-                    CreateProfileDropdown();
-
                 {
                     var guiMode = new GUIContent("Tools", "Tools used to configure or analyze Addressable Assets");
                     Rect rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
@@ -307,7 +304,6 @@ namespace UnityEditor.AddressableAssets.GUI
                             Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
                         });
 
-                        menu.AddItem(new GUIContent("Window/Profiles"), false, () => EditorWindow.GetWindow<ProfileWindow>().Show(true));
                         menu.AddItem(new GUIContent("Window/Analyze"), false, AnalyzeWindow.ShowWindow);
 
 #if UNITY_2022_2_OR_NEWER
@@ -353,7 +349,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             if (m.CanBuildData<AddressablesPlayModeBuildResult>())
                             {
                                 string text = m is Build.DataBuilders.BuildScriptPackedPlayMode
-                                    ? $"Use Existing Build ({PlatformMappingService.GetAddressablesPlatformPathInternal(EditorUserBuildSettings.activeBuildTarget)})"
+                                    ? $"Use Existing Build ({EditorUserBuildSettings.activeBuildTarget})"
                                     : m.Name;
                                 menu.AddItem(new GUIContent(text), i == settings.ActivePlayModeDataBuilderIndex, OnSetActivePlayModeScript, i);
                             }
@@ -697,43 +693,6 @@ namespace UnityEditor.AddressableAssets.GUI
             m_EntryTree.SwapSearchType();
             m_EntryTree.Reload();
             m_EntryTree.Repaint();
-        }
-
-        void CreateProfileDropdown()
-        {
-            var activeProfileName = settings.profileSettings.GetProfileName(settings.activeProfileId);
-            if (string.IsNullOrEmpty(activeProfileName))
-            {
-                settings.activeProfileId = null; //this will reset it to default.
-                activeProfileName = settings.profileSettings.GetProfileName(settings.activeProfileId);
-            }
-
-            var profileButton = new GUIContent("Profile: " + activeProfileName, "The active collection of build path settings");
-
-            Rect r = GUILayoutUtility.GetRect(profileButton, m_ButtonStyle, GUILayout.Width(115f));
-            if (EditorGUI.DropdownButton(r, profileButton, FocusType.Passive, EditorStyles.toolbarDropDown))
-            {
-                //GUIUtility.hotControl = 0;
-                var menu = new GenericMenu();
-
-                var nameList = settings.profileSettings.GetAllProfileNames();
-
-                foreach (var name in nameList)
-                {
-                    menu.AddItem(new GUIContent(name), name == activeProfileName, SetActiveProfile, name);
-                }
-
-                menu.AddSeparator(string.Empty);
-                menu.AddItem(new GUIContent("Manage Profiles"), false, () => EditorWindow.GetWindow<ProfileWindow>().Show(true));
-                menu.DropDown(r);
-            }
-        }
-
-        void SetActiveProfile(object context)
-        {
-            var n = context as string;
-            AddressableAssetSettingsDefaultObject.Settings.activeProfileId = AddressableAssetSettingsDefaultObject.Settings.profileSettings.GetProfileId(n);
-            AddressableAssetUtility.OpenAssetIfUsingVCIntegration(AddressableAssetSettingsDefaultObject.Settings);
         }
 
         bool m_ModificationRegistered;
