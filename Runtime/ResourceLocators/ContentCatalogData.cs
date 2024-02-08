@@ -29,11 +29,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public List<string> Dependencies { get; private set; }
 
         /// <summary>
-        /// Serializable data for the provider.
-        /// </summary>
-        public object Data { get; set; }
-
-        /// <summary>
         /// The type of the resource for th location.
         /// </summary>
         public Type ResourceType { get; private set; }
@@ -46,13 +41,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <param name="key">The collection of keys that can be used to retrieve this entry.</param>
         /// <param name="dependencies">Optional collection of keys for dependencies.</param>
         /// <param name="extraData">Optional additional data to be passed to the provider.  For example, AssetBundleProviders use this for cache and crc data.</param>
-        public ContentCatalogDataEntry(Type type, string internalId, string key, IEnumerable<string> dependencies = null, object extraData = null)
+        public ContentCatalogDataEntry(Type type, string internalId, string key, IEnumerable<string> dependencies = null)
         {
             InternalId = internalId;
             ResourceType = type;
             Key = key;
             Dependencies = dependencies == null ? new List<string>() : new List<string>(dependencies);
-            Data = extraData;
         }
     }
 
@@ -207,7 +201,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         public uint internalIdOffset;
                         public uint dependencySetOffset;
                         public int dependencyHashValue;
-                        public uint extraDataOffset;
                         public uint typeId;
                     }
 
@@ -238,7 +231,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                             primaryKeyOffset = writer.WriteString(e.Key, '/'),
                             internalIdOffset = writer.WriteString(e.InternalId, '/'),
                             dependencySetOffset = depId,
-                            extraDataOffset = writer.WriteObject(e.Data, true),
                             typeId = writer.WriteObject(e.ResourceType, false)
                         };
                         return writer.Write(data);
@@ -250,7 +242,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     var d = r.ReadValue<Serializer.Data>(id);
                     PrimaryKey = r.ReadString(d.primaryKeyOffset, '/', false);
                     InternalId = Addressables.ResolveInternalId(r.ReadString(d.internalIdOffset, '/', false));
-                    Data = r.ReadObject(d.extraDataOffset, false);
                     Dependencies = r.ReadObjectArray<ResourceLocation>(d.dependencySetOffset, true);
                     DependencyHashCode = (int)d.dependencySetOffset;
                     ResourceType = r.ReadObject<Type>(d.typeId);
@@ -261,7 +252,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
                 public string PrimaryKey { private set; get; }
                 public string InternalId { private set; get; }
-                public object Data { private set; get; }
                 public string ProviderId { set; get; }
                 public IList<IResourceLocation> Dependencies { private set; get; }
                 public int DependencyHashCode { private set; get; }

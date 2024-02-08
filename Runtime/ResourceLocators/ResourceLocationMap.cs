@@ -49,7 +49,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 }
 
                 var loc = new ResourceLocationBase(rlData.Keys, Addressables.ResolveInternalId(rlData.InternalId), rlData.Provider, rlData.ResourceType);
-                loc.Data = rlData.Data;
                 locMap.Add(rlData.Keys, loc);
                 dataMap.Add(rlData.Keys, rlData);
             }

@@ -45,12 +45,6 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         bool HasDependencies { get; }
 
         /// <summary>
-        /// Gets any data object associated with this locations
-        /// </summary>
-        /// <value>The object.</value>
-        object Data { get; }
-
-        /// <summary>
         /// Primary address for this location.
         /// </summary>
         string PrimaryKey { get; }

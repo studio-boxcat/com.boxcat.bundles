@@ -588,13 +588,11 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Create all entries for this addressable asset.  This will expand subassets (Sprites, Meshes, etc) and also different representations.
         /// </summary>
         /// <param name="entries">The list of entries to fill in.</param>
-        /// <param name="isBundled">Whether the entry is bundles or not.  This will affect the load path.</param>
         /// <param name="dependencies">Keys of dependencies</param>
-        /// <param name="extraData">Extra data to append to catalog entries.</param>
         /// <param name="depInfo">Map of guids to AssetLoadInfo for object identifiers in an Asset.  If null, ContentBuildInterface gathers object ids automatically.</param>
         /// <param name="includeAddress">Flag indicating if address locations should be included</param>
         /// <param name="assetsInBundle">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
-        public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, IEnumerable<string> dependencies, object extraData,
+        public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, IEnumerable<string> dependencies,
             Dictionary<GUID, AssetLoadInfo> depInfo, bool includeAddress, HashSet<string> assetsInBundle)
         {
             if (string.IsNullOrEmpty(AssetPath))
@@ -626,11 +624,11 @@ namespace UnityEditor.AddressableAssets.Settings
                     : ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(new GUID(guid), EditorUserBuildSettings.activeBuildTarget);
 
                 foreach (var t in GatherMainAndReferencedSerializedTypes(ids))
-                    entries.Add(new ContentCatalogDataEntry(t, assetPath, key, dependencies, extraData));
+                    entries.Add(new ContentCatalogDataEntry(t, assetPath, key, dependencies));
             }
             else if (mainType != null && mainType != typeof(DefaultAsset))
             {
-                entries.Add(new ContentCatalogDataEntry(mainType, assetPath, key, dependencies, extraData));
+                entries.Add(new ContentCatalogDataEntry(mainType, assetPath, key, dependencies));
             }
         }
 

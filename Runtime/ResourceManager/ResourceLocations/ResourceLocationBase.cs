@@ -10,7 +10,6 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
     {
         string m_Id;
         string m_ProviderId;
-        object m_Data;
         int m_DependencyHashCode;
         int m_HashCode;
         Type m_Type;
@@ -20,43 +19,22 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// <summary>
         /// Internal id.
         /// </summary>
-        public string InternalId
-        {
-            get { return m_Id; }
-        }
+        public string InternalId => m_Id;
 
         /// <summary>
         /// Provider Id.  This is usually set to the FullName property of the type of the provider class.
         /// </summary>
-        public string ProviderId
-        {
-            get { return m_ProviderId; }
-        }
+        public string ProviderId => m_ProviderId;
 
         /// <summary>
         /// List of dependencies that must be loaded before this location.  This value may be null.
         /// </summary>
-        public IList<IResourceLocation> Dependencies
-        {
-            get { return m_Dependencies; }
-        }
+        public IList<IResourceLocation> Dependencies => m_Dependencies;
 
         /// <summary>
         /// Convenience method to see if there are any dependencies.
         /// </summary>
-        public bool HasDependencies
-        {
-            get { return m_Dependencies != null && m_Dependencies.Count > 0; }
-        }
-
-        /// <summary>
-        /// Data that is intended for the provider.  Objects can be serialized during the build process to be used by the provider.  An example of usage is cache usage data for AssetBundleProvider.
-        /// </summary>
-        public object Data
-        {
-            get { return m_Data; }
-            set { m_Data = value; }
-        }
+        public bool HasDependencies => m_Dependencies != null && m_Dependencies.Count > 0;
 
         /// <inheritdoc/>
         public string PrimaryKey

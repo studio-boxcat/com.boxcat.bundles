@@ -69,35 +69,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             get { return m_ResourceType.Value; }
         }
 
-        [SerializeField]
-        byte[] SerializedData;
-
-        object _Data;
-
-        /// <summary>
-        /// The optional arbitrary data stored along with location
-        /// </summary>
-        public object Data
-        {
-            get
-            {
-                if (_Data == null)
-                {
-                    if (SerializedData == null || SerializedData.Length <= 0)
-                        return null;
-                    _Data = Utility.SerializationUtilities.ReadObjectFromByteArray(SerializedData, 0);
-                }
-
-                return _Data;
-            }
-            set
-            {
-                var tmp = new System.Collections.Generic.List<byte>();
-                Utility.SerializationUtilities.WriteObjectToByteList(value, tmp);
-                SerializedData = tmp.ToArray();
-            }
-        }
-
         /// <summary>
         /// Construct a new ResourceLocationData object.
         /// </summary>
