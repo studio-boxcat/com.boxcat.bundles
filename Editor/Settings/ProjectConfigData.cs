@@ -28,9 +28,6 @@ namespace UnityEditor.AddressableAssets.Settings
             internal int activePlayModeIndex = 0;
 
             [SerializeField]
-            internal bool hideSubObjectsInGroupView = false;
-
-            [SerializeField]
             internal bool showGroupsAsHierarchy = false;
 
             [SerializeField]
@@ -50,24 +47,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         static ConfigSaveData s_Data;
-
-        /// <summary>
-        /// Whether to display sub objects in the Addressables Groups window.
-        /// </summary>
-        public static bool ShowSubObjectsInGroupView
-        {
-            get
-            {
-                ValidateData();
-                return !s_Data.hideSubObjectsInGroupView;
-            }
-            set
-            {
-                ValidateData();
-                s_Data.hideSubObjectsInGroupView = !value;
-                SaveData();
-            }
-        }
 
         /// <summary>
         /// Whether to generate the bundle build layout report.

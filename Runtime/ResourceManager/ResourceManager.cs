@@ -168,12 +168,6 @@ namespace UnityEngine.ResourceManagement
             if (desiredType == null)
             {
                 provider = GetResourceProvider(location);
-                if (provider == null)
-                {
-                    var ex = new UnknownResourceProviderException(location);
-                    return CreateCompletedOperationInternal<object>(null, false, ex, releaseDependenciesOnFailure);
-                }
-
                 desiredType = provider.GetDefaultType(location);
             }
 
@@ -187,7 +181,6 @@ namespace UnityEngine.ResourceManagement
             {
                 op.IncrementReferenceCount();
                 return new AsyncOperationHandle(op, location.ToString());
-                ;
             }
 
             Type provType;
@@ -199,7 +192,7 @@ namespace UnityEngine.ResourceManagement
             int depHash = location.DependencyHashCode;
             var depOp = location.HasDependencies
                 ? ProvideResourceGroupCached(location.Dependencies, depHash, null, null, releaseDependenciesOnFailure)
-                : default(AsyncOperationHandle<IList<AsyncOperationHandle>>);
+                : default;
 
             ((IGenericProviderOperation)op).Init(this, provider, location, depOp, releaseDependenciesOnFailure);
 
@@ -442,44 +435,6 @@ namespace UnityEngine.ResourceManagement
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Create a group operation for a set of locations.
-        /// </summary>
-        /// <typeparam name="T">The expected object type for the operations.</typeparam>
-        /// <param name="locations">The list of locations to load.</param>
-        /// <returns>The operation for the entire group.</returns>
-        public AsyncOperationHandle<IList<AsyncOperationHandle>> CreateGroupOperation<T>(IList<IResourceLocation> locations)
-        {
-            var op = CreateOperation<GroupOperation>(typeof(GroupOperation), s_GroupOperationTypeHash, null, m_ReleaseOpNonCached);
-            var ops = new List<AsyncOperationHandle>(locations.Count);
-            foreach (var loc in locations)
-                ops.Add(ProvideResource<T>(loc));
-
-            op.Init(ops);
-            return StartOperation(op, default);
-        }
-
-        /// <summary>
-        /// Create a group operation for a set of locations.
-        /// </summary>
-        /// <typeparam name="T">The expected object type for the operations.</typeparam>
-        /// <param name="locations">The list of locations to load.</param>
-        /// <param name="allowFailedDependencies">The operation succeeds if any grouped locations fail.</param>
-        /// <returns>The operation for the entire group.</returns>
-        internal AsyncOperationHandle<IList<AsyncOperationHandle>> CreateGroupOperation<T>(IList<IResourceLocation> locations, bool allowFailedDependencies)
-        {
-            var op = CreateOperation<GroupOperation>(typeof(GroupOperation), s_GroupOperationTypeHash, null, m_ReleaseOpNonCached);
-            var ops = new List<AsyncOperationHandle>(locations.Count);
-            foreach (var loc in locations)
-                ops.Add(ProvideResource<T>(loc));
-
-            GroupOperation.GroupOperationSettings settings = GroupOperation.GroupOperationSettings.None;
-            if (allowFailedDependencies)
-                settings |= GroupOperation.GroupOperationSettings.AllowFailedDependencies;
-            op.Init(ops, settings);
-            return StartOperation(op, default);
         }
 
         internal AsyncOperationHandle<IList<AsyncOperationHandle>> ProvideResourceGroupCached(

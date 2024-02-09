@@ -90,16 +90,14 @@ namespace UnityEngine.AddressableAssets
         }
 
         public void SetResourceLocator(IResourceLocator loc) => m_ResourceLocator = loc;
-
-        internal bool GetResourceLocation(string key, Type type, out IResourceLocation location)
-        {
-            return m_ResourceLocator!.Locate(key, type, out location);
-        }
+        internal IResourceLocation GetResourceLocation(string key, Type type) => m_ResourceLocator!.Locate(key, type);
 
         void Initialize()
         {
             if (initialized)
                 return;
+
+            L.W("[Addressables] Initialize");
 
             initialized = true;
 
@@ -169,25 +167,17 @@ namespace UnityEngine.AddressableAssets
             return TrackHandle(ResourceManager.ProvideResource<TObject>(location));
         }
 
-        public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(string key)
+        public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(string key) where TObject : Object
         {
             Assert.IsNotNull(key, "Cannot load asset with null key");
 
             QueueEditorUpdateIfNeeded();
             if (initialized is false) Initialize();
 
-            var t = typeof(TObject);
-            if (t.IsArray)
-                t = t.GetElementType();
-            else if (t.IsGenericType && typeof(IList<>) == t.GetGenericTypeDefinition())
-                t = t.GetGenericArguments()[0];
-
             var locator = m_ResourceLocator;
             Assert.IsNotNull(locator, "Addressables.m_ResourceLocator is null");
-            if (locator.Locate(key, t, out var loc))
-                return TrackHandle(ResourceManager.ProvideResource<TObject>(loc));
-
-            return ResourceManager.CreateCompletedOperationWithException<TObject>(default(TObject), new InvalidKeyException(key, t, this));
+            var loc = locator.Locate(key, typeof(TObject));
+            return TrackHandle(ResourceManager.ProvideResource<TObject>(loc));
         }
 
         void OnHandleDestroyed(AsyncOperationHandle handle)
@@ -310,32 +300,14 @@ namespace UnityEngine.AddressableAssets
             return InstantiateAsync(key, new InstantiationParameters(position, rotation, parent), trackHandle);
         }
 
-        AsyncOperationHandle<GameObject> InstantiateWithChain(AsyncOperationHandle dep, string key, InstantiationParameters instantiateParameters, bool trackHandle = true)
-        {
-            var chainOp = ResourceManager.CreateChainOperation(dep, op => InstantiateAsync(key, instantiateParameters, false));
-            if (trackHandle)
-                chainOp.CompletedTypeless += m_OnHandleCompleteAction;
-            return chainOp;
-        }
-
         public AsyncOperationHandle<GameObject> InstantiateAsync(string key, InstantiationParameters instantiateParameters, bool trackHandle = true)
         {
             QueueEditorUpdateIfNeeded();
             if (initialized is false) Initialize();
 
             var locator = m_ResourceLocator;
-            if (locator!.Locate(key, typeof(GameObject), out var loc))
-                return InstantiateAsync(loc, instantiateParameters, trackHandle);
-
-            return ResourceManager.CreateCompletedOperationWithException<GameObject>(null, new InvalidKeyException(key, typeof(GameObject), this));
-        }
-
-        AsyncOperationHandle<GameObject> InstantiateWithChain(AsyncOperationHandle dep, IResourceLocation location, InstantiationParameters instantiateParameters, bool trackHandle = true)
-        {
-            var chainOp = ResourceManager.CreateChainOperation(dep, op => InstantiateAsync(location, instantiateParameters, false));
-            if (trackHandle)
-                chainOp.CompletedTypeless += m_OnHandleCompleteAction;
-            return chainOp;
+            var loc = locator!.Locate(key, typeof(GameObject));
+            return InstantiateAsync(loc, instantiateParameters, trackHandle);
         }
 
         public AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, InstantiationParameters instantiateParameters, bool trackHandle = true)
@@ -367,17 +339,6 @@ namespace UnityEngine.AddressableAssets
             return true;
         }
 
-        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, string key, LoadSceneMode loadMode, bool activateOnLoad = true, int priority = 100)
-        {
-            return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadMode, activateOnLoad, priority, false)));
-        }
-
-        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, IResourceLocation key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true,
-            int priority = 100)
-        {
-            return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadMode, activateOnLoad, priority, false)));
-        }
-
         public AsyncOperationHandle<SceneInstance> LoadSceneAsync(string key)
         {
             return LoadSceneAsync(key, LoadSceneMode.Single);
@@ -388,9 +349,7 @@ namespace UnityEngine.AddressableAssets
             QueueEditorUpdateIfNeeded();
             if (initialized is false) Initialize();
 
-            if (!GetResourceLocation(key, typeof(SceneInstance), out var location))
-                return ResourceManager.CreateCompletedOperationWithException<SceneInstance>(default(SceneInstance), new InvalidKeyException(key, typeof(SceneInstance), this));
-
+            var location = GetResourceLocation(key, typeof(SceneInstance));
             return LoadSceneAsync(location, loadMode, activateOnLoad, priority, trackHandle);
         }
 

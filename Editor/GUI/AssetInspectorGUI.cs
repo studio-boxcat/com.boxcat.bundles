@@ -317,21 +317,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     if (info.MainAssetEntry != null)
                     {
-                        if (info.IsMainAsset == false && ProjectConfigData.ShowSubObjectsInGroupView)
-                        {
-                            List<AddressableAssetEntry> subs = new List<AddressableAssetEntry>();
-                            info.MainAssetEntry.GatherAllAssets(subs, false, true, true);
-                            foreach (AddressableAssetEntry sub in subs)
-                            {
-                                if (sub.TargetAsset == info.TargetObject)
-                                {
-                                    entries.Add(sub);
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                            entries.Add(info.MainAssetEntry);
+                        entries.Add(info.MainAssetEntry);
                     }
                 }
 

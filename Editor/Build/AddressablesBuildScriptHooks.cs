@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -32,7 +33,7 @@ namespace UnityEditor.AddressableAssets.Build
                 if (settings.ActivePlayModeDataBuilder == null)
                 {
                     var err = "Active play mode build script is null.";
-                    Debug.LogError(err);
+                    L.E(err);
 
                     if (BuildScript.buildCompleted != null)
                     {
@@ -46,7 +47,8 @@ namespace UnityEditor.AddressableAssets.Build
                 if (!settings.ActivePlayModeDataBuilder.CanBuildData<AddressablesPlayModeBuildResult>())
                 {
                     var err = string.Format("Active build script {0} cannot build AddressablesPlayModeBuildResult.", settings.ActivePlayModeDataBuilder);
-                    Debug.LogError(err);
+                    L.E(err);
+
                     if (BuildScript.buildCompleted != null)
                     {
                         var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(0, err);
@@ -56,7 +58,7 @@ namespace UnityEditor.AddressableAssets.Build
                     return;
                 }
 
-                Debug.Log("[Addressables] BuildScriptHooks: OnEditorPlayModeChanged - " + settings.ActivePlayModeDataBuilder.Name);
+                L.I("[Addressables] BuildScriptHooks: OnEditorPlayModeChanged - " + settings.ActivePlayModeDataBuilder.Name);
 
                 var res = settings.ActivePlayModeDataBuilder.BuildData<AddressablesPlayModeBuildResult>(new AddressablesDataBuilderInput(settings));
                 if (!string.IsNullOrEmpty(res.Error))

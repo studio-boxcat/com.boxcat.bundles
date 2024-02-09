@@ -1,4 +1,3 @@
-using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -9,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         public static void Initialize(AddressablesImpl addressables, AddressableAssetSettings settings)
         {
-            Debug.Log("[Addressables] FastModeInitializer");
+            L.I("[Addressables] FastModeInitializer");
             addressables.SetResourceLocator(new AddressableAssetSettingsLocator(settings));
             addressables.ResourceManager.ResourceProviders[(int) ResourceProviderType.AssetDatabase] ??= new AssetDatabaseProvider();
         }

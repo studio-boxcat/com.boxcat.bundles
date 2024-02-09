@@ -20,7 +20,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public string InternalId { get; set; }
 
         /// <summary>
-        /// Keys for this location.
+        /// Key (Address) for this location. Null if the location does not have a explicit address.
         /// </summary>
         public string Key { get; set; }
 
@@ -41,7 +41,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <param name="internalId">The internal id.</param>
         /// <param name="key">The collection of keys that can be used to retrieve this entry.</param>
         /// <param name="dependencies">Optional collection of keys for dependencies.</param>
-        /// <param name="extraData">Optional additional data to be passed to the provider.  For example, AssetBundleProviders use this for cache and crc data.</param>
         public ContentCatalogDataEntry(Type type, string internalId, string key, IEnumerable<string> dependencies = null)
         {
             InternalId = internalId;
@@ -114,14 +113,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 #endif
 
         BinaryStorageBuffer.Reader m_Reader;
+
         internal ContentCatalogData(BinaryStorageBuffer.Reader reader)
         {
             m_Reader = reader;
-        }
-
-        internal IResourceLocator CreateCustomLocator(int locatorCacheSize = 100)
-        {
-            return new ResourceLocator(m_Reader, locatorCacheSize);
         }
 
         internal class Serializer : BinaryStorageBuffer.ISerializationAdapter<ContentCatalogData>
@@ -274,32 +269,14 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 public int Hash(Type t) => (InternalId.GetHashCode() * 31 + t.GetHashCode()) * 31 + DependencyHashCode;
             }
 
-            struct CacheKey : IEquatable<CacheKey>
-            {
-                public object key;
-                public Type type;
-                int hashCode;
-                public CacheKey(object o, Type t)
-                {
-                    key = o;
-                    type = t;
-                    hashCode = type == null ? key.GetHashCode() : key.GetHashCode() * 31 + type.GetHashCode();
-                }
-                public bool Equals(CacheKey other) => key.Equals(other.key) && ((type == null && other.type == null) || type.Equals(other.type));
-                public override int GetHashCode() => hashCode;
-            }
+            readonly Dictionary<string, uint> keyData;
+            readonly BinaryStorageBuffer.Reader reader;
 
-            LRUCache<CacheKey, IResourceLocation> m_Cache;
-            Dictionary<string, uint> keyData;
-            BinaryStorageBuffer.Reader reader;
-
-            internal ResourceLocator(BinaryStorageBuffer.Reader reader, int cacheLimit)
+            internal ResourceLocator(BinaryStorageBuffer.Reader reader)
             {
                 this.reader = reader;
-                m_Cache = new LRUCache<CacheKey, IResourceLocation>(cacheLimit);
                 keyData = new Dictionary<string, uint>();
-                uint keysOffset = sizeof(uint);
-                var keyDataArray = reader.ReadValueArray<KeyData>(keysOffset, false);
+                var keyDataArray = reader.ReadValueArray<KeyData>(sizeof(uint), false);
                 int index = 0;
                 foreach (var k in keyDataArray)
                 {
@@ -309,36 +286,16 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 }
             }
 
-            public bool Locate(string key, Type type, out IResourceLocation location)
+            public IResourceLocation Locate(string key, Type type)
             {
-                var cacheKey = new CacheKey(key, type);
-                if (m_Cache.TryGet(cacheKey, out location))
-                    return true;
-                if (!keyData.TryGetValue(key, out var locationOffset))
-                {
-                    location = null;
-                    return false;
-                }
-                var loc = reader.ReadObject<ResourceLocation>(locationOffset);
-                if (type == null || type == typeof(object))
-                {
-                    location = loc;
-                    m_Cache.TryAdd(cacheKey, location);
-                    return true;
-                }
+                Assert.IsNotNull(type);
 
-                if (type.IsAssignableFrom(loc.ResourceType))
-                {
-                    location = loc;
-                    m_Cache.TryAdd(cacheKey, location);
-                    return true;
-                }
-                else
-                {
-                    location = null;
-                    m_Cache.TryAdd(cacheKey, location);
-                    return false;
-                }
+                if (keyData.TryGetValue(key, out var locationOffset) is false)
+                    throw new KeyNotFoundException($"Key not found: {key}");
+
+                var loc = reader.ReadObject<ResourceLocation>(locationOffset);
+                Assert.IsTrue(type.IsAssignableFrom(loc.ResourceType), $"ResourceType mismatch. Key: {key}, Expected: {type}, Actual: {loc.ResourceType}");
+                return loc;
             }
         }
     }

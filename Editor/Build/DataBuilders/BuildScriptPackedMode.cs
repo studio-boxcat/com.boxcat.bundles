@@ -558,8 +558,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="schema">The BundledAssetGroupSchema of used to process the assetGroup.</param>
         /// <param name="entryFilter">A filter to remove AddressableAssetEntries from being processed in the build.</param>
         /// <returns>The total list of AddressableAssetEntries that were processed.</returns>
-        public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema,
-            Func<AddressableAssetEntry, bool> entryFilter = null)
+        public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema)
         {
             var combinedEntries = new List<AddressableAssetEntry>();
             var packingMode = schema.BundleMode;
@@ -570,14 +569,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
                 {
-                    var allEntries = new List<AddressableAssetEntry>();
-                    foreach (AddressableAssetEntry a in assetGroup.entries)
-                    {
-                        if (entryFilter != null && !entryFilter(a))
-                            continue;
-                        a.GatherAllAssets(allEntries, true, true, false, entryFilter);
-                    }
-
+                    var allEntries = new List<AddressableAssetEntry>(assetGroup.entries);
                     combinedEntries.AddRange(allEntries);
                     GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
                 }
@@ -586,12 +578,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 {
                     foreach (AddressableAssetEntry a in assetGroup.entries)
                     {
-                        if (entryFilter != null && !entryFilter(a))
-                            continue;
-                        var allEntries = new List<AddressableAssetEntry>();
-                        a.GatherAllAssets(allEntries, true, true, false, entryFilter);
-                        combinedEntries.AddRange(allEntries);
-                        GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
+                        var singleEntry = new List<AddressableAssetEntry> {a};
+                        combinedEntries.AddRange(singleEntry);
+                        GenerateBuildInputDefinitions(singleEntry, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, singleEntry), a.address, ignoreUnsupportedFilesInBuild);
                     }
                 }
                     break;
@@ -883,7 +872,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="newPrimaryKey">New Primary key to set on location</param>
         /// <param name="aaContext">Addressables build context to collect and assign other location data</param>
         /// <exception cref="ArgumentException"></exception>
-        private void SetPrimaryKey(ContentCatalogDataEntry forLocation, string newPrimaryKey, AddressableAssetsBuildContext aaContext)
+        private static void SetPrimaryKey(ContentCatalogDataEntry forLocation, string newPrimaryKey, AddressableAssetsBuildContext aaContext)
         {
             if (forLocation == null || forLocation.Key == null)
                 throw new ArgumentException("Cannot change primary key. Invalid catalog entry");

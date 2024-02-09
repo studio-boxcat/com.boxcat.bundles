@@ -310,11 +310,6 @@ namespace UnityEditor.AddressableAssets.GUI
                         menu.AddItem(new GUIContent("Window/Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
 #endif
 
-                        menu.AddItem(new GUIContent("Groups View/Show Sprite and Subobject Addresses"), ProjectConfigData.ShowSubObjectsInGroupView, () =>
-                        {
-                            ProjectConfigData.ShowSubObjectsInGroupView = !ProjectConfigData.ShowSubObjectsInGroupView;
-                            m_EntryTree.Reload();
-                        });
                         menu.AddItem(
                             new GUIContent("Groups View/Group Hierarchy with Dashes",
                                 "If enabled, group names are parsed as if a '-' represented a child in hierarchy.  So a group called 'a-b-c' would be displayed as if it were in a folder called 'b' that lived in a folder called 'a'.  In this mode, only groups without '-' can be rearranged within the groups window."),

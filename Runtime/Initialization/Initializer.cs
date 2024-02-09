@@ -13,9 +13,7 @@ namespace UnityEngine.AddressableAssets.Initialization
         {
             // On Android and WebGL platforms, it’s not possible to access the streaming asset files directly via file system APIs and streamingAssets path because these platforms return a URL. Use the UnityWebRequest class to access the content instead.
             var url = "file://" + ResourcePath.RuntimePath_CatalogBin;
-#if DEBUG
-            Debug.Log("[Addressables] InitializationOperation: " + url);
-#endif
+            L.I("[Addressables] InitializationOperation: " + url);
             var req = UnityWebRequest.Get(url).SendWebRequest();
 
             // Wait for completion.
@@ -32,7 +30,7 @@ namespace UnityEngine.AddressableAssets.Initialization
 
             var reader = new BinaryStorageBuffer.Reader(req.webRequest.downloadHandler.data,
                 1024, new ContentCatalogData.Serializer());
-            var locMap = new ContentCatalogData.ResourceLocator(reader, 100);
+            var locMap = new ContentCatalogData.ResourceLocator(reader);
             addressables.SetResourceLocator(locMap);
 
             // XXX: Hardcoded all used providers.

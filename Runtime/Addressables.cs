@@ -179,7 +179,7 @@ namespace UnityEngine.AddressableAssets
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="key">The key of the location of the asset.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is the loaded asset of the type `TObject`.</returns>
-        public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(string key)
+        public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(string key) where TObject : Object
         {
             return m_Addressables.LoadAssetAsync<TObject>(key);
         }

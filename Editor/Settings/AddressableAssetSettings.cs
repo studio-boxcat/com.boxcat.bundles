@@ -833,23 +833,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Gets all asset entries from all groups.
-        /// </summary>
-        /// <param name="assets">The list of asset entries.</param>
-        /// <param name="includeSubObjects">Determines if sub objects such as sprites should be included.</param>
-        /// <param name="groupFilter">A method to filter groups.  Groups will be processed if filter is null, or it returns TRUE</param>
-        /// <param name="entryFilter">A method to filter entries.  Entries will be processed if filter is null, or it returns TRUE</param>
-        public void GetAllAssets(List<AddressableAssetEntry> assets, bool includeSubObjects, Func<AddressableAssetGroup, bool> groupFilter = null, Func<AddressableAssetEntry, bool> entryFilter = null)
-        {
-            using (var cache = new AddressablesFileEnumerationCache(this, false, null))
-            {
-                foreach (var g in groups)
-                    if (g != null && (groupFilter == null || groupFilter(g)))
-                        g.GatherAllAssets(assets, true, true, includeSubObjects, entryFilter);
-            }
-        }
-
-        /// <summary>
         /// Remove an asset entry.
         /// </summary>
         /// <param name="guid">The  guid of the asset.</param>

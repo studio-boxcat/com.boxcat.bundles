@@ -7,8 +7,6 @@ using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
@@ -73,8 +71,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             if (aaContext.GuidToCatalogLocation == null)
                 aaContext.GuidToCatalogLocation = output.GuidToLocation;
-            else foreach (KeyValuePair<GUID,List<ContentCatalogDataEntry>> pair in output.GuidToLocation)
-                aaContext.GuidToCatalogLocation[pair.Key] = pair.Value;
+            else foreach (var (guid, entry) in output.GuidToLocation)
+                aaContext.GuidToCatalogLocation[guid] = entry;
             
             aaContext.assetGroupToBundles = output.AssetGroupToBundles;
             aaContext.bundleToExpandedBundleDependencies = output.BundleToExpandedBundleDependencies;
@@ -142,7 +140,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             /// <summary>
             /// A mapping of Asset GUID's to resulting ContentCatalogDataEntry entries.
             /// </summary>
-            internal Dictionary<GUID, List<ContentCatalogDataEntry>> GuidToLocation;
+            internal Dictionary<GUID, ContentCatalogDataEntry> GuidToLocation;
 
             /// <summary>
             /// A mapping of AddressableAssetGroups to the AssetBundles generated from its data.
@@ -258,7 +256,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bEntry.BundleName, bEntry.BundleName));
             }
 
-            Dictionary<GUID, List<ContentCatalogDataEntry>> guidToLocation = new Dictionary<GUID, List<ContentCatalogDataEntry>>();
+            var guidToLocation = new Dictionary<GUID, ContentCatalogDataEntry>();
             using (input.Logger.ScopedStep(LogLevel.Info, "Calculate Locations"))
             {
                 // build a mapping of asset guid to AddressableAssetEntry
@@ -267,16 +265,16 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 foreach (BundleEntry bEntry in bundleToEntry.Values)
                 {
                     var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
+                    if (schema.IncludeAddressInCatalog is false)
+                        continue;
+
                     foreach (GUID assetGUID in bEntry.Assets)
                     {
-                        if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry))
-                        {
-                            int indexAddedStart = locations.Count;
-                            entry.CreateCatalogEntries(locations, bEntry.ExpandedDependencies.Select(x => x.BundleName), input.AssetToAssetInfo,
-                                schema.IncludeAddressInCatalog, bEntry.AssetInternalIds);
-                            if (indexAddedStart < locations.Count)
-                                guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count-indexAddedStart));
-                        }
+                        var entry = guidToEntry[assetGUID.ToString()];
+                        var deps = bEntry.ExpandedDependencies.Select(x => x.BundleName);
+                        var e = entry.CreateCatalogEntry(deps, input.AssetToAssetInfo, bEntry.AssetInternalIds);
+                        locations.Add(e);
+                        guidToLocation.Add(assetGUID, e);
                     }
                 }
             }

@@ -85,7 +85,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <summary>
         /// A mapping of Asset GUID's to resulting ContentCatalogDataEntry entries.
         /// </summary>
-        internal Dictionary<GUID, List<ContentCatalogDataEntry>> GuidToCatalogLocation = null;
+        internal Dictionary<GUID, ContentCatalogDataEntry> GuidToCatalogLocation = null;
 
         private Dictionary<string, List<ContentCatalogDataEntry>> m_PrimaryKeyToDependers = null;
 

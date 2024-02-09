@@ -10,6 +10,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Utilities;
 using UnityEditor.VersionControl;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -158,10 +159,12 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
-        static HashSet<Type> validTypes = new HashSet<Type>();
+        static readonly HashSet<Type> validTypes = new HashSet<Type>();
 
-        internal static Type MapEditorTypeToRuntimeType(Type t, bool allowFolders)
+        internal static Type MapEditorTypeToRuntimeType(Type t)
         {
+            Assert.AreNotEqual(typeof(DefaultAsset), t);
+
             //type is valid and already seen (most common)
             if (validTypes.Contains(t))
                 return t;
@@ -176,9 +179,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 validTypes.Add(t);
                 return t;
             }
-
-            if (t == typeof(DefaultAsset))
-                return typeof(DefaultAsset);
 
             //try to remap the editor type to a runtime type
             return MapEditorTypeToRuntimeTypeInternal(t);

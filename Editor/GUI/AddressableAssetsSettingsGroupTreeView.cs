@@ -421,30 +421,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             var item = new AssetEntryTreeViewItem(entry, depth);
             parent.AddChild(item);
-            if (!expanded)
-            {
-                item.checkedForChildren = false;
-                return;
-            }
-
-            RecurseEntryChildren(entry, item, depth);
-        }
-
-        internal void RecurseEntryChildren(AddressableAssetEntry entry, AssetEntryTreeViewItem item, int depth)
-        {
-            item.checkedForChildren = true;
-            var subAssets = new List<AddressableAssetEntry>();
-            bool includeSubObjects = ProjectConfigData.ShowSubObjectsInGroupView && !string.IsNullOrEmpty(entry.guid);
-            entry.GatherAllAssets(subAssets, false, false, includeSubObjects);
-            if (subAssets.Count > 0)
-            {
-                foreach (var e in subAssets)
-                {
-                    if (e.guid.Length > 0 && e.address.Contains('[') && e.address.Contains(']'))
-                        Debug.LogErrorFormat("Subasset address '{0}' cannot contain '[ ]'.", e.address);
-                    AddAndRecurseEntriesBuild(e, item, depth + 1, IsExpanded(item.id));
-                }
-            }
+            item.checkedForChildren = expanded;
         }
 
         protected override void ExpandedStateChanged()
@@ -455,8 +432,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (item != null && item.hasChildren)
                 {
                     foreach (AssetEntryTreeViewItem c in item.children)
-                        if (!c.checkedForChildren)
-                            RecurseEntryChildren(c.entry, c, c.depth + 1);
+                        c.checkedForChildren = true;
                 }
             }
         }

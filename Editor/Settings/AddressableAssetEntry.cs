@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using JetBrains.Annotations;
 using UnityEditor.Build.Content;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.Assertions;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
@@ -159,16 +160,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        /// <summary>
-        /// Creates a list of keys that can be used to load this entry.
-        /// </summary>
-        /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        [CanBeNull]
-        internal string CreateKeyList(bool includeAddress)
-        {
-            return includeAddress ? address : null;
-        }
-
         internal AddressableAssetEntry(string guid, string address, AddressableAssetGroup parent, bool readOnly)
         {
             if (guid.Length > 0 && address.Contains('[') && address.Contains(']'))
@@ -312,7 +303,6 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The asset load path.  This is used to determine the internal id of resource locations.
         /// </summary>
-        /// <param name="isBundled">True if the asset will be contained in an asset bundle.</param>
         /// <param name="otherLoadPaths">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
         /// <returns>Return the runtime path that should be used to load this entry.</returns>
         public string GetAssetLoadPath(HashSet<string> otherLoadPaths)
@@ -343,92 +333,6 @@ namespace UnityEditor.AddressableAssets.Settings
             if (i > 0)
                 path = path.Substring(0, i);
             return path;
-        }
-
-        /// <summary>
-        /// Gathers all asset entries.  Each explicit entry may contain multiple sub entries. For example, addressable folders create entries for each asset contained within.
-        /// </summary>
-        /// <param name="assets">The generated list of entries.  For simple entries, this will contain just the entry itself if specified.</param>
-        /// <param name="includeSelf">Determines if the entry should be contained in the result list or just sub entries.</param>
-        /// <param name="recurseAll">Determines if full recursion should be done when gathering entries.</param>
-        /// <param name="includeSubObjects">Determines if sub objects such as sprites should be included.</param>
-        /// <param name="entryFilter">Optional predicate to run against each entry, only returning those that pass.  A null filter will return all entries</param>
-        public void GatherAllAssets(List<AddressableAssetEntry> assets, bool includeSelf, bool recurseAll, bool includeSubObjects, Func<AddressableAssetEntry, bool> entryFilter = null)
-        {
-            if (assets == null)
-                assets = new List<AddressableAssetEntry>();
-
-            if (string.IsNullOrEmpty(AssetPath))
-                return;
-
-            if (AssetDatabase.IsValidFolder(AssetPath))
-                throw new NotSupportedException(AssetPath);
-
-            if (entryFilter == null || entryFilter(this))
-            {
-                if (includeSelf)
-                    assets.Add(this);
-                if (includeSubObjects)
-                {
-                    var mainType = AssetDatabase.GetMainAssetTypeAtPath(AssetPath);
-                    if (mainType == typeof(SpriteAtlas))
-                        GatherSpriteAtlasEntries(assets);
-                    else
-                        GatherSubObjectEntries(assets);
-                }
-            }
-        }
-
-        void GatherSubObjectEntries(List<AddressableAssetEntry> assets)
-        {
-            var objs = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetPath);
-            for (int i = 0; i < objs.Length; i++)
-            {
-                var o = objs[i];
-                var namedAddress = string.Format("{0}[{1}]", address, o == null ? "missing reference" : o.name);
-                if (o == null)
-                {
-                    Debug.LogWarning(string.Format("NullReference in entry {0}\nAssetPath: {1}\nAddressableAssetGroup: {2}", address, AssetPath, parentGroup.Name));
-                    assets.Add(new AddressableAssetEntry("", namedAddress, parentGroup, true));
-                }
-                else
-                {
-                    var newEntry = parentGroup.Settings.CreateEntry("", namedAddress, parentGroup, true);
-                    newEntry.IsSubAsset = true;
-                    newEntry.ParentEntry = this;
-                    newEntry.SetSubObjectType(o.GetType());
-                    assets.Add(newEntry);
-                }
-            }
-        }
-
-        void GatherSpriteAtlasEntries(List<AddressableAssetEntry> assets)
-        {
-            var settings = parentGroup.Settings;
-            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetPath);
-            var sprites = new Sprite[atlas.spriteCount];
-            atlas.GetSprites(sprites);
-
-            for (int i = 0; i < atlas.spriteCount; i++)
-            {
-                var spriteName = sprites[i] == null ? "missing reference" : sprites[i].name;
-                if (sprites[i] == null)
-                {
-                    Debug.LogWarning(string.Format("NullReference in entry {0}\nAssetPath: {1}\nAddressableAssetGroup: {2}", address, AssetPath, parentGroup.Name));
-                    assets.Add(new AddressableAssetEntry("", spriteName, parentGroup, true));
-                }
-                else
-                {
-                    if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
-                        spriteName = spriteName.Replace("(Clone)", "");
-
-                    var namedAddress = string.Format("{0}[{1}]", address, spriteName);
-                    var newEntry = settings.CreateEntry("", namedAddress, parentGroup, true);
-                    newEntry.IsSubAsset = true;
-                    newEntry.ParentEntry = this;
-                    assets.Add(newEntry);
-                }
-            }
         }
 
         /// <summary>
@@ -530,87 +434,62 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Create all entries for this addressable asset.  This will expand subassets (Sprites, Meshes, etc) and also different representations.
         /// </summary>
-        /// <param name="entries">The list of entries to fill in.</param>
         /// <param name="dependencies">Keys of dependencies</param>
         /// <param name="depInfo">Map of guids to AssetLoadInfo for object identifiers in an Asset.  If null, ContentBuildInterface gathers object ids automatically.</param>
-        /// <param name="includeAddress">Flag indicating if address locations should be included</param>
         /// <param name="assetsInBundle">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
-        public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, IEnumerable<string> dependencies,
-            Dictionary<GUID, AssetLoadInfo> depInfo, bool includeAddress, HashSet<string> assetsInBundle)
+        public ContentCatalogDataEntry CreateCatalogEntry(IEnumerable<string> dependencies, Dictionary<GUID, AssetLoadInfo> depInfo, HashSet<string> assetsInBundle)
         {
-            if (string.IsNullOrEmpty(AssetPath))
-                return;
+            Assert.IsFalse(string.IsNullOrEmpty(address), "Address is null or empty");
+            Assert.IsFalse(string.IsNullOrEmpty(AssetPath), "AssetPath is null or empty");
+            Assert.IsNotNull(depInfo, "depInfo is null");
 
-            string assetPath = GetAssetLoadPath(assetsInBundle);
-            string key = CreateKeyList(includeAddress);
-            if (key is null)
-                return;
-
-            //The asset may have previously been invalid. Since then, it may have been re-imported.
-            //This can occur in particular when using ScriptedImporters with complex, multi-step behavior.
-            //Double-check the type here in case the asset has been imported correctly after we cached its type.
-            if (MainAssetType == typeof(DefaultAsset))
-                m_cachedMainAssetType = null;
-
-            Type mainType = AddressableAssetUtility.MapEditorTypeToRuntimeType(MainAssetType, false);
-            if (mainType == null || mainType == typeof(DefaultAsset))
-            {
-                var t = MainAssetType;
-                Debug.LogWarningFormat("Type {0} is in editor assembly {1}.  Asset location with internal id {2} will be stripped and not included in the build.", t.Name, t.Assembly.FullName, assetPath);
-                return;
-            }
-
-            if (!IsScene)
-            {
-                ObjectIdentifier[] ids = depInfo != null
-                    ? depInfo[new GUID(guid)].includedObjects.ToArray()
-                    : ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(new GUID(guid), EditorUserBuildSettings.activeBuildTarget);
-
-                foreach (var t in GatherMainAndReferencedSerializedTypes(ids))
-                    entries.Add(new ContentCatalogDataEntry(t, assetPath, key, dependencies));
-            }
-            else if (mainType != null && mainType != typeof(DefaultAsset))
-            {
-                entries.Add(new ContentCatalogDataEntry(mainType, assetPath, key, dependencies));
-            }
+            L.I($"[AddressableAssetEntry] Creating catalog entry for {address}");
+            var mainType = ResolveRepresentingType(MainAssetType, guid, depInfo);
+            var assetPath = GetAssetLoadPath(assetsInBundle);
+            L.I($"[AddressableAssetEntry] CreateCatalogEntry: {address}, {mainType}, {assetPath}, [{string.Join(",", dependencies)}]");
+            return new ContentCatalogDataEntry(mainType, assetPath, address, dependencies);
         }
 
-        static internal IEnumerable<Type> GatherMainAndReferencedSerializedTypes(ObjectIdentifier[] ids)
+        static Type ResolveRepresentingType(Type type, string guid, Dictionary<GUID, AssetLoadInfo> depInfo)
         {
-            if (ids.Length > 0)
+            var mainType = AddressableAssetUtility.MapEditorTypeToRuntimeType(type);
+            Assert.IsNotNull(mainType, "Main type is null");
+            Assert.AreNotEqual(typeof(DefaultAsset), mainType, "Main type is DefaultAsset");
+
+            // When the main type is SceneInstance...
+            if (mainType == typeof(SceneInstance))
+                return mainType;
+
+            // For the Texture imported as single Sprite, use Sprite type.
+            if (mainType == typeof(Texture2D))
             {
-                Type[] typesForObjs = ContentBuildInterface.GetTypeForObjects(ids);
-                HashSet<Type> typesSeen = new HashSet<Type>();
-                foreach (var objType in typesForObjs)
+                var includedObjs = depInfo[new GUID(guid)].includedObjects;
+                if (includedObjs.Count == 2)
                 {
-                    if (!typeof(UnityEngine.Object).IsAssignableFrom(objType))
-                        continue;
-                    if (typeof(Component).IsAssignableFrom(objType))
-                        continue;
-                    Type rtType = AddressableAssetUtility.MapEditorTypeToRuntimeType(objType, false);
-                    if (rtType != null && rtType != typeof(DefaultAsset) && !typesSeen.Contains(rtType))
-                    {
-                        yield return rtType;
-                        typesSeen.Add(rtType);
-                    }
+                    Assert.AreEqual(mainType, ContentBuildInterface.GetTypeForObject(includedObjs[0]), "Main type is not Texture2D");
+                    var objType = ContentBuildInterface.GetTypeForObject(includedObjs[1]);
+                    if (objType == typeof(Sprite))
+                        return typeof(Sprite);
                 }
             }
+
+            Assert.AreNotEqual(typeof(DefaultAsset), mainType, "Main type is DefaultAsset");
+            return mainType;
         }
 
-        static internal List<Type> GatherMainObjectTypes(ObjectIdentifier[] ids)
+        public static Type ResolveRepresentingType(ObjectIdentifier[] ids)
         {
-            List<Type> typesSeen = new List<Type>();
-            foreach (ObjectIdentifier id in ids)
+            // XXX: Assume that the first identifier is the main asset.
+            var mainType = ContentBuildInterface.GetTypeForObject(ids[0]);
+
+            if (ids.Length == 2 && mainType == typeof(Texture2D))
             {
-                Type objType = ContentBuildInterface.GetTypeForObject(id);
-                if (typeof(Component).IsAssignableFrom(objType))
-                    continue;
-                Type rtType = AddressableAssetUtility.MapEditorTypeToRuntimeType(objType, false);
-                if (rtType != null && rtType != typeof(DefaultAsset) && !typesSeen.Contains(rtType))
-                    typesSeen.Add(rtType);
+                var objType = ContentBuildInterface.GetTypeForObject(ids[1]);
+                if (objType == typeof(Sprite))
+                    return typeof(Sprite);
             }
 
-            return typesSeen;
+            return AddressableAssetUtility.MapEditorTypeToRuntimeType(mainType);
         }
     }
 }

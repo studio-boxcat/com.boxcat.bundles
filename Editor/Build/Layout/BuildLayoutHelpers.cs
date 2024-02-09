@@ -139,7 +139,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                     return typeAssignment.Item2;
             }
 
-            ofType = AddressableAssetUtility.MapEditorTypeToRuntimeType(ofType, false);
+            ofType = AddressableAssetUtility.MapEditorTypeToRuntimeType(ofType);
             if (ofType == null)
                 return AssetType.Other;
             if (SystemTypeToAssetType.TryGetValue(ofType, out assetType))
