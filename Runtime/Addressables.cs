@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.Serialization;
-using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -19,29 +16,6 @@ using UnityEditor;
 namespace UnityEngine.AddressableAssets
 {
     /// <summary>
-    /// A container for data pertaining to a specific Resource Locator.  Used mainly to determine if a content catalog
-    /// needs to be updated.
-    /// </summary>
-    public class ResourceLocatorInfo
-    {
-        /// <summary>
-        /// The Resource Locator that has been loaded into the Addressables system.
-        /// </summary>
-        public IResourceLocator Locator { get; private set; }
-
-        /// <summary>
-        /// Contstruct a ResourceLocatorInfo for a given Resource Locator.
-        /// </summary>
-        /// <param name="loc">The IResourceLocator to track.</param>
-        /// <param name="remoteCatalogLocation">The location for the remote catalog.  Typically this location contains exactly two dependeices,
-        /// the first one pointing to the remote hash file.  The second dependency pointing to the local hash file.</param>
-        public ResourceLocatorInfo(IResourceLocator loc)
-        {
-            Locator = loc;
-        }
-    }
-
-    /// <summary>
     /// Exception to encapsulate invalid key errors.
     /// </summary>
     public class InvalidKeyException : Exception
@@ -56,52 +30,13 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public Type Type { get; private set; }
 
-        /// <summary>
-        /// Construct a new InvalidKeyException.
-        /// </summary>
-        /// <param name="key">The key that caused the exception.</param>
-        public InvalidKeyException(object key) : this(key, typeof(object))
-        {
-        }
-
         private AddressablesImpl m_Addressables;
 
-        /// <summary>
-        /// Construct a new InvalidKeyException.
-        /// </summary>
-        /// <param name="key">The key that caused the exception.</param>
-        /// <param name="type">The type of the key that caused the exception.</param>
-        public InvalidKeyException(object key, Type type)
-        {
-            Key = key;
-            Type = type;
-        }
-
-        internal InvalidKeyException(object key, Type type, AddressablesImpl addr)
+        internal InvalidKeyException(string key, Type type, AddressablesImpl addr)
         {
             Key = key;
             Type = type;
             m_Addressables = addr;
-        }
-
-        ///<inheritdoc cref="InvalidKeyException"/>
-        public InvalidKeyException()
-        {
-        }
-
-        ///<inheritdoc/>
-        public InvalidKeyException(string message) : base(message)
-        {
-        }
-
-        ///<inheritdoc/>
-        public InvalidKeyException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        ///<inheritdoc/>
-        protected InvalidKeyException(SerializationInfo message, StreamingContext context) : base(message, context)
-        {
         }
 
         const string BaseInvalidKeyMessageFormat = "{0}, Key={1}, Type={2}";
@@ -156,61 +91,7 @@ namespace UnityEngine.AddressableAssets
             }
 #endif
 
-            HashSet<Type> typesAvailableForKey = GetTypesForKey(keyString);
-            if (typesAvailableForKey.Count == 0)
-                return $"{base.Message} No Location found for Key={keyString}";
-
-            if (typesAvailableForKey.Count == 1)
-            {
-                Type availableType = null;
-                foreach (Type type in typesAvailableForKey)
-                    availableType = type;
-                if (availableType == null)
-                    return string.Format(BaseInvalidKeyMessageFormat, base.Message, keyString, Type);
-                return $"{base.Message} No Asset found with for Key={keyString}. Key exists as Type={availableType}, which is not assignable from the requested Type={Type}";
-            }
-
-            StringBuilder csv = new StringBuilder(512);
-            int count = 0;
-            foreach (Type type in typesAvailableForKey)
-            {
-                count++;
-                csv.Append(count > 1 ? $", {type}" : type.ToString());
-            }
-
-            return $"{base.Message} No Asset found with for Key={keyString}. Key exists as multiple Types={csv}, which is not assignable from the requested Type={Type}";
-        }
-
-        HashSet<Type> GetTypesForKey(string keyString)
-        {
-            HashSet<Type> typesAvailableForKey = new HashSet<Type>();
-            foreach (var locator in m_Addressables.ResourceLocators)
-            {
-                if (!locator.Locate(keyString, null, out var locations))
-                    continue;
-
-                foreach (IResourceLocation location in locations)
-                    typesAvailableForKey.Add(location.ResourceType);
-            }
-
-            return typesAvailableForKey;
-        }
-
-        bool GetTypeToKeys(string key, Dictionary<Type, List<string>> typeToKeys)
-        {
-            HashSet<Type> types = GetTypesForKey(key);
-            if (types.Count == 0)
-                return false;
-
-            foreach (Type type in types)
-            {
-                if (!typeToKeys.TryGetValue(type, out List<string> keysForType))
-                    typeToKeys.Add(type, new List<string>() {key});
-                else
-                    keysForType.Add(key);
-            }
-
-            return true;
+            return $"{base.Message} No Asset found with for Key={keyString}";
         }
 
         string GetCSVString(IEnumerable<string> enumerator, string prefixSingle, string prefixPlural)
@@ -244,6 +125,7 @@ namespace UnityEngine.AddressableAssets
 #if UNITY_EDITOR
                 if (EditorSettings.enterPlayModeOptionsEnabled && reinitializeAddressables)
                 {
+                    L.I("[Addressables] Reinitializing Addressables");
                     reinitializeAddressables = false;
                     m_AddressablesInstance.ReleaseSceneManagerOperation();
                     m_AddressablesInstance = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
@@ -282,18 +164,6 @@ namespace UnityEngine.AddressableAssets
 #endif
 
         /// <summary>
-        /// Used to resolve a string using addressables config values
-        /// </summary>
-        /// <param name="id">The internal id to resolve.</param>
-        /// <returns>Returns the string that the internal id represents.</returns>
-        public static string ResolveInternalId(string id)
-        {
-            return m_Addressables.ResolveInternalId(id);
-        }
-
-        const string k_AddressablesLogConditional = "ADDRESSABLES_LOG_ALL";
-
-        /// <summary>
         /// The path to the Addressables Library subfolder
         /// </summary>
         public const string LibraryPath = "Library/com.unity.addressables/";
@@ -303,180 +173,13 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public const string BuildReportPath = "Library/com.unity.addressables/BuildReports/";
 
-        [Conditional(k_AddressablesLogConditional)]
-        internal static void InternalSafeSerializationLog(string msg, LogType logType = LogType.Log)
-        {
-            if (m_AddressablesInstance == null)
-                return;
-            switch (logType)
-            {
-                case LogType.Warning:
-                    m_AddressablesInstance.LogWarning(msg);
-                    break;
-                case LogType.Error:
-                    m_AddressablesInstance.LogError(msg);
-                    break;
-                case LogType.Log:
-                    m_AddressablesInstance.Log(msg);
-                    break;
-            }
-        }
-
-        [Conditional(k_AddressablesLogConditional)]
-        internal static void InternalSafeSerializationLogFormat(string format, LogType logType = LogType.Log, params object[] args)
-        {
-            if (m_AddressablesInstance == null)
-                return;
-            switch (logType)
-            {
-                case LogType.Warning:
-                    m_AddressablesInstance.LogWarningFormat(format, args);
-                    break;
-                case LogType.Error:
-                    m_AddressablesInstance.LogErrorFormat(format, args);
-                    break;
-                case LogType.Log:
-                    m_AddressablesInstance.LogFormat(format, args);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Log can be used to write a Debug level log message.
-        /// </summary>
-        /// <remarks>
-        /// Log works the same as <see cref="Debug.Log(object)">Debug.Log</see>. Addressables only logs warnings and errors so by default this function does not log anything.
-        /// </remarks>
-        /// <param name="msg">The msg to log</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLog.cs" region="SAMPLE" />
-        /// </example>
-        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
-        [Conditional(k_AddressablesLogConditional)]
-        public static void Log(string msg)
-        {
-            m_Addressables.Log(msg);
-        }
-
-        /// <summary>
-        /// LogFormat can be used to write a formatted log message.
-        /// </summary>
-        /// <remarks>
-        /// LogFormat supports Composite Formatting and works the same way as [Debug.LogFormat](xref:UnityEngine.Debug.LogFormat(System.String,System.Object[])). Addressables logs warnings and errors so by default this function will **not** log.
-        /// </remarks>
-        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
-        /// <param name="format">The string with format tags.</param>
-        /// <param name="args">The args used to fill in the format tags.</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogFormat.cs" region="SAMPLE" />
-        /// </example>
-        [Conditional(k_AddressablesLogConditional)]
-        public static void LogFormat(string format, params object[] args)
-        {
-            m_Addressables.LogFormat(format, args);
-        }
-
-        /// <summary>
-        /// LogWarning can be used to write a log message.
-        /// </summary>
-        /// <remarks>
-        /// LogWarning works the same way as [Debug.LogWarning](xref:UnityEngine.Debug.LogWarning(System.Object)). Addressables logs warnings and errors so by default this function will log.
-        /// </remarks>
-        /// <param name="msg">The msg to log</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogWarning.cs" region="SAMPLE" />
-        /// </example>
-        public static void LogWarning(string msg)
-        {
-            m_Addressables.LogWarning(msg);
-        }
-
-        /// <summary>
-        /// LogFormat can be used to write a formatted log message.
-        /// </summary>
-        /// <remarks>
-        /// LogWarningFormat supports Composite Formatting and works the same way as [Debug.LogWarningFormat](xref:UnityEngine.Debug.LogWarningFormat(System.String,System.Object[])). Addressables logs warnings and errors so by default this function will log.
-        /// </remarks>
-        /// <param name="format">The string with format tags.</param>
-        /// <param name="args">The args used to fill in the format tags.</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogWarningFormat.cs" region="SAMPLE" />
-        /// </example>
-        public static void LogWarningFormat(string format, params object[] args)
-        {
-            m_Addressables.LogWarningFormat(format, args);
-        }
-
-        /// <summary>
-        /// Write an error level log message.
-        /// </summary>
-        /// <remarks>
-        /// LogError can be used to write an Error message. LogError works the same way as <see cref="Debug.LogError(object)" />. Addressables logs warnings and errors so by default this function will log.
-        /// </remarks>
-        /// <param name="msg">The msg to log</param>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogError.cs" region="SAMPLE"/>
-        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
-        public static void LogError(string msg)
-        {
-            m_Addressables.LogError(msg);
-        }
-
-        /// <summary>
-        /// Write an exception as a log message. 
-        /// </summary>
-        /// <remarks>
-        /// LogException can be used to convert an exception to a log message. The exception is stringified. If the operation is in a failed state, the exception is logged at an Error logging level. If not the exception is logged at a Debug logging level.
-        /// Addressables logs warnings and errors so if the operation is not in a failed state by default this function will not log.
-        /// </remarks>
-        /// <param name="op">The operation handle.</param>
-        /// <param name="ex">The exception.</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogException.cs" region="SAMPLE_ASYNC_OP"/>
-        /// </example>
-        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
-        public static void LogException(AsyncOperationHandle op, Exception ex)
-        {
-            m_Addressables.LogException(op, ex);
-        }
-
-        /// <summary>
-        /// Write an exception as a debug log message.
-        /// </summary>
-        /// <remarks>
-        /// LogException can be used to convert an exception to a log message. The exception is stringified and logged at a Debug logging level. Addressables logs warnings and errors so by default this function will not log.
-        /// </remarks>
-        /// <param name="ex">The exception.</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogException.cs" region="SAMPLE"/>
-        /// </example>
-        public static void LogException(Exception ex)
-        {
-            m_Addressables.LogException(ex);
-        }
-
-        /// <summary>
-        /// Write an error level formatted log message.
-        /// </summary>
-        /// <remarks>
-        /// LogErrorFormat can be used to write a formatted Error level log message. LogErrorFormat supports Composite Formatting and works the same way as <see cref="Debug.LogErrorFormat(string, object[])" />. Addressables logs warnings and errors so by default this function will log.
-        /// </remarks>
-        /// <param name="format">The string with format tags.</param>
-        /// <param name="args">The args used to fill in the format tags.</param>
-        /// <example>
-        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogErrorFormat.cs" region="SAMPLE"/>
-        /// </example>
-        public static void LogErrorFormat(string format, params object[] args)
-        {
-            m_Addressables.LogErrorFormat(format, args);
-        }
-
         /// <summary>
         /// Loads a single Addressable asset identified by an <see cref="IResourceLocation"/>.
         /// </summary>
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="key">The key of the location of the asset.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is the loaded asset of the type `TObject`.</returns>
-        public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(object key)
+        public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(string key)
         {
             return m_Addressables.LoadAssetAsync<TObject>(key);
         }
@@ -617,7 +320,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
-        public static AsyncOperationHandle<GameObject> InstantiateAsync(object key, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
+        public static AsyncOperationHandle<GameObject> InstantiateAsync(string key, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(key, parent, instantiateInWorldSpace, trackHandle);
         }
@@ -631,7 +334,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
-        public static AsyncOperationHandle<GameObject> InstantiateAsync(object key, Vector3 position, Quaternion rotation, Transform parent = null, bool trackHandle = true)
+        public static AsyncOperationHandle<GameObject> InstantiateAsync(string key, Vector3 position, Quaternion rotation, Transform parent = null, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(key, position, rotation, parent, trackHandle);
         }
@@ -643,7 +346,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="instantiateParameters">Parameters for instantiation.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
-        public static AsyncOperationHandle<GameObject> InstantiateAsync(object key, InstantiationParameters instantiateParameters, bool trackHandle = true)
+        public static AsyncOperationHandle<GameObject> InstantiateAsync(string key, InstantiationParameters instantiateParameters, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(key, instantiateParameters, trackHandle);
         }
@@ -671,7 +374,7 @@ namespace UnityEngine.AddressableAssets
         /// <seealso cref="Addressables.LoadSceneAsync(object, LoadSceneMode, bool, int)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadSceneAsync(*)", true)]
         [Obsolete]
-        public static AsyncOperationHandle<SceneInstance> LoadScene(object key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
+        public static AsyncOperationHandle<SceneInstance> LoadScene(string key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
             return LoadSceneAsync(key, loadMode, activateOnLoad, priority);
         }
@@ -707,22 +410,9 @@ namespace UnityEngine.AddressableAssets
         /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
         /// <param name="priority">Async operation priority for scene loading.</param>
         /// <returns>The operation handle for the request.</returns>
-        public static AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
+        public static AsyncOperationHandle<SceneInstance> LoadSceneAsync(string key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
-            return m_Addressables.LoadSceneAsync(key, new LoadSceneParameters(loadMode), activateOnLoad, priority);
-        }
-
-        /// <summary>
-        /// Loads an Addressable Scene asset.
-        /// </summary>
-        /// <param name="key">The key of the location of the scene to load.</param>
-        /// <param name="loadSceneParameters">Scene load mode.</param>
-        /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
-        /// <param name="priority">Async operation priority for scene loading.</param>
-        /// <returns>The operation handle for the request.</returns>
-        public static AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100)
-        {
-            return m_Addressables.LoadSceneAsync(key, loadSceneParameters, activateOnLoad, priority);
+            return m_Addressables.LoadSceneAsync(key, loadMode, activateOnLoad, priority);
         }
 
         /// <summary>
@@ -735,83 +425,8 @@ namespace UnityEngine.AddressableAssets
         /// <returns>The operation handle for the request.</returns>
         public static AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
-            return m_Addressables.LoadSceneAsync(location, new LoadSceneParameters(loadMode), activateOnLoad, priority);
+            return m_Addressables.LoadSceneAsync(location, loadMode, activateOnLoad, priority);
         }
-
-        /// <summary>
-        /// Loads an Addressable Scene asset.
-        /// </summary>
-        /// <param name="location">The location of the scene to load.</param>
-        /// <param name="loadSceneParameters">Scene load parameters.</param>
-        /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
-        /// <param name="priority">Async operation priority for scene loading.</param>
-        /// <returns>The operation handle for the request.</returns>
-        public static AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100)
-        {
-            return m_Addressables.LoadSceneAsync(location, loadSceneParameters, activateOnLoad, priority);
-        }
-
-        /// <summary>
-        /// Release scene
-        /// </summary>
-        /// <param name="scene">The SceneInstance to release.</param>
-        /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
-        /// <seealso cref="UnloadSceneAsync(SceneInstance, bool)"/>
-        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
-        [Obsolete]
-        public static AsyncOperationHandle<SceneInstance> UnloadScene(SceneInstance scene, bool autoReleaseHandle = true)
-        {
-            return UnloadSceneAsync(scene, autoReleaseHandle);
-        }
-
-        /// <summary>
-        /// Release scene
-        /// </summary>
-        /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
-        /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
-        /// <seealso cref="UnloadSceneAsync(AsyncOperationHandle, bool)"/>
-        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
-        [Obsolete]
-        public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle handle, bool autoReleaseHandle = true)
-        {
-            return UnloadSceneAsync(handle, autoReleaseHandle);
-        }
-
-        /// <summary>
-        /// Release scene
-        /// </summary>
-        /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
-        /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
-        /// <seealso cref="UnloadSceneAsync(AsyncOperationHandle{SceneInstance}, bool)"/>
-        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
-        //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
-        [Obsolete]
-        public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle<SceneInstance> handle, bool autoReleaseHandle = true)
-        {
-            return UnloadSceneAsync(handle, autoReleaseHandle);
-        }
-
-        /// <summary>
-        /// Release scene
-        /// </summary>
-        /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
-        /// <param name="unloadOptions">Specify behavior for unloading embedded scene objecs</param>
-        /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
-        /// <seealso cref="UnloadSceneAsync(SceneInstance, UnloadSceneOptions, bool)"/>
-        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
-        //[Obsolete("We have added Async to the name of all asycn methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
-        [Obsolete]
-        public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle<SceneInstance> handle, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
-        {
-            return UnloadSceneAsync(handle, unloadOptions, autoReleaseHandle);
-        }
-
 
         /// <summary>
         /// Release scene

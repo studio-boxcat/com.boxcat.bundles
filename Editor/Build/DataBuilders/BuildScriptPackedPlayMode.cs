@@ -59,7 +59,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             //TODO: detect if the data that does exist is out of date..
-            AddressablesEditorInitializer.CreatePlayModeInitializationOperation = null;
+            AddressablesEditorInitializer.InitializeOverride = null;
             IDataBuilderResult res = new AddressablesPlayModeBuildResult() {Duration = timer.Elapsed.TotalSeconds};
             m_DataBuilt = true;
             return (TResult) res;

@@ -236,8 +236,8 @@ namespace UnityEditor.AddressableAssets.Build
         {
             if (string.IsNullOrWhiteSpace(input.AddressableSettings.OverridePlayerVersion))
             {
-                Addressables.LogWarning("<b>When using CCD it is recommended that you set a 'Player Version Override' in Addressables Settings.</b> You can have it use the Player build version by setting it to [UnityEditor.PlayerSettings.bundleVersion].");
-                Addressables.LogWarning("Documentation on how to disable this warning is available in the example DisableBuildWarnings.cs.");
+                L.LogWarning("<b>When using CCD it is recommended that you set a 'Player Version Override' in Addressables Settings.</b> You can have it use the Player build version by setting it to [UnityEditor.PlayerSettings.bundleVersion].");
+                L.LogWarning("Documentation on how to disable this warning is available in the example DisableBuildWarnings.cs.");
             }
             return true;
         }

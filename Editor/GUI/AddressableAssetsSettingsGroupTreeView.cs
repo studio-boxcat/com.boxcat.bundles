@@ -676,7 +676,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (m_Editor.settings.IsNotUniqueGroupName(args.newName))
                     {
                         args.acceptedRename = false;
-                        Addressables.LogWarning("There is already a group named '" + args.newName + "'.  Cannot rename this group to match");
+                        L.W("There is already a group named '" + args.newName + "'.  Cannot rename this group to match");
                     }
                     else
                     {

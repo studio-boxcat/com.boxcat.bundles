@@ -318,7 +318,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     catch
                     {
                         //if the current class doesn't match what's in the file, Deserialize will throw. since this data is non-critical, we just wipe it
-                        Addressables.LogWarning("Error reading Addressable Asset project config (play mode, etc.). Resetting to default.");
+                        L.W("Error reading Addressable Asset project config (play mode, etc.). Resetting to default.");
                         File.Delete(dataPath);
                     }
                 }

@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Settings
@@ -52,21 +49,6 @@ namespace UnityEditor.AddressableAssets.Settings
         AddressableAssetGroupSchemaSet m_SchemaSet = new AddressableAssetGroupSchemaSet();
 
         Dictionary<string, AddressableAssetEntry> m_EntryMap = new Dictionary<string, AddressableAssetEntry>();
-        List<AddressableAssetEntry> m_AssetCollectionEntryCache = null;
-
-        internal void RefreshEntriesCache()
-        {
-            m_AssetCollectionEntryCache = new List<AddressableAssetEntry>();
-            foreach (AddressableAssetEntry e in entries)
-            {
-                if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
-                    throw new NotSupportedException(e.AssetPath);
-#pragma warning disable 0618
-                else if (!string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
-                    m_AssetCollectionEntryCache.Add(e);
-#pragma warning restore 0618
-            }
-        }
 
         /// <summary>
         /// The group name.
@@ -336,16 +318,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal Dictionary<string, AddressableAssetEntry> EntryMap => m_EntryMap;
 
-        internal ICollection<AddressableAssetEntry> AssetCollectionEntries
-        {
-            get
-            {
-                if (m_AssetCollectionEntryCache == null)
-                    RefreshEntriesCache();
-                return m_AssetCollectionEntryCache;
-            }
-        }
-
         /// <summary>
         /// Is the default group.
         /// </summary>
@@ -418,7 +390,6 @@ namespace UnityEditor.AddressableAssets.Settings
         internal void ResetEntryMap()
         {
             m_EntryMap.Clear();
-            m_AssetCollectionEntryCache = null;
             foreach (var e in m_SerializeEntries)
             {
                 try
@@ -429,7 +400,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
                 catch (Exception ex)
                 {
-                    Addressables.InternalSafeSerializationLog(e.address);
+                    L.I(e.address);
                     Debug.LogException(ex);
                 }
             }
@@ -528,10 +499,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_EntryMap[e.guid] = e;
             if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
                 throw new NotSupportedException(e.AssetPath);
-#pragma warning disable 0618
-            else if (m_AssetCollectionEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
-                m_AssetCollectionEntryCache.Add(e);
-#pragma warning restore 0618
             m_SerializeEntries = null;
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
         }
@@ -543,36 +510,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns></returns>
         public virtual AddressableAssetEntry GetAssetEntry(string guid)
         {
-            return GetAssetEntry(guid, false);
-        }
-
-        /// <summary>
-        /// Get an entry via the asset guid.
-        /// </summary>
-        /// <param name="guid">The asset guid.</param>
-        /// <param name="includeImplicit">Whether or not to include implicit asset entries in the search.</param>
-        /// <returns></returns>
-        public virtual AddressableAssetEntry GetAssetEntry(string guid, bool includeImplicit)
-        {
-            if (m_EntryMap.TryGetValue(guid, out var entry))
-                return entry;
-            return includeImplicit ? GetImplicitAssetEntry(guid, null) : null;
-        }
-
-        internal AddressableAssetEntry GetImplicitAssetEntry(string assetGuid, string assetPath)
-        {
-            if (AssetCollectionEntries.Count != 0)
-            {
-                AddressableAssetEntry entry;
-                foreach (var e in m_AssetCollectionEntryCache)
-                {
-                    entry = e.GetAssetCollectionSubEntry(assetGuid);
-                    if (entry != null)
-                        return entry;
-                }
-            }
-
-            return null;
+            return m_EntryMap.GetValueOrDefault(guid);
         }
 
         /// <summary>
@@ -601,7 +539,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
         {
             m_EntryMap.Remove(entry.guid);
-            m_AssetCollectionEntryCache?.Remove(entry);
             entry.parentGroup = null;
             m_SerializeEntries = null;
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
@@ -612,7 +549,6 @@ namespace UnityEditor.AddressableAssets.Settings
             foreach (AddressableAssetEntry entry in removeEntries)
             {
                 m_EntryMap.Remove(entry.guid);
-                m_AssetCollectionEntryCache?.Remove(entry);
                 entry.parentGroup = null;
             }
 

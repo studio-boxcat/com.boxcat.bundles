@@ -18,10 +18,6 @@ namespace UnityEditor.AddressableAssets.Settings
     [Serializable]
     public class AddressableAssetEntry : ISerializationCallbackReceiver
     {
-#pragma warning disable 0618
-        static Type typeof_AddressableAssetEntryCollection = typeof(AddressableAssetEntryCollection);
-#pragma warning restore 0618
-
         [FormerlySerializedAs("m_guid")]
         [SerializeField]
         string m_GUID;
@@ -362,39 +358,23 @@ namespace UnityEditor.AddressableAssets.Settings
             if (assets == null)
                 assets = new List<AddressableAssetEntry>();
 
-            {
-                if (string.IsNullOrEmpty(AssetPath))
-                    return;
+            if (string.IsNullOrEmpty(AssetPath))
+                return;
 
-                if (AssetDatabase.IsValidFolder(AssetPath))
+            if (AssetDatabase.IsValidFolder(AssetPath))
+                throw new NotSupportedException(AssetPath);
+
+            if (entryFilter == null || entryFilter(this))
+            {
+                if (includeSelf)
+                    assets.Add(this);
+                if (includeSubObjects)
                 {
-                    throw new NotSupportedException(AssetPath);
-                }
-                else
-                {
-#pragma warning disable 0618
-                    bool isEntryCollection = MainAssetType == typeof_AddressableAssetEntryCollection;
-#pragma warning restore 0618
-                    if (isEntryCollection)
-                    {
-                        GatherAssetEntryCollectionEntries(assets, entryFilter);
-                    }
+                    var mainType = AssetDatabase.GetMainAssetTypeAtPath(AssetPath);
+                    if (mainType == typeof(SpriteAtlas))
+                        GatherSpriteAtlasEntries(assets);
                     else
-                    {
-                        if (entryFilter == null || entryFilter(this))
-                        {
-                            if (includeSelf)
-                                assets.Add(this);
-                            if (includeSubObjects)
-                            {
-                                var mainType = AssetDatabase.GetMainAssetTypeAtPath(AssetPath);
-                                if (mainType == typeof(SpriteAtlas))
-                                    GatherSpriteAtlasEntries(assets);
-                                else
-                                    GatherSubObjectEntries(assets);
-                            }
-                        }
-                    }
+                        GatherSubObjectEntries(assets);
                 }
             }
         }
@@ -451,27 +431,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-#pragma warning disable 0618
-        internal void GatherAssetEntryCollectionEntries(List<AddressableAssetEntry> assets, Func<AddressableAssetEntry, bool> entryFilter)
-        {
-            var settings = parentGroup.Settings;
-            var col = AssetDatabase.LoadAssetAtPath<AddressableAssetEntryCollection>(AssetPath);
-            if (col != null)
-            {
-                foreach (var e in col.Entries)
-                {
-                    var entry = settings.CreateSubEntryIfUnique(e.guid, e.address, this);
-                    if (entry != null)
-                    {
-                        if (entryFilter == null || entryFilter(entry))
-                            assets.Add(entry);
-                    }
-                }
-            }
-        }
-
-#pragma warning restore 0618
-
         /// <summary>
         /// Gets an entry for this folder entry
         /// </summary>
@@ -519,21 +478,6 @@ namespace UnityEditor.AddressableAssets.Settings
             return assetEntry;
         }
 
-#pragma warning disable 0618
-        internal AddressableAssetEntry GetAssetCollectionSubEntry(string subAssetGuid)
-        {
-            if (AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && MainAssetType == typeof_AddressableAssetEntryCollection)
-            {
-                List<AddressableAssetEntry> implicitEntries = new List<AddressableAssetEntry>();
-                GatherAssetEntryCollectionEntries(implicitEntries, null);
-                return implicitEntries.FirstOrDefault(ie => ie.guid == subAssetGuid);
-            }
-
-            return null;
-        }
-
-#pragma warning restore 0618
-
         static IEnumerable<string> GetResourceDirectories()
         {
             string[] resourcesGuids = AssetDatabase.FindAssets("Resources", new string[] {"Assets", "Packages"});
@@ -549,8 +493,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal AddressableAssetEntry GetImplicitEntry(string implicitAssetGuid, string implicitAssetPath)
         {
-            var e = GetAssetCollectionSubEntry(implicitAssetGuid);
-            return e != null ? e : GetFolderSubEntry(implicitAssetGuid, implicitAssetPath);
+            return GetFolderSubEntry(implicitAssetGuid, implicitAssetPath);
         }
 
         string GetRelativePath(string file, string path)

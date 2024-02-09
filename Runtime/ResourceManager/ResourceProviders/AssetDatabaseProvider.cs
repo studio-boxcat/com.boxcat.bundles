@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEditor;
-using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
@@ -113,12 +112,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_ProvideHandle.Complete(result, result != null,
                     result == null ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.") : null);
             }
-        }
-
-        /// <inheritdoc/>
-        public override bool CanProvide(Type t, IResourceLocation location)
-        {
-            return base.CanProvide(t, location);
         }
 
         public override void Provide(ProvideHandle provideHandle)

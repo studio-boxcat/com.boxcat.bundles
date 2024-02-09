@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 
@@ -36,12 +37,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
         [FormerlySerializedAs("m_provider")]
         [SerializeField]
-        string m_Provider;
+        ResourceProviderType m_Provider;
 
         /// <summary>
         /// The provider id.
         /// </summary>
-        public string Provider
+        public ResourceProviderType Provider
         {
             get { return m_Provider; }
         }
@@ -77,11 +78,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <param name="provider">The provider id.</param>
         /// <param name="t">The resource object type.</param>
         /// <param name="dependencies">Optional array of dependencies.</param>
-        public ResourceLocationData(string keys, string id, Type provider, Type t, string[] dependencies = null)
+        public ResourceLocationData(string keys, string id, ResourceProviderType provider, Type t, string[] dependencies = null)
         {
             m_Keys = keys;
             m_InternalId = id;
-            m_Provider = provider == null ? "" : provider.FullName;
+            m_Provider = provider;
             m_Dependencies = dependencies == null ? new string[0] : dependencies;
             m_ResourceType = new SerializedType() {Value = t};
         }

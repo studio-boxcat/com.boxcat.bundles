@@ -43,7 +43,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Build and Save Snapshot"))
                 {
-                    Addressables.Log("we aren't actually building yet.");
+                    L.I("we aren't actually building yet.");
                 }
 
                 GUILayout.EndHorizontal();
@@ -62,7 +62,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.Space(10);
                 if (GUILayout.Button("Browse"))
                 {
-                    Addressables.Log("we aren't actually browsing yet.");
+                    L.I("we aren't actually browsing yet.");
                 }
 
                 GUILayout.EndHorizontal();
@@ -70,7 +70,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Create Updated Packs"))
                 {
-                    Addressables.Log("we aren't actually updating yet.");
+                    L.I("we aren't actually updating yet.");
                 }
 
                 GUILayout.EndHorizontal();

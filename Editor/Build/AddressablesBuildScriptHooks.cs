@@ -56,6 +56,8 @@ namespace UnityEditor.AddressableAssets.Build
                     return;
                 }
 
+                Debug.Log("[Addressables] BuildScriptHooks: OnEditorPlayModeChanged - " + settings.ActivePlayModeDataBuilder.Name);
+
                 var res = settings.ActivePlayModeDataBuilder.BuildData<AddressablesPlayModeBuildResult>(new AddressablesDataBuilderInput(settings));
                 if (!string.IsNullOrEmpty(res.Error))
                 {

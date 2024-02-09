@@ -12,8 +12,7 @@ namespace UnityEngine.ResourceManagement.Util
 {
     internal class BinaryStorageBuffer
     {
-        class BuiltinTypesSerializer :
-             ISerializationAdapter<string>
+        class StringSerializer : ISerializationAdapter<string>
         {
             public IEnumerable<ISerializationAdapter> Dependencies => null;
 
@@ -68,8 +67,7 @@ namespace UnityEngine.ResourceManagement.Util
             }
         }
 
-        class TypeSerializer :
-             ISerializationAdapter<Type>
+        class TypeSerializer : ISerializationAdapter<Type>
         {
             struct Data
             {
@@ -126,7 +124,7 @@ namespace UnityEngine.ResourceManagement.Util
                 if (i.IsGenericType && typeof(ISerializationAdapter).IsAssignableFrom(i))
                 {
                     var aType = i.GenericTypeArguments[0];
-                    if (serializationAdapters.ContainsKey(aType))
+                    if (serializationAdapters.TryAdd(aType, adapter) is false)
                     {
                         if (forceOverride)
                         {
@@ -144,7 +142,6 @@ namespace UnityEngine.ResourceManagement.Util
                     }
                     else
                     {
-                        serializationAdapters[aType] = adapter;
                         added = true;
                     }
                 }
@@ -212,7 +209,7 @@ namespace UnityEngine.ResourceManagement.Util
                 foreach (var a in adapters)
                     BinaryStorageBuffer.AddSerializationAdapter(m_Adapters, a);
                 BinaryStorageBuffer.AddSerializationAdapter(m_Adapters, new TypeSerializer());
-                BinaryStorageBuffer.AddSerializationAdapter(m_Adapters, new BuiltinTypesSerializer());
+                BinaryStorageBuffer.AddSerializationAdapter(m_Adapters, new StringSerializer());
             }
 
             public void AddSerializationAdapter(ISerializationAdapter a)
@@ -409,7 +406,6 @@ namespace UnityEngine.ResourceManagement.Util
             List<Chunk> chunks;
             Dictionary<Hash128, uint> existingValues;
             Dictionary<Type, ISerializationAdapter> serializationAdapters;
-            public uint Length => totalBytes;
 
             public Writer(int chunkSize = 1024*1024, params ISerializationAdapter[] adapters)
             {
@@ -419,7 +415,7 @@ namespace UnityEngine.ResourceManagement.Util
                 chunks.Add(new Chunk { position = 0 });
                 serializationAdapters = new Dictionary<Type, ISerializationAdapter>();
                 AddSerializationAdapter(serializationAdapters, new TypeSerializer());
-                AddSerializationAdapter(serializationAdapters, new BuiltinTypesSerializer());
+                AddSerializationAdapter(serializationAdapters, new StringSerializer());
                 foreach (var a in adapters)
                     AddSerializationAdapter(serializationAdapters, a, true);
             }

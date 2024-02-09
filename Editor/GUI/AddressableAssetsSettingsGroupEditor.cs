@@ -234,7 +234,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 s = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
             if (s == null)
             {
-                Addressables.LogError("Missing built-in guistyle " + styleName);
+                L.E("Missing built-in guistyle " + styleName);
                 s = new GUIStyle();
             }
 
@@ -508,7 +508,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     else if (!existingType.IsSubclassOf(menuType))
                     {
                         // both are same level, issue
-                        Addressables.LogWarning(
+                        L.W(
                             $"Trying to new build menu [{menuType}] with path \"{menuInst.BuildMenuPath}\". But an existing type already exists with that path, [{existingType}].");
                     }
                 }
@@ -528,7 +528,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             if (context.BuildMenu == null)
             {
-                Addressables.LogError("Addressable content build failure : null build menu context");
+                L.E("Addressable content build failure : null build menu context");
                 return;
             }
 
@@ -560,7 +560,7 @@ namespace UnityEditor.AddressableAssets.GUI
             try {
                 if (context.BuildMenu == null)
                 {
-                    Addressables.LogError("Addressable content build failure : null build menu context");
+                    L.LogError("Addressable content build failure : null build menu context");
                     return;
                 }
 
@@ -630,7 +630,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             if (!context.BuildMenu.OnPrebuild(builderInput))
             {
-                Addressables.LogError($"Addressable content pre-build failure : {context.BuildMenu.BuildMenuPath}");
+                L.E($"Addressable content pre-build failure : {context.BuildMenu.BuildMenuPath}");
                 return false;
             }
 
@@ -640,7 +640,7 @@ namespace UnityEditor.AddressableAssets.GUI
         static void HandlePostBuild(BuildMenuContext context, AddressablesDataBuilderInput builderInput, AddressablesPlayerBuildResult rst)
         {
             if (string.IsNullOrEmpty(rst.Error) && !context.BuildMenu.OnPostbuild(builderInput, rst))
-                Addressables.LogError($"Addressable content post-build failure : {context.BuildMenu.BuildMenuPath}");
+                L.E($"Addressable content post-build failure : {context.BuildMenu.BuildMenuPath}");
         }
 
         void OnCleanAll()

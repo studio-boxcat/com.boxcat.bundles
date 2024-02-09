@@ -128,7 +128,7 @@ namespace UnityEditor.AddressableAssets.Build
 
             m_AnalyzeData = JsonUtility.FromJson<AddressablesAnalyzeResultData>(File.ReadAllText(path));
             if (m_AnalyzeData == null)
-                Addressables.LogWarning($"Unable to load Analyze Result Data at {path}.");
+                L.W($"Unable to load Analyze Result Data at {path}.");
             else
             {
                 if (m_AnalyzeData.Data == null)
@@ -138,7 +138,7 @@ namespace UnityEditor.AddressableAssets.Build
                 {
                     if (rule == null)
                     {
-                        Addressables.LogWarning("An unknown Analyze rule is being skipped because it is null.");
+                        L.W("An unknown Analyze rule is being skipped because it is null.");
                         continue;
                     }
 

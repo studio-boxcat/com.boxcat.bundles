@@ -3,6 +3,16 @@ using System.Collections.Generic;
 
 namespace UnityEngine.ResourceManagement.ResourceLocations
 {
+    public enum ResourceProviderType : byte
+    {
+        AssetBundle = 0,
+        BundledAsset = 1,
+#if UNITY_EDITOR
+        AssetDatabase = 2,
+#endif
+        COUNT,
+    }
+
     /// <summary>
     /// Contains enough information to load an asset (what/where/how/dependencies)
     /// </summary>
@@ -18,7 +28,7 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// Matches the provider used to provide/load this location
         /// </summary>
         /// <value>The provider id.</value>
-        string ProviderId { get; }
+        ResourceProviderType ProviderId { get; }
 
         /// <summary>
         /// Gets the dependencies to other IResourceLocations

@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceLocations;
-using UnityEngine.ResourceManagement.Util;
-using UnityEngine.SceneManagement;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
@@ -12,7 +8,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     /// </summary>
     public class InstanceProvider : IInstanceProvider
     {
-        Dictionary<GameObject, AsyncOperationHandle<GameObject>> m_InstanceObjectToPrefabHandle = new Dictionary<GameObject, AsyncOperationHandle<GameObject>>();
+        Dictionary<GameObject, AsyncOperationHandle<GameObject>> m_InstanceObjectToPrefabHandle = new();
 
         /// <inheritdoc/>
         public GameObject ProvideInstance(ResourceManager resourceManager, AsyncOperationHandle<GameObject> prefabHandle, InstantiationParameters instantiateParameters)
@@ -25,8 +21,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <inheritdoc/>
         public void ReleaseInstance(ResourceManager resourceManager, GameObject instance)
         {
-            AsyncOperationHandle<GameObject> resource;
-            if (!m_InstanceObjectToPrefabHandle.TryGetValue(instance, out resource))
+            if (!m_InstanceObjectToPrefabHandle.TryGetValue(instance, out var resource))
             {
                 Debug.LogWarningFormat("Releasing unknown GameObject {0} to InstanceProvider.", instance);
             }

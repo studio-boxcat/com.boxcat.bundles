@@ -115,7 +115,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             m_GroupToBundleNames = new Dictionary<AddressableAssetGroup, (string, string)[]>();
             var bundleToAssetGroup = new Dictionary<string, string>();
             m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
-            m_Linker.AddAssemblies(new[] {typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly});
+            m_Linker.AddAssemblies(new[] {typeof(Addressables).Assembly, typeof(ResourceManager).Assembly});
 
             aaContext = new AddressableAssetsBuildContext
             {
@@ -295,7 +295,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     contentCatalog.m_BuildResultHash = buildResultHash;
                 }
 
-                contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList());//, aaContext.Settings.OptimizeCatalogSize);
+                contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList());
                 var bytes = contentCatalog.SerializeToByteArray();
 
                 CreateCatalogFiles(bytes, builderInput, aaContext);
@@ -358,7 +358,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             if (data == null || data.Length == 0 || builderInput == null || aaContext == null)
             {
-                Addressables.LogError("Unable to create content catalog (Null arguments).");
+                L.E("Unable to create content catalog (Null arguments).");
                 return false;
             }
 
@@ -425,7 +425,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             if (assetGroup.Schemas.Count == 0)
             {
-                Addressables.LogWarning($"{assetGroup.Name} does not have any associated AddressableAssetGroupSchemas. " +
+                L.W($"{assetGroup.Name} does not have any associated AddressableAssetGroupSchemas. " +
                                         $"Data from this group will not be included in the build. " +
                                         $"If this is unexpected the AddressableGroup may have become corrupted.");
                 return string.Empty;
@@ -483,7 +483,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             m_IncludedGroupsInBuild?.Add(assetGroup);
 
             if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.buildTarget == BuildTarget.WebGL)
-                Addressables.LogWarning($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
+                L.W($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
 
             var bundleInputDefs = new List<AssetBundleBuild>();
             var list = PrepGroupBundlePacking(assetGroup, bundleInputDefs, schema);

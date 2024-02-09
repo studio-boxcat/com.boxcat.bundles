@@ -9,7 +9,7 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
     public class ResourceLocationBase : IResourceLocation
     {
         string m_Id;
-        string m_ProviderId;
+        ResourceProviderType m_ProviderId;
         int m_DependencyHashCode;
         int m_HashCode;
         Type m_Type;
@@ -24,7 +24,7 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// <summary>
         /// Provider Id.  This is usually set to the FullName property of the type of the provider class.
         /// </summary>
-        public string ProviderId => m_ProviderId;
+        public ResourceProviderType ProviderId => m_ProviderId;
 
         /// <summary>
         /// List of dependencies that must be loaded before this location.  This value may be null.
@@ -86,12 +86,10 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// <param name="providerId">The provider id.  This is set to the FullName of the type of the provder class.</param>
         /// <param name="t">The type of the object to provide.</param>
         /// <param name="dependencies">Locations for the dependencies of this location.</param>
-        public ResourceLocationBase(string name, string id, string providerId, Type t, params IResourceLocation[] dependencies)
+        public ResourceLocationBase(string name, string id, ResourceProviderType providerId, Type t, params IResourceLocation[] dependencies)
         {
             if (string.IsNullOrEmpty(id))
                 throw new ArgumentNullException(nameof(id));
-            if (string.IsNullOrEmpty(providerId))
-                throw new ArgumentNullException(nameof(providerId));
             m_PrimaryKey = name;
             m_HashCode = (name.GetHashCode() * 31 + id.GetHashCode()) * 31 + providerId.GetHashCode();
             m_Id = id;

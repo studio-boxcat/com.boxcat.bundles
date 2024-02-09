@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
-using UnityEngine.ResourceManagement.Util;
-using UnityEngine.SceneManagement;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
@@ -135,25 +133,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     public interface IResourceProvider
     {
         /// <summary>
-        /// Unique identifier for this provider, used by Resource Locations to find a suitable Provider
-        /// </summary>
-        /// <value>The provider identifier.</value>
-        string ProviderId { get; }
-
-        /// <summary>
         /// The default type of object that this provider can provide.
         /// </summary>
         /// <param name="location">The location that can be used to determine the type.</param>
         /// <returns>The type of object that can be provided.</returns>
         Type GetDefaultType(IResourceLocation location);
-
-        /// <summary>
-        /// Determine if this provider can provide the specified object type from the specified location.
-        /// </summary>
-        /// <param name="type">The type of object.</param>
-        /// <param name="location">The resource location of the object.</param>
-        /// <returns>True if this provider can create the specified object.</returns>
-        bool CanProvide(Type type, IResourceLocation location);
 
         /// <summary>
         /// Tells the provide that it needs to provide a resource and report the results through the passed provideHandle. When this is called, all dependencies have completed and are available through the provideHandle.

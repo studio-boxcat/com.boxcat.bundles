@@ -77,13 +77,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
                 catch (Exception e)
                 {
+                    Debug.LogException(e);
+
                     string errMessage;
                     if (e.Message == "path")
                         errMessage = "Invalid path detected during build. Check for unmatched brackets in your active profile's variables.";
                     else
                         errMessage = e.Message;
 
-                    Debug.LogError(errMessage);
                     return AddressableAssetBuildResult.CreateResult<TResult>(0, errMessage);
                 }
 

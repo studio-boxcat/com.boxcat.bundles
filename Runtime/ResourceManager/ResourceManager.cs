@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -24,7 +26,7 @@ namespace UnityEngine.ResourceManagement
 
         internal bool CallbackHooksEnabled = true; // tests might need to disable the callback hooks to manually pump updating
 
-        ListWithEvents<IResourceProvider> m_ResourceProviders = new ListWithEvents<IResourceProvider>();
+        IResourceProvider[] m_ResourceProviders = new IResourceProvider[(int) ResourceProviderType.COUNT];
         IAllocationStrategy m_allocator;
 
         // list of all the providers in s_ResourceProviders that implement IUpdateReceiver
@@ -39,7 +41,6 @@ namespace UnityEngine.ResourceManagement
         bool m_InsideUpdateMethod = false;
 
         //cache of type + providerId to IResourceProviders for faster lookup
-        internal Dictionary<int, IResourceProvider> m_providerMap = new Dictionary<int, IResourceProvider>();
         Dictionary<IOperationCacheKey, IAsyncOperation> m_AssetOperationCache = new Dictionary<IOperationCacheKey, IAsyncOperation>();
         HashSet<InstanceOperation> m_TrackedInstanceOperations = new HashSet<InstanceOperation>();
         internal DelegateList<float> m_UpdateCallbacks = DelegateList<float>.CreateWithGlobalCache();
@@ -106,7 +107,7 @@ namespace UnityEngine.ResourceManagement
         /// Gets the list of configured <see cref="IResourceProvider"/> objects. Resource Providers handle load and release operations for <see cref="IResourceLocation"/> objects.
         /// </summary>
         /// <value>The resource providers list.</value>
-        public IList<IResourceProvider> ResourceProviders
+        public IResourceProvider[] ResourceProviders
         {
             get { return m_ResourceProviders; }
         }
@@ -121,26 +122,10 @@ namespace UnityEngine.ResourceManagement
             m_ReleaseOpCached = OnOperationDestroyCached;
             m_ReleaseInstanceOp = OnInstanceOperationDestroy;
             m_allocator = alloc == null ? new LRUCacheAllocationStrategy(1000, 1000, 100, 10) : alloc;
-            m_ResourceProviders.OnElementAdded += OnObjectAdded;
-            m_ResourceProviders.OnElementRemoved += OnObjectRemoved;
             m_UpdateReceivers.OnElementAdded += x => RegisterForCallbacks();
 #if ENABLE_ADDRESSABLE_PROFILER
             Profiling.ProfilerRuntime.Initialise();
 #endif
-        }
-
-        private void OnObjectAdded(object obj)
-        {
-            IUpdateReceiver updateReceiver = obj as IUpdateReceiver;
-            if (updateReceiver != null)
-                AddUpdateReceiver(updateReceiver);
-        }
-
-        private void OnObjectRemoved(object obj)
-        {
-            IUpdateReceiver updateReceiver = obj as IUpdateReceiver;
-            if (updateReceiver != null)
-                RemoveUpdateReciever(updateReceiver);
         }
 
         bool m_RegisteredForCallbacks = false;
@@ -158,54 +143,14 @@ namespace UnityEngine.ResourceManagement
         /// Gets the appropriate <see cref="IResourceProvider"/> for the given <paramref name="location"/> and <paramref name="type"/>.
         /// </summary>
         /// <returns>The resource provider. Or null if an appropriate provider cannot be found</returns>
-        /// <param name="t">The desired object type to be loaded from the provider.</param>
         /// <param name="location">The resource location.</param>
-        public IResourceProvider GetResourceProvider(Type t, IResourceLocation location)
+        [NotNull]
+        public IResourceProvider GetResourceProvider(IResourceLocation location)
         {
-            if (location != null)
-            {
-                IResourceProvider prov = null;
-                var hash = location.ProviderId.GetHashCode() * 31 + (t == null ? 0 : t.GetHashCode());
-                if (!m_providerMap.TryGetValue(hash, out prov))
-                {
-                    for (int i = 0; i < ResourceProviders.Count; i++)
-                    {
-                        var p = ResourceProviders[i];
-                        if (p.ProviderId.Equals(location.ProviderId, StringComparison.Ordinal) && (t == null || p.CanProvide(t, location)))
-                        {
-                            m_providerMap.Add(hash, prov = p);
-                            break;
-                        }
-                    }
-                }
-
-                return prov;
-            }
-
-            return null;
-        }
-
-        Type GetDefaultTypeForLocation(IResourceLocation loc)
-        {
-            var provider = GetResourceProvider(null, loc);
-            if (provider == null)
-                return typeof(object);
-            Type t = provider.GetDefaultType(loc);
-            return t != null ? t : typeof(object);
-        }
-
-        private int CalculateLocationsHash(IList<IResourceLocation> locations, Type t = null)
-        {
-            if (locations == null || locations.Count == 0)
-                return 0;
-            int hash = 17;
-            foreach (var loc in locations)
-            {
-                Type t2 = t != null ? t : GetDefaultTypeForLocation(loc);
-                hash = hash * 31 + loc.Hash(t2);
-            }
-
-            return hash;
+            Assert.IsNotNull(location, "IResourceLocation is null");
+            var provider = ResourceProviders[(int) location.ProviderId];
+            Assert.IsNotNull(provider, $"No provider for type {location.ProviderId}");
+            return provider;
         }
 
         /// <summary>
@@ -222,7 +167,7 @@ namespace UnityEngine.ResourceManagement
             IResourceProvider provider = null;
             if (desiredType == null)
             {
-                provider = GetResourceProvider(desiredType, location);
+                provider = GetResourceProvider(location);
                 if (provider == null)
                 {
                     var ex = new UnknownResourceProviderException(location);
@@ -233,7 +178,7 @@ namespace UnityEngine.ResourceManagement
             }
 
             if (provider == null)
-                provider = GetResourceProvider(desiredType, location);
+                provider = GetResourceProvider(location);
 
             IAsyncOperation op;
             IOperationCacheKey key = CreateCacheKeyForLocation(provider, location, desiredType);
@@ -265,16 +210,6 @@ namespace UnityEngine.ResourceManagement
                 depOp.Release();
 
             return handle;
-        }
-
-        internal IAsyncOperation GetOperationFromCache(IResourceLocation location, Type desiredType)
-        {
-            IResourceProvider provider = GetResourceProvider(desiredType, location);
-            IOperationCacheKey key = CreateCacheKeyForLocation(provider, location, desiredType);
-
-            if (m_AssetOperationCache.TryGetValue(key, out IAsyncOperation op))
-                return op;
-            return null;
         }
 
         /// <summary>
@@ -547,20 +482,6 @@ namespace UnityEngine.ResourceManagement
             return StartOperation(op, default);
         }
 
-        /// <summary>
-        /// Create a group operation for a set of AsyncOperationHandles
-        /// </summary>
-        /// <param name="operations">The list of operations that need to complete.</param>
-        /// <param name="releasedCachedOpOnComplete">Determine if the cached operation should be released or not.</param>
-        /// <returns>The operation for the entire group</returns>
-        public AsyncOperationHandle<IList<AsyncOperationHandle>> CreateGenericGroupOperation(List<AsyncOperationHandle> operations, bool releasedCachedOpOnComplete = false)
-        {
-            var op = CreateOperation<GroupOperation>(typeof(GroupOperation), s_GroupOperationTypeHash, new AsyncOpHandlesCacheKey(operations),
-                releasedCachedOpOnComplete ? m_ReleaseOpCached : m_ReleaseOpNonCached);
-            op.Init(operations);
-            return StartOperation(op, default);
-        }
-
         internal AsyncOperationHandle<IList<AsyncOperationHandle>> ProvideResourceGroupCached(
             IList<IResourceLocation> locations, int groupHash, Type desiredType, Action<AsyncOperationHandle> callback, bool releaseDependenciesOnFailure = true)
         {
@@ -593,93 +514,6 @@ namespace UnityEngine.ResourceManagement
             }
 
             return handle;
-        }
-
-        /// <summary>
-        /// Asynchronously load all objects in the given collection of <paramref name="locations"/>.
-        /// If any matching location fails, all loads and dependencies will be released.  The returned .Result will be null, and .Status will be Failed.
-        /// </summary>
-        /// <returns>An async operation that will complete when all individual async load operations are complete.</returns>
-        /// <param name="locations">locations to load.</param>
-        /// <param name="callback">This callback will be invoked once for each object that is loaded.</param>
-        /// <typeparam name="TObject">Object type to load.</typeparam>
-        public AsyncOperationHandle<IList<TObject>> ProvideResources<TObject>(IList<IResourceLocation> locations, Action<TObject> callback = null)
-        {
-            return ProvideResources(locations, true, callback);
-        }
-
-        /// <summary>
-        /// Asynchronously load all objects in the given collection of <paramref name="locations"/>.
-        /// </summary>
-        /// <returns>An async operation that will complete when all individual async load operations are complete.</returns>
-        /// <param name="locations">locations to load.</param>
-        /// <param name="releaseDependenciesOnFailure">
-        /// If all matching locations succeed, this parameter is ignored.
-        /// When true, if any matching location fails, all loads and dependencies will be released.  The returned .Result will be null, and .Status will be Failed.
-        /// When false, if any matching location fails, the returned .Result will be an IList of size equal to the number of locations attempted.  Any failed location will
-        /// correlate to a null in the IList, while successful loads will correlate to a TObject in the list. The .Status will still be Failed.
-        /// When true, op does not need to be released if anything fails, when false, it must always be released.
-        /// </param>
-        /// <param name="callback">This callback will be invoked once for each object that is loaded.</param>
-        /// <typeparam name="TObject">Object type to load.</typeparam>
-        public AsyncOperationHandle<IList<TObject>> ProvideResources<TObject>(IList<IResourceLocation> locations, bool releaseDependenciesOnFailure, Action<TObject> callback = null)
-        {
-            if (locations == null)
-                return CreateCompletedOperation<IList<TObject>>(null, "Null Location");
-
-            Action<AsyncOperationHandle> callbackGeneric = null;
-            if (callback != null)
-            {
-                callbackGeneric = (x) => callback((TObject)(x.Result));
-            }
-
-            var typelessHandle = ProvideResourceGroupCached(locations, CalculateLocationsHash(locations, typeof(TObject)), typeof(TObject), callbackGeneric, releaseDependenciesOnFailure);
-            var chainOp = CreateChainOperation<IList<TObject>>(typelessHandle, (resultHandle) =>
-            {
-                AsyncOperationHandle<IList<AsyncOperationHandle>> handleToHandles = resultHandle.Convert<IList<AsyncOperationHandle>>();
-
-                var list = new List<TObject>();
-                Exception exception = null;
-                if (handleToHandles.Status == AsyncOperationStatus.Succeeded)
-                {
-                    foreach (var r in handleToHandles.Result)
-                        list.Add(r.Convert<TObject>().Result);
-                }
-                else
-                {
-                    bool foundSuccess = false;
-                    if (!releaseDependenciesOnFailure)
-                    {
-                        foreach (AsyncOperationHandle handle in handleToHandles.Result)
-                        {
-                            if (handle.Status == AsyncOperationStatus.Succeeded)
-                            {
-                                list.Add(handle.Convert<TObject>().Result);
-                                foundSuccess = true;
-                            }
-                            else
-                                list.Add(default(TObject));
-                        }
-                    }
-
-                    if (!foundSuccess)
-                    {
-                        list = null;
-                        exception = new ResourceManagerException("ProvideResources failed", handleToHandles.OperationException);
-                    }
-                    else
-                    {
-                        exception = new ResourceManagerException("Partial success in ProvideResources.  Some items failed to load. See earlier logs for more info.",
-                            handleToHandles.OperationException);
-                    }
-                }
-
-                return CreateCompletedOperationInternal<IList<TObject>>(list, exception == null, exception, releaseDependenciesOnFailure);
-            }, releaseDependenciesOnFailure);
-
-            // chain operation holds the dependency
-            typelessHandle.Release();
-            return chainOp;
         }
 
         /// <summary>

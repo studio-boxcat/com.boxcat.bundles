@@ -60,7 +60,7 @@ namespace UnityEditor.AddressableAssets
             }
 
             if (entriesToRemove.Count > 0)
-                Addressables.Log(builder.ToString());
+                L.I(builder.ToString());
         }
     }
 }

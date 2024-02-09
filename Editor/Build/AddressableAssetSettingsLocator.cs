@@ -1,69 +1,23 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.U2D;
 using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
     internal class AddressableAssetSettingsLocator : IResourceLocator
     {
-        private static Type m_SpriteType = typeof(Sprite);
-        private static Type m_SpriteAtlasType = typeof(SpriteAtlas);
-
-        public string LocatorId { get; private set; }
-        public Dictionary<object, HashSet<AddressableAssetEntry>> m_keyToEntries;
-        public Dictionary<CacheKey, IList<IResourceLocation>> m_Cache;
+        public Dictionary<string, AddressableAssetEntry> m_keyToEntry;
+        public Dictionary<CacheKey, IResourceLocation> m_Cache;
         public AddressableAssetTree m_AddressableAssetTree;
-        HashSet<object> m_Keys = null;
         AddressableAssetSettings m_Settings;
         bool m_dirty = true;
-
-        public IEnumerable<object> Keys
-        {
-            get
-            {
-                if (m_dirty)
-                    RebuildInternalData();
-                if (m_Keys == null)
-                {
-                    using (new AddressablesFileEnumerationScope(m_AddressableAssetTree))
-                    {
-                        m_Keys = new HashSet<object>();
-                        foreach (var kvp in m_keyToEntries)
-                        {
-                            var hasNonFolder = false;
-                            foreach (var e in kvp.Value)
-                            {
-                                if (AssetDatabase.IsValidFolder(e.AssetPath))
-                                {
-                                    throw new NotSupportedException(e.AssetPath);
-                                }
-                                else
-                                {
-                                    hasNonFolder = true;
-                                }
-                            }
-
-                            if (hasNonFolder)
-                                m_Keys.Add(kvp.Key);
-                        }
-                    }
-                }
-
-                return m_Keys;
-            }
-        }
-
-        /// <summary>
-        /// Returns an empty array of locations.
-        /// </summary>
-        public IEnumerable<IResourceLocation> AllLocations => new IResourceLocation[0];
 
         public struct CacheKey : IEquatable<CacheKey>
         {
@@ -83,17 +37,15 @@ namespace UnityEditor.AddressableAssets.Settings
         public AddressableAssetSettingsLocator(AddressableAssetSettings settings)
         {
             m_Settings = settings;
-            LocatorId = m_Settings.name;
             m_dirty = true;
             m_Settings.OnModification += Settings_OnModification;
         }
 
         void RebuildInternalData()
         {
-            m_Keys = null;
             m_AddressableAssetTree = BuildAddressableTree(m_Settings);
-            m_Cache = new Dictionary<CacheKey, IList<IResourceLocation>>();
-            m_keyToEntries = new Dictionary<object, HashSet<AddressableAssetEntry>>();
+            m_Cache = new Dictionary<CacheKey, IResourceLocation>();
+            m_keyToEntry = new Dictionary<string, AddressableAssetEntry>();
             using (new AddressablesFileEnumerationScope(m_AddressableAssetTree))
             {
                 foreach (AddressableAssetGroup g in m_Settings.groups)
@@ -102,9 +54,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     foreach (AddressableAssetEntry e in g.entries)
-                    {
-                        AddEntriesToTables(m_keyToEntries, e);
-                    }
+                        AddEntriesToTables(m_keyToEntry, e);
                 }
             }
 
@@ -127,20 +77,13 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        static void AddEntry(AddressableAssetEntry e, object k, Dictionary<object, HashSet<AddressableAssetEntry>> keyToEntries)
+        static void AddEntriesToTables(Dictionary<string, AddressableAssetEntry> keyToEntries, AddressableAssetEntry e)
         {
-            if (!keyToEntries.TryGetValue(k, out HashSet<AddressableAssetEntry> entries))
-                keyToEntries.Add(k, entries = new HashSet<AddressableAssetEntry>());
-            entries.Add(e);
+            keyToEntries.Add(e.address, e);
+            keyToEntries.Add(e.guid, e);
         }
 
-        static void AddEntriesToTables(Dictionary<object, HashSet<AddressableAssetEntry>> keyToEntries, AddressableAssetEntry e)
-        {
-            AddEntry(e, e.address, keyToEntries);
-            AddEntry(e, e.guid, keyToEntries);
-        }
-
-        static void GatherEntryLocations(AddressableAssetEntry entry, Type type, IList<IResourceLocation> locations, AddressableAssetTree assetTree)
+        static void GatherEntryLocations(AddressableAssetEntry entry, [NotNull] Type type, IList<IResourceLocation> locations, AddressableAssetTree assetTree)
         {
             if (!string.IsNullOrEmpty(entry.address) && entry.address.Contains('[') && entry.address.Contains(']'))
             {
@@ -154,12 +97,12 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     if (e.IsScene)
                     {
-                        if (type == null || type == typeof(object) || type == typeof(SceneInstance) || AddressableAssetUtility.MapEditorTypeToRuntimeType(e.MainAssetType, false) == type)
-                            locations.Add(new ResourceLocationBase(e.address, e.AssetPath, typeof(SceneProvider).FullName, typeof(SceneInstance)));
+                        if (type == typeof(object) || type == typeof(SceneInstance) || AddressableAssetUtility.MapEditorTypeToRuntimeType(e.MainAssetType, false) == type)
+                            locations.Add(new ResourceLocationBase(e.address, e.AssetPath, ResourceProviderType.AssetDatabase, typeof(SceneInstance)));
                     }
-                    else if (type == null || (type.IsAssignableFrom(e.MainAssetType) && type != typeof(object)))
+                    else if ((type.IsAssignableFrom(e.MainAssetType) && type != typeof(object)))
                     {
-                        locations.Add(new ResourceLocationBase(e.address, e.AssetPath, typeof(AssetDatabaseProvider).FullName, e.MainAssetType));
+                        locations.Add(new ResourceLocationBase(e.address, e.AssetPath, ResourceProviderType.AssetDatabase, e.MainAssetType));
                         return true;
                     }
                     else
@@ -171,7 +114,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             {
                                 if (type.IsAssignableFrom(t))
                                     locations.Add(
-                                        new ResourceLocationBase(e.address, e.AssetPath, typeof(AssetDatabaseProvider).FullName, AddressableAssetUtility.MapEditorTypeToRuntimeType(t, false)));
+                                        new ResourceLocationBase(e.address, e.AssetPath, ResourceProviderType.AssetDatabase, AddressableAssetUtility.MapEditorTypeToRuntimeType(t, false)));
                             }
 
                             return true;
@@ -183,139 +126,32 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
+        static readonly List<IResourceLocation> _locationBuf = new();
+
+        public bool Locate(string key, Type type, out IResourceLocation location)
         {
             Assert.IsNotNull(key, "Key cannot be null");
+            Assert.IsFalse(string.IsNullOrEmpty(key), "Key cannot be empty");
+            Assert.IsNotNull(type, "Type cannot be null");
 
             if (m_dirty)
                 RebuildInternalData();
-            CacheKey cacheKey = new CacheKey() {m_key = key, m_type = type};
-            if (m_Cache.TryGetValue(cacheKey, out locations))
-                return locations != null;
 
-            locations = new List<IResourceLocation>();
-            if (m_keyToEntries.TryGetValue(key, out HashSet<AddressableAssetEntry> entries))
-            {
-                foreach (AddressableAssetEntry e in entries)
-                {
-                    if (type == null)
-                    {
-                        if (e.MainAssetType != typeof(SceneAsset))
-                        {
-                            ObjectIdentifier[] ids =
-                                ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(new GUID(e.guid),
-                                    EditorUserBuildSettings.activeBuildTarget);
-                            List<Type> mainObjectTypes = AddressableAssetEntry.GatherMainObjectTypes(ids);
+            var cacheKey = new CacheKey() {m_key = key, m_type = type};
+            if (m_Cache.TryGetValue(cacheKey, out location))
+                return location != null;
 
-                            if (mainObjectTypes.Count > 0)
-                            {
-                                foreach (Type t in mainObjectTypes)
-                                    GatherEntryLocations(e, t, locations, m_AddressableAssetTree);
-                            }
-                            else
-                            {
-                                GatherEntryLocations(e, null, locations, m_AddressableAssetTree);
-                            }
-                        }
-                        else
-                        {
-                            GatherEntryLocations(e, null, locations, m_AddressableAssetTree);
-                        }
-                    }
-                    else
-                    {
-                        GatherEntryLocations(e, type, locations, m_AddressableAssetTree);
-                    }
-                }
-            }
+            if (m_keyToEntry.TryGetValue(key, out var e) is false)
+                throw new ArgumentException("[AddressableAssetSettingsLocator] Unable to find key " + key);
 
-            if (type == null)
-                type = typeof(object);
+            Assert.AreEqual(0, _locationBuf.Count, "Location buffer not empty");
+            GatherEntryLocations(e, type, _locationBuf, m_AddressableAssetTree);
+            Assert.AreEqual(1, _locationBuf.Count, "No locations found for key " + key);
+            location = _locationBuf[0];
+            _locationBuf.Clear();
 
-            string keyStr = key as string;
-            if (!string.IsNullOrEmpty(keyStr))
-            {
-                //check if the key is a guid first
-                var keyPath = AssetDatabase.GUIDToAssetPath(keyStr);
-                if (!string.IsNullOrEmpty(keyPath))
-                {
-                    //only look for folders from GUID if no locations have been found
-                    if (locations.Count == 0)
-                    {
-                        var slash = keyPath.LastIndexOf('/');
-                        while (slash > 0)
-                        {
-                            keyPath = keyPath.Substring(0, slash);
-                            var parentFolderKey = AssetDatabase.AssetPathToGUID(keyPath);
-                            if (string.IsNullOrEmpty(parentFolderKey))
-                                break;
-
-                            if (m_keyToEntries.ContainsKey(parentFolderKey))
-                            {
-                                AddLocations(locations, type, keyPath, AssetDatabase.GUIDToAssetPath(keyStr));
-                                break;
-                            }
-
-                            slash = keyPath.LastIndexOf('/');
-                        }
-                    }
-                }
-                else
-                {
-                    //if the key is not a GUID, see if it is contained in a folder entry
-                    keyPath = keyStr;
-                    int slash = keyPath.LastIndexOf('/');
-                    while (slash > 0)
-                    {
-                        keyPath = keyPath.Substring(0, slash);
-                        if (m_keyToEntries.TryGetValue(keyPath, out var entry))
-                        {
-                            foreach (var e in entry)
-                                AddLocations(locations, type, keyStr, GetInternalIdFromFolderEntry(keyStr, e));
-                            break;
-                        }
-
-                        slash = keyPath.LastIndexOf('/');
-                    }
-                }
-            }
-
-            if (locations.Count == 0)
-            {
-                locations = null;
-                m_Cache.Add(cacheKey, locations);
-                return false;
-            }
-
-            m_Cache.Add(cacheKey, locations);
+            m_Cache.Add(cacheKey, location);
             return true;
-        }
-
-        internal static void AddLocations(IList<IResourceLocation> locations, Type type, string keyStr, string internalId)
-        {
-            if (!string.IsNullOrEmpty(internalId) && !string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(internalId)))
-            {
-                if (type == m_SpriteType && AssetDatabase.GetMainAssetTypeAtPath(internalId) == m_SpriteAtlasType)
-                    locations.Add(new ResourceLocationBase(keyStr, internalId, typeof(AssetDatabaseProvider).FullName, m_SpriteAtlasType));
-                else
-                {
-                    foreach (var obj in AssetDatabaseProvider.LoadAssetsWithSubAssets(internalId))
-                    {
-                        var rtt = AddressableAssetUtility.MapEditorTypeToRuntimeType(obj.GetType(), false);
-                        if (type.IsAssignableFrom(rtt))
-                            locations.Add(new ResourceLocationBase(keyStr, internalId, typeof(AssetDatabaseProvider).FullName, rtt));
-                    }
-                }
-            }
-        }
-
-        string GetInternalIdFromFolderEntry(string keyStr, AddressableAssetEntry entry)
-        {
-            var entryPath = entry.AssetPath;
-            if (keyStr.StartsWith(entry.address + "/", StringComparison.Ordinal))
-                return entryPath + keyStr.Substring(entry.address.Length);
-
-            return string.Empty;
         }
     }
 }

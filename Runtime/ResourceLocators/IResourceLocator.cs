@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace UnityEngine.AddressableAssets.ResourceLocators
@@ -10,22 +9,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
     public interface IResourceLocator
     {
         /// <summary>
-        /// The keys defined by this locator.
-        /// </summary>
-        IEnumerable<object> Keys { get; }
-
-        /// <summary>
-        /// All locations that are available by this locator.
-        /// </summary>
-        IEnumerable<IResourceLocation> AllLocations { get; }
-
-        /// <summary>
         /// Retrieve the locations from a specified key.
         /// </summary>
         /// <param name="key">The key to use.</param>
         /// <param name="type">The resource type.</param>
-        /// <param name="locations">The resulting set of locations for the key.</param>
+        /// <param name="location">The resulting set of locations for the key.</param>
         /// <returns>True if any locations were found with the specified key.</returns>
-        bool Locate(object key, Type type, out IList<IResourceLocation> locations);
+        bool Locate(string key, Type type, out IResourceLocation location);
     }
 }

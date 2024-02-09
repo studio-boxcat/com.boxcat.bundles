@@ -149,8 +149,8 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             else
             {
                 string errorMsg = string.Format(
-                    "Provider of type {0} with id {1} has provided a result of type {2} which cannot be converted to requested type {3}. The operation will be marked as failed.",
-                    m_Provider.GetType().ToString(), m_Provider.ProviderId, typeof(T), typeof(TObject));
+                    "Provider of type {0} has provided a result of type {1} which cannot be converted to requested type {2}. The operation will be marked as failed.",
+                    m_Provider.GetType().ToString(), typeof(T), typeof(TObject));
                 Complete(Result, false, errorMsg);
                 throw new Exception(errorMsg);
             }

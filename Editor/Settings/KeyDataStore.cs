@@ -119,7 +119,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
             catch (Exception ex)
             {
-                Addressables.LogWarningFormat("KeyDataStore unable to serizalize entry {0} with value {1}, exception: {2}", key, value, ex);
+                L.W("KeyDataStore unable to serizalize entry {0} with value {1}, exception: {2}", key, value, ex);
             }
 
             return entry;
@@ -142,7 +142,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
             catch (Exception ex)
             {
-                Addressables.LogWarningFormat("KeyDataStore unable to deserizalize entry {0} from assembly {1} of type {2}, exception: {3}", e.Key, e.AssemblyName, e.ClassName, ex);
+                L.W("KeyDataStore unable to deserizalize entry {0} from assembly {1} of type {2}, exception: {3}", e.Key, e.AssemblyName, e.ClassName, ex);
                 return null;
             }
         }

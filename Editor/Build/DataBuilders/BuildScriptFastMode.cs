@@ -47,11 +47,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             if (builderInput.AddressableSettings)
             {
-                AddressablesEditorInitializer.CreatePlayModeInitializationOperation = obj =>
-                {
-                    return builderInput.AddressableSettings
-                        .CreatePlayModeInitializationOperation((AddressablesImpl) obj);
-                };
+                AddressablesEditorInitializer.InitializeOverride =
+                    obj => FastModeInitializer.Initialize(obj, builderInput.AddressableSettings);
                 IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = "", Duration = 0};
                 m_DataBuilt = true;
                 return (TResult)res;
