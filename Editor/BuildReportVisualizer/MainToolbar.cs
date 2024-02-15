@@ -1,7 +1,4 @@
 #if UNITY_2022_2_OR_NEWER
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -75,12 +72,12 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             var mainToolbarAddReportButton = rootVisualElement.Q<ToolbarMenu>(BuildReportUtility.MainToolbarAddReportButton);
             mainToolbarAddReportButton.menu.AppendAction("Add Report...", x =>
             {
-                var path = EditorUtility.OpenFilePanelWithFilters("Locate Build Report", Addressables.BuildReportPath, new[] { "Build Report", "json" });
+                var path = EditorUtility.OpenFilePanelWithFilters("Locate Build Report", PathConfig.BuildReportPath, new[] { "Build Report", "json" });
                 m_ReportsList.AddReportFromFile(path);
             }, DropdownMenuAction.AlwaysEnabled);
             mainToolbarAddReportButton.menu.AppendAction("Add Reports from Folder...", x =>
             {
-                var path = EditorUtility.OpenFolderPanel("Locate folder with Build Reports", Addressables.BuildReportPath, "");
+                var path = EditorUtility.OpenFolderPanel("Locate folder with Build Reports", PathConfig.BuildReportPath, "");
                 m_ReportsList.AddReportsFromFolder(path);
             }, DropdownMenuAction.AlwaysEnabled);
 

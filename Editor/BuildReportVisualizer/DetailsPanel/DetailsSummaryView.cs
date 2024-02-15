@@ -1,8 +1,5 @@
 #if UNITY_2022_2_OR_NEWER
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEditor.AddressableAssets.BuildReportVisualizer.BuildReportWindow;
@@ -95,7 +92,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 {
                     builder.With("Bundle", bundle.Name)
                            .With("Group", bundle.Group.Name)
-                           .With("Load Path", bundle.LoadPath);
+                           .With("Load Path", bundle.Key.GetBuildName());
                 }
             }
 

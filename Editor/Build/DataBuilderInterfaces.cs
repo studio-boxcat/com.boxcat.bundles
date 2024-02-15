@@ -24,11 +24,6 @@ namespace UnityEditor.AddressableAssets.Build
         /// Path of runtime settings file
         /// </summary>
         string OutputPath { get; set; }
-
-        /// <summary>
-        /// Registry of files created during the build
-        /// </summary>
-        FileRegistry FileRegistry { get; set; }
     }
 
     /// <summary>

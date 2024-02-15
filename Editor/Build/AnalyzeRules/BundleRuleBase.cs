@@ -4,14 +4,12 @@ using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
-using UnityEngine.AddressableAssets.ResourceLocators;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 {
@@ -21,19 +19,10 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     public class BundleRuleBase : AnalyzeRule
     {
         [NonSerialized]
-        internal Dictionary<string, List<GUID>> m_ResourcesToDependencies = new Dictionary<string, List<GUID>>();
+        internal Dictionary<string, List<GUID>> m_ResourcesToDependencies = new();
 
         [NonSerialized]
-        internal readonly List<ContentCatalogDataEntry> m_Locations = new List<ContentCatalogDataEntry>();
-
-        [NonSerialized]
-        internal readonly List<AssetBundleBuild> m_AllBundleInputDefs = new List<AssetBundleBuild>();
-
-        [NonSerialized]
-        internal readonly Dictionary<string, string> m_BundleToAssetGroup = new Dictionary<string, string>();
-
-        [NonSerialized]
-        internal List<AddressableAssetEntry> m_AssetEntries = new List<AddressableAssetEntry>();
+        internal List<AssetBundleBuild> m_AllBundleInputDefs = new();
 
         [NonSerialized]
         internal ExtractDataTask m_ExtractData = null;
@@ -48,7 +37,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         protected Dictionary<string, List<GUID>> ResourcesToDependencies => m_ResourcesToDependencies;
         protected internal List<AssetBundleBuild> AllBundleInputDefs => m_AllBundleInputDefs;
 
-        internal IList<IBuildTask> RuntimeDataBuildTasks(string builtinShaderBundleName)
+        internal static IList<IBuildTask> RuntimeDataBuildTasks()
         {
             IList<IBuildTask> buildTasks = new List<IBuildTask>();
 
@@ -63,7 +52,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             buildTasks.Add(new CalculateSceneDependencyData());
             buildTasks.Add(new CalculateAssetDependencyData());
             buildTasks.Add(new StripUnusedSpriteSources());
-            buildTasks.Add(new CreateBuiltInShadersBundle(builtinShaderBundleName));
+            buildTasks.Add(new CreateBuiltInShadersBundle(BuildUtility.BuiltInShaderBundle));
 
             // Packing
             buildTasks.Add(new GenerateBundlePacking());
@@ -88,11 +77,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             return new AddressableAssetsBuildContext
             {
                 Settings = settings,
-                buildTarget = default,
-                bundleToAssetGroup = m_BundleToAssetGroup,
-                locations = m_Locations,
-                assetEntries = m_AssetEntries,
-                assetGroupToBundles = new Dictionary<AddressableAssetGroup, List<string>>()
             };
         }
 
@@ -104,7 +88,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         protected bool IsValidPath(string path)
         {
             return AddressableAssetUtility.IsPathValidForEntry(path) &&
-                   !AddressableAssetUtility.StringContains(path, "/Resources/", StringComparison.OrdinalIgnoreCase);
+                   !path.Contains("/Resources/", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -119,19 +103,13 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
             var buildTarget = context.Target;
             var buildTargetGroup = context.TargetGroup;
-            var buildParams = new AddressableAssetsBundleBuildParameters(settings, m_BundleToAssetGroup, buildTarget,
-                buildTargetGroup, settings.buildSettings.bundleBuildPath);
-            var builtinShaderBundleName =
-                settings.DefaultGroup.Name.ToLower().Replace(" ", "").Replace('\\', '/').Replace("//", "/") +
-                "_unitybuiltinshaders.bundle";
-            var buildTasks = RuntimeDataBuildTasks(builtinShaderBundleName);
+            var buildParams = new AddressableAssetsBundleBuildParameters(settings, buildTarget, buildTargetGroup);
+            var buildTasks = RuntimeDataBuildTasks();
             m_ExtractData = new ExtractDataTask();
             buildTasks.Add(m_ExtractData);
 
-            IBundleBuildResults buildResults;
             var exitCode = ContentPipeline.BuildAssetBundles(buildParams, new BundleBuildContent(m_AllBundleInputDefs),
-                out buildResults, buildTasks, buildContext);
-
+                out _, buildTasks, buildContext);
             return exitCode;
         }
 
@@ -173,14 +151,14 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// Build map of resources to corresponding dependencies
         /// </summary>
         /// <param name="resourcePaths"> Array of resource paths</param>
-        protected internal virtual void BuiltInResourcesToDependenciesMap(string[] resourcePaths)
+        protected internal void BuiltInResourcesToDependenciesMap(string[] resourcePaths)
         {
             for (int sceneIndex = 0; sceneIndex < resourcePaths.Length; ++sceneIndex)
             {
                 string path = resourcePaths[sceneIndex];
                 if (EditorUtility.DisplayCancelableProgressBar("Generating built-in resource dependency map",
                         "Checking " + path + " for duplicates with Addressables content.",
-                        (float)sceneIndex / resourcePaths.Length))
+                        (float) sceneIndex / resourcePaths.Length))
                 {
                     m_ResourcesToDependencies.Clear();
                     EditorUtility.ClearProgressBar();
@@ -233,127 +211,13 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         /// <summary>
-        /// Use bundle names to create group names for AssetBundleBuild
-        /// </summary>
-        /// <param name="buildContext">Context information for building</param>
-        protected internal void ConvertBundleNamesToGroupNames(AddressableAssetsBuildContext buildContext)
-        {
-            if (m_ExtractData == null)
-            {
-                Debug.LogError("Build not run, RefreshBuild needed before ConvertBundleNamesToGroupNames");
-                return;
-            }
-
-            Dictionary<string, string> bundleNamesToUpdate = new Dictionary<string, string>();
-
-            foreach (var assetGroup in buildContext.Settings.groups)
-            {
-                if (assetGroup == null)
-                    continue;
-
-                List<string> bundles;
-                if (buildContext.assetGroupToBundles.TryGetValue(assetGroup, out bundles))
-                {
-                    foreach (string bundle in bundles)
-                    {
-                        var keys = m_ExtractData.WriteData.FileToBundle.Keys.Where(key => m_ExtractData.WriteData.FileToBundle[key] == bundle);
-                        foreach (string key in keys)
-                            bundleNamesToUpdate.Add(key, assetGroup.Name);
-                    }
-                }
-            }
-
-            foreach (string key in bundleNamesToUpdate.Keys)
-            {
-                var bundleName = m_ExtractData.WriteData.FileToBundle[key];
-                string convertedName = ConvertBundleName(bundleName, bundleNamesToUpdate[key]);
-                if (m_ExtractData.WriteData.FileToBundle.ContainsKey(key))
-                    m_ExtractData.WriteData.FileToBundle[key] = convertedName;
-                for (int i = 0; i < m_AllBundleInputDefs.Count; ++i)
-                {
-                    if (m_AllBundleInputDefs[i].assetBundleName == bundleName)
-                    {
-                        var input = m_AllBundleInputDefs[i];
-                        input.assetBundleName = convertedName;
-                        m_AllBundleInputDefs[i] = input;
-                        break;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Generate input definitions and entries for AssetBundleBuild
         /// </summary>
         /// <param name="settings">The current Addressables settings object</param>
         protected internal void CalculateInputDefinitions(AddressableAssetSettings settings)
         {
-            int updateFrequency = Mathf.Max(settings.groups.Count / 10, 1);
-            bool progressDisplayed = false;
-            for (int groupIndex = 0; groupIndex < settings.groups.Count; ++groupIndex)
-            {
-                AddressableAssetGroup group = settings.groups[groupIndex];
-                if (group == null)
-                    continue;
-                if (!progressDisplayed || groupIndex % updateFrequency == 0)
-                {
-                    progressDisplayed = true;
-                    if (EditorUtility.DisplayCancelableProgressBar("Calculating Input Definitions", "",
-                            (float)groupIndex / settings.groups.Count))
-                    {
-                        m_AssetEntries.Clear();
-                        m_BundleToAssetGroup.Clear();
-                        m_AllBundleInputDefs.Clear();
-                        break;
-                    }
-                }
-
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema != null && schema.IncludeInBuild)
-                {
-                    List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();
-                    m_AssetEntries.AddRange(BuildScriptPackedMode.PrepGroupBundlePacking(group, bundleInputDefinitions, schema));
-
-                    for (int i = 0; i < bundleInputDefinitions.Count; i++)
-                    {
-                        if (m_BundleToAssetGroup.ContainsKey(bundleInputDefinitions[i].assetBundleName))
-                            bundleInputDefinitions[i] = CreateUniqueBundle(bundleInputDefinitions[i]);
-
-                        m_BundleToAssetGroup.Add(bundleInputDefinitions[i].assetBundleName, schema.Group.Guid);
-                    }
-
-                    m_AllBundleInputDefs.AddRange(bundleInputDefinitions);
-                }
-            }
-
-            if (progressDisplayed)
-                EditorUtility.ClearProgressBar();
-        }
-
-        internal AssetBundleBuild CreateUniqueBundle(AssetBundleBuild bid)
-        {
-            return CreateUniqueBundle(bid, m_BundleToAssetGroup);
-        }
-
-        /// <summary>
-        /// Create new AssetBundleBuild
-        /// </summary>
-        /// <param name="bid">ID for new AssetBundleBuild</param>
-        /// <param name="bundleToAssetGroup"> Map of bundle names to asset group Guids</param>
-        /// <returns></returns>
-        protected internal static AssetBundleBuild CreateUniqueBundle(AssetBundleBuild bid, Dictionary<string, string> bundleToAssetGroup)
-        {
-            int count = 1;
-            var newName = bid.assetBundleName;
-            while (bundleToAssetGroup.ContainsKey(newName) && count < 1000)
-                newName = bid.assetBundleName.Replace(".bundle", string.Format("{0}.bundle", count++));
-            return new AssetBundleBuild
-            {
-                assetBundleName = newName,
-                addressableNames = bid.addressableNames,
-                assetBundleVariant = bid.assetBundleVariant,
-                assetNames = bid.assetNames
-            };
+            m_AllBundleInputDefs = BuildScriptPackedMode.GenerateBundleBuilds(
+                settings.groups, new Dictionary<BundleKey, AddressableAssetGroup>());
         }
 
         /// <summary>
@@ -369,10 +233,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 return new List<GUID>();
             }
 
-            List<GUID> guids = (from id in m_ExtractData.WriteData.FileToObjects[fileName]
+            return (from id in m_ExtractData.WriteData.FileToObjects[fileName]
                 where !m_ExtractData.WriteData.AssetToFiles.Keys.Contains(id.guid)
                 select id.guid).ToList();
-            return guids;
         }
 
         /// <summary>
@@ -498,22 +361,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             EditorUtility.DisplayProgressBar("Calculating Built-in dependencies",
                 "Calculating dependencies between Built-in resources and Addressables", 0.9f);
             IntersectResourcesDepedenciesWithBundleDependencies(GetAllBundleDependencies());
-            ConvertBundleNamesToGroupNames(context);
 
             return exitCode;
-        }
-
-        /// <summary>
-        /// Convert bundle name to include group name
-        /// </summary>
-        /// <param name="bundleName">Current bundle name</param>
-        /// <param name="groupName">Group name of bundle's group</param>
-        /// <returns>The new bundle name</returns>
-        protected string ConvertBundleName(string bundleName, string groupName)
-        {
-            string[] bundleNameSegments = bundleName.Split('_');
-            bundleNameSegments[0] = groupName.Replace(" ", "").ToLower();
-            return string.Join("_", bundleNameSegments);
         }
 
         /// <summary>
@@ -521,10 +370,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         public override void ClearAnalysis()
         {
-            m_Locations.Clear();
-            m_AssetEntries.Clear();
             m_AllBundleInputDefs.Clear();
-            m_BundleToAssetGroup.Clear();
             m_ResourcesToDependencies.Clear();
             m_ResultData = null;
             m_ExtractData = null;
@@ -656,10 +502,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// Gets an array of resource paths that are to be compared against the addressables build content
         /// </summary>
         /// <returns>Array of Resource paths to compare against</returns>
-        internal protected virtual string[] GetResourcePaths()
-        {
-            return new string[0];
-        }
+        internal protected virtual string[] GetResourcePaths() => Array.Empty<string>();
 
         /// <inheritdoc />
         public override void FixIssues(AddressableAssetSettings settings)

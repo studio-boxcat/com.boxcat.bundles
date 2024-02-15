@@ -427,19 +427,17 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        internal static SortedDictionary<string, BuildLayout.ExplicitAsset> GetReferencingAssets(BuildLayout.ExplicitAsset asset)
+        internal static SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GetReferencingAssets(BuildLayout.ExplicitAsset asset)
         {
-            var dependenciesOfAsset = new SortedDictionary<string, BuildLayout.ExplicitAsset>();
+            var dependenciesOfAsset = new SortedDictionary<AssetId, BuildLayout.ExplicitAsset>();
             if (asset.Bundle == null)
                 return dependenciesOfAsset;
 
-            IEnumerable<BuildLayout.ExplicitAsset> assetsOfDependentBundles = asset.Bundle.DependentBundles.SelectMany(b => b.DependentBundles).SelectMany(f => f.Files).SelectMany(a => a.Assets);
-            foreach (BuildLayout.ExplicitAsset assetOfDependentBundle in assetsOfDependentBundles)
+            var assetsOfDependentBundles = asset.Bundle.DependentBundles.SelectMany(b => b.DependentBundles).SelectMany(f => f.Files).SelectMany(a => a.Assets);
+            foreach (var assetOfDependentBundle in assetsOfDependentBundles)
             {
                 if (assetOfDependentBundle.ExternallyReferencedAssets.Find(x => x.AddressableName == asset.AddressableName) != null)
-                {
                     dependenciesOfAsset.TryAdd(assetOfDependentBundle.Guid, assetOfDependentBundle);
-                }
             }
             return dependenciesOfAsset;
         }

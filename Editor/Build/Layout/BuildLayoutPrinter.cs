@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
@@ -18,10 +16,10 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             {
                 order++;
                 prevOrderRemainder = byteSize % 1024;
-                byteSize = byteSize / 1024;
+                byteSize /= 1024;
             }
 
-            double byteSizeFloat = (double)byteSize + (double)prevOrderRemainder / 1024;
+            double byteSizeFloat = byteSize + (double)prevOrderRemainder / 1024;
 
             string result = String.Format("{0:0.##}{1}", byteSizeFloat, sizes[order]);
             return result;
@@ -68,7 +66,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         class AttrBuilder
         {
-            List<Tuple<string, string>> m_Items = new List<Tuple<string, string>>();
+            List<Tuple<string, string>> m_Items = new();
 
             public void Add(string k, string v)
             {
@@ -154,7 +152,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         {
             AttrBuilder attr = new AttrBuilder();
             attr.AddSize("Size", archive.FileSize);
-            attr.Add("Compression", archive.Compression);
 
             ulong bundleSize = archive.Files.First(x => x.BundleObjectInfo != null).BundleObjectInfo.Size;
             attr.AddSize("Asset Bundle Object Size", bundleSize);
@@ -187,32 +184,17 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        static void PrintSchema(TabWriter writer, BuildLayout.SchemaData sd)
-        {
-            string text = sd.Type;
-            if (sd.KvpDetails.Count > 0)
-            {
-                AttrBuilder attr = new AttrBuilder();
-                sd.KvpDetails.ForEach(x => attr.Add(x.Item1, x.Item2));
-                text += " " + attr;
-            }
-
-            writer.WriteLine(text);
-        }
-
         static void PrintGroup(TabWriter writer, BuildLayout.Group grp)
         {
-            int explicitAssetCount = grp.Bundles.Sum(x => x.Files.Sum(y => y.Assets.Count));
-            AttrBuilder attr = new AttrBuilder();
+            var explicitAssetCount = grp.Bundles.Sum(x => x.Files.Sum(y => y.Assets.Count));
+            var attr = new AttrBuilder();
             attr.Add("Bundles", grp.Bundles.Count.ToString());
+            attr.Add("Packing Mode", grp.PackingMode);
             attr.AddSize("Total Size", (ulong)grp.Bundles.Sum(x => (long)x.FileSize));
             attr.Add("Explicit Asset Count", explicitAssetCount.ToString());
 
             using (writer.IndentScope($"Group {grp.Name} {attr}"))
             {
-                using (writer.IndentScope("Schemas"))
-                    grp.Schemas.ForEach(x => PrintSchema(writer, x));
-
                 foreach (BuildLayout.Bundle archive in grp.Bundles)
                     PrintArchive(writer, archive);
             }
@@ -255,7 +237,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
             foreach (BuildLayout.File f in BuildLayoutHelpers.EnumerateFiles(layout))
             {
-                BundleOverheadSize += f.BundleObjectInfo != null ? f.BundleObjectInfo.Size : 0;
+                BundleOverheadSize += f.BundleObjectInfo?.Size ?? 0;
                 MonoScriptSize += f.MonoScriptSize;
             }
 

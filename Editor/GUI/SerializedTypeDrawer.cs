@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
-using UnityEngine.ResourceManagement.Util;
+using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
@@ -24,8 +24,6 @@ namespace UnityEditor.AddressableAssets.GUI
             m_Property = property;
             if (m_SerializedFieldInfo == null)
                 m_SerializedFieldInfo = GetFieldInfo(property);
-            if (m_Types == null)
-                m_Types = GetTypes(m_SerializedFieldInfo);
 
             List<GUIContent> typeContent = new List<GUIContent>();
             typeContent.Add(new GUIContent("<none>", "Clear the type."));
@@ -51,7 +49,6 @@ namespace UnityEditor.AddressableAssets.GUI
                         ValueChanged = true
                     });
                 EditorUtility.SetDirty(m_Property.serializedObject.targetObject);
-                AddressableAssetUtility.OpenAssetIfUsingVCIntegration(m_Property.serializedObject.targetObject);
             }
 
             EditorGUI.EndProperty();
@@ -82,14 +79,6 @@ namespace UnityEditor.AddressableAssets.GUI
             if (i > 0)
                 propertyName = property.propertyPath.Substring(0, i);
             return t.GetField(propertyName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        }
-
-        static List<Type> GetTypes(FieldInfo fieldInfo)
-        {
-            var attrs = fieldInfo.GetCustomAttributes(typeof(SerializedTypeRestrictionAttribute), false);
-            if (attrs.Length == 0 || !(attrs[0] is SerializedTypeRestrictionAttribute))
-                return null;
-            return AddressableAssetUtility.GetTypes((attrs[0] as SerializedTypeRestrictionAttribute).type);
         }
     }
 }

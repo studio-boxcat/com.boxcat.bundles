@@ -10,16 +10,10 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     public class CheckResourcesDupeDependencies : BundleRuleBase
     {
         /// <inheritdoc />
-        public override string ruleName
-        {
-            get { return "Check Resources to Addressable Duplicate Dependencies"; }
-        }
+        public override string ruleName => "Check Resources to Addressable Duplicate Dependencies";
 
         /// <inheritdoc />
-        public override bool CanFix
-        {
-            get { return false; }
-        }
+        public override bool CanFix => false;
 
         /// <summary>
         /// Clear analysis and calculate built in resources and corresponding bundle dependencies
@@ -42,9 +36,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <inheritdoc />
         internal protected override string[] GetResourcePaths()
         {
-            string[] resourceDirectory = Directory.GetDirectories("Assets", "Resources", SearchOption.AllDirectories);
-            List<string> resourcePaths = new List<string>();
-            foreach (string directory in resourceDirectory)
+            var resourceDirectory = Directory.GetDirectories("Assets", "Resources", SearchOption.AllDirectories);
+            var resourcePaths = new List<string>();
+            foreach (var directory in resourceDirectory)
                 resourcePaths.AddRange(Directory.GetFiles(directory, "*", SearchOption.AllDirectories));
             return resourcePaths.ToArray();
         }

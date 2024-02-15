@@ -1,49 +1,46 @@
 #if UNITY_2022_2_OR_NEWER
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal abstract class BuildReportHelperAsset
     {
         public abstract BuildLayout.ExplicitAsset ImmediateReferencingAsset { get; set; }
-        public abstract SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
+        public abstract SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
     }
 
     internal class BuildReportHelperExplicitAsset : BuildReportHelperAsset
     {
         public override BuildLayout.ExplicitAsset ImmediateReferencingAsset { get; set; }
-        public override SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
+        public override SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
 
         public BuildLayout.ExplicitAsset Asset;
-        public SortedDictionary<string, BuildReportHelperExplicitAssetDependency> GUIDToInternalReferencedExplicitAssets;
-        public SortedDictionary<string, BuildReportHelperImplicitAssetDependency> GUIDToInternalReferencedOtherAssets;
-        public SortedDictionary<string, BuildReportHelperAssetDependency> GUIDToExternallyReferencedAssets;
+        public SortedDictionary<AssetId, BuildReportHelperExplicitAssetDependency> GUIDToInternalReferencedExplicitAssets;
+        public SortedDictionary<AssetId, BuildReportHelperImplicitAssetDependency> GUIDToInternalReferencedOtherAssets;
+        public SortedDictionary<AssetId, BuildReportHelperAssetDependency> GUIDToExternallyReferencedAssets;
 
-        public BuildReportHelperExplicitAsset(BuildLayout.ExplicitAsset asset, BuildLayout.ExplicitAsset referencingAsset, SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
+        public BuildReportHelperExplicitAsset(BuildLayout.ExplicitAsset asset, BuildLayout.ExplicitAsset referencingAsset, SortedDictionary<AssetId, BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
         {
             Asset = asset;
             ImmediateReferencingAsset = referencingAsset;
 
-            GUIDToInternalReferencedExplicitAssets = new SortedDictionary<string, BuildReportHelperExplicitAssetDependency>();
-            GUIDToInternalReferencedOtherAssets = new SortedDictionary<string, BuildReportHelperImplicitAssetDependency>();
-            GUIDToExternallyReferencedAssets = new SortedDictionary<string, BuildReportHelperAssetDependency>();
+            GUIDToInternalReferencedExplicitAssets = new SortedDictionary<AssetId, BuildReportHelperExplicitAssetDependency>();
+            GUIDToInternalReferencedOtherAssets = new SortedDictionary<AssetId, BuildReportHelperImplicitAssetDependency>();
+            GUIDToExternallyReferencedAssets = new SortedDictionary<AssetId, BuildReportHelperAssetDependency>();
 
             GenerateFlatListOfReferencedAssets(Asset, Asset, GUIDToInternalReferencedExplicitAssets, GUIDToInternalReferencedOtherAssets, GUIDToExternallyReferencedAssets, duplicateAssets);
             GUIDToReferencingAssets = BuildReportUtility.GetReferencingAssets(Asset);
         }
 
         void GenerateFlatListOfReferencedAssets(BuildLayout.ExplicitAsset asset, BuildLayout.ExplicitAsset mainAsset,
-            SortedDictionary<string, BuildReportHelperExplicitAssetDependency> internalReferencedExplicitAssets,
-            SortedDictionary<string, BuildReportHelperImplicitAssetDependency> internalReferencedOtherAssets,
-            SortedDictionary<string, BuildReportHelperAssetDependency> externallyReferencedAssets,
-            SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
+            SortedDictionary<AssetId, BuildReportHelperExplicitAssetDependency> internalReferencedExplicitAssets,
+            SortedDictionary<AssetId, BuildReportHelperImplicitAssetDependency> internalReferencedOtherAssets,
+            SortedDictionary<AssetId, BuildReportHelperAssetDependency> externallyReferencedAssets,
+            SortedDictionary<AssetId, BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
         {
-            foreach (BuildLayout.ExplicitAsset explicitDep in asset.InternalReferencedExplicitAssets)
+            foreach (var explicitDep in asset.InternalReferencedExplicitAssets)
             {
                 if (asset.Bundle == mainAsset.Bundle && !internalReferencedExplicitAssets.ContainsKey(explicitDep.Guid))
                     internalReferencedExplicitAssets.TryAdd(explicitDep.Guid, new BuildReportHelperExplicitAssetDependency(explicitDep, asset));
@@ -52,21 +49,21 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 GenerateFlatListOfReferencedAssets(explicitDep, mainAsset, internalReferencedExplicitAssets, internalReferencedOtherAssets, externallyReferencedAssets, duplicateAssets);
             }
 
-            foreach (BuildLayout.DataFromOtherAsset implicitDep in asset.InternalReferencedOtherAssets)
+            foreach (var implicitDep in asset.InternalReferencedOtherAssets)
             {
                 if (asset.Bundle == mainAsset.Bundle && !internalReferencedOtherAssets.ContainsKey(implicitDep.AssetGuid))
                 {
-                    if (duplicateAssets.ContainsKey(implicitDep.AssetGuid))
-                        internalReferencedOtherAssets.TryAdd(implicitDep.AssetGuid, new BuildReportHelperImplicitAssetDependency(duplicateAssets[implicitDep.AssetGuid], asset));
-                    else
-                        internalReferencedOtherAssets.TryAdd(implicitDep.AssetGuid, new BuildReportHelperImplicitAssetDependency(implicitDep, asset));
+                    var dep = duplicateAssets.TryGetValue(implicitDep.AssetGuid, out var duplicateAsset)
+                        ? new BuildReportHelperImplicitAssetDependency(duplicateAsset, asset)
+                        : new BuildReportHelperImplicitAssetDependency(implicitDep, asset);
+                    internalReferencedOtherAssets.TryAdd(implicitDep.AssetGuid, dep);
                 }
                 else if (asset.Bundle != mainAsset.Bundle && !externallyReferencedAssets.ContainsKey(implicitDep.AssetGuid))
                 {
-                    if (duplicateAssets.ContainsKey(implicitDep.AssetGuid))
-                        externallyReferencedAssets.TryAdd(implicitDep.AssetGuid, new BuildReportHelperImplicitAssetDependency(duplicateAssets[implicitDep.AssetGuid], asset));
-                    else
-                        externallyReferencedAssets.TryAdd(implicitDep.AssetGuid, new BuildReportHelperImplicitAssetDependency(implicitDep, asset));
+                    var dep = duplicateAssets.TryGetValue(implicitDep.AssetGuid, out var duplicateAsset)
+                        ? new BuildReportHelperImplicitAssetDependency(duplicateAsset, asset)
+                        : new BuildReportHelperImplicitAssetDependency(implicitDep, asset);
+                    externallyReferencedAssets.TryAdd(implicitDep.AssetGuid, dep);
                 }
             }
 
@@ -82,14 +79,14 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     internal abstract class BuildReportHelperAssetDependency
     {
         public abstract BuildLayout.ExplicitAsset ImmediateReferencingAsset { get; set; }
-        public abstract SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
+        public abstract SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
     }
 
     internal class BuildReportHelperExplicitAssetDependency : BuildReportHelperAssetDependency
     {
         public BuildLayout.ExplicitAsset Asset { get; set; }
         public override BuildLayout.ExplicitAsset ImmediateReferencingAsset { get; set; }
-        public override SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
+        public override SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
 
         public BuildReportHelperExplicitAssetDependency(BuildLayout.ExplicitAsset asset, BuildLayout.ExplicitAsset referencingAsset)
         {
@@ -103,7 +100,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public BuildLayout.DataFromOtherAsset Asset { get; set; }
         public override BuildLayout.ExplicitAsset ImmediateReferencingAsset { get; set; }
-        public override SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
+        public override SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
 
         public List<BuildLayout.Bundle> Bundles { get; set; }
 
@@ -111,8 +108,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             Asset = asset;
             ImmediateReferencingAsset = immediateReferencingAsset;
-            Bundles = new List<BuildLayout.Bundle>() { asset.File.Bundle };
-            GUIDToReferencingAssets = new SortedDictionary<string, BuildLayout.ExplicitAsset>();
+            Bundles = new List<BuildLayout.Bundle>() {asset.File.Bundle};
+            GUIDToReferencingAssets = new SortedDictionary<AssetId, BuildLayout.ExplicitAsset>();
             foreach (BuildLayout.ExplicitAsset referencingAsset in asset.ReferencingAssets)
             {
                 GUIDToReferencingAssets.TryAdd(referencingAsset.Guid, referencingAsset);
@@ -136,13 +133,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public BuildLayout.DataFromOtherAsset Asset;
 
-        public override SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
+        public override SortedDictionary<AssetId, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
 
         public BuildReportHelperDuplicateImplicitAsset(BuildLayout.DataFromOtherAsset asset, BuildLayout.AssetDuplicationData assetDupData)
         {
             Asset = asset;
             Bundles = new List<BuildLayout.Bundle>();
-            GUIDToReferencingAssets = new SortedDictionary<string, BuildLayout.ExplicitAsset>();
+            GUIDToReferencingAssets = new SortedDictionary<AssetId, BuildLayout.ExplicitAsset>();
 
             foreach (BuildLayout.File bundleFile in assetDupData.DuplicatedObjects.SelectMany(o => o.IncludedInBundleFiles))
             {
@@ -163,19 +160,20 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
     internal class BuildReportHelperConsumer : IBuildReportConsumer
     {
-        SortedDictionary<string, BuildLayout.DataFromOtherAsset> m_GUIDToImplicitAssets;
-        SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset> m_GUIDToDuplicateAssets;
+        SortedDictionary<AssetId, BuildLayout.DataFromOtherAsset> m_GUIDToImplicitAssets;
+        SortedDictionary<AssetId, BuildReportHelperDuplicateImplicitAsset> m_GUIDToDuplicateAssets;
 
-        internal SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset> GUIDToDuplicateAssets => m_GUIDToDuplicateAssets;
+        internal SortedDictionary<AssetId, BuildReportHelperDuplicateImplicitAsset> GUIDToDuplicateAssets => m_GUIDToDuplicateAssets;
 
         public void Consume(BuildLayout buildReport)
         {
             m_GUIDToImplicitAssets = GetGUIDToImplicitAssets(buildReport);
             m_GUIDToDuplicateAssets = GetGUIDToDuplicateAssets(buildReport, m_GUIDToImplicitAssets);
         }
-        SortedDictionary<string, BuildLayout.DataFromOtherAsset> GetGUIDToImplicitAssets(BuildLayout report)
+
+        static SortedDictionary<AssetId, BuildLayout.DataFromOtherAsset> GetGUIDToImplicitAssets(BuildLayout report)
         {
-            var guidToImplicitAssets = new SortedDictionary<string, BuildLayout.DataFromOtherAsset>();
+            var guidToImplicitAssets = new SortedDictionary<AssetId, BuildLayout.DataFromOtherAsset>();
             var allInstancesOfImplicitAssets = BuildLayoutHelpers.EnumerateBundles(report).SelectMany(b => b.Files).SelectMany(f => f.Assets).SelectMany(a => a.InternalReferencedOtherAssets);
 
             foreach (BuildLayout.DataFromOtherAsset asset in allInstancesOfImplicitAssets)
@@ -188,20 +186,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return guidToImplicitAssets;
         }
 
-        SortedDictionary<string, BuildReportHelperExplicitAsset> GetGUIDToExplicitAssets(BuildLayout report, SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
+        static SortedDictionary<AssetId, BuildReportHelperDuplicateImplicitAsset> GetGUIDToDuplicateAssets(
+            BuildLayout report, SortedDictionary<AssetId, BuildLayout.DataFromOtherAsset> guidToImplicitAssets)
         {
-            var guidToExplicitAssets = new SortedDictionary<string, BuildReportHelperExplicitAsset>();
-            foreach (BuildLayout.ExplicitAsset asset in BuildLayoutHelpers.EnumerateAssets(report))
-            {
-                var helperAsset = new BuildReportHelperExplicitAsset(asset, null, duplicateAssets);
-                guidToExplicitAssets.TryAdd(asset.Guid, helperAsset);
-            }
-            return guidToExplicitAssets;
-        }
-
-        SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset> GetGUIDToDuplicateAssets(BuildLayout report, SortedDictionary<string, BuildLayout.DataFromOtherAsset> guidToImplicitAssets)
-        {
-            var duplicateAssets = new SortedDictionary<string, BuildReportHelperDuplicateImplicitAsset>();
+            var duplicateAssets = new SortedDictionary<AssetId, BuildReportHelperDuplicateImplicitAsset>();
             foreach (BuildLayout.AssetDuplicationData dupData in report.DuplicatedAssets)
             {
                 var helperDupAsset = new BuildReportHelperDuplicateImplicitAsset(guidToImplicitAssets[dupData.AssetGuid], dupData);

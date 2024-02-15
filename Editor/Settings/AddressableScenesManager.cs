@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -26,13 +26,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 case AddressableAssetSettings.ModificationEvent.EntryAdded:
                 case AddressableAssetSettings.ModificationEvent.EntryMoved:
                 case AddressableAssetSettings.ModificationEvent.EntryModified:
-                    var entries = obj as List<AddressableAssetEntry>;
-                    if (entries == null)
-                    {
-                        entries = new List<AddressableAssetEntry>();
-                        entries.Add(obj as AddressableAssetEntry);
-                    }
-
+                    if (obj is not List<AddressableAssetEntry> entries)
+                        entries = new List<AddressableAssetEntry> {obj as AddressableAssetEntry};
                     CheckForScenesInBuildList(entries);
                     break;
             }
@@ -50,24 +45,19 @@ namespace UnityEditor.AddressableAssets.Settings
 
             foreach (var scene in BuiltinSceneCache.scenes)
             {
-                if (scene.enabled)
-                {
-                    var entry = settings.FindAssetEntry(scene.guid.ToString());
-                    if (entry != null)
-                    {
-                        Debug.LogWarning("An addressable scene was added to the build scenes list and can thus no longer be addressable.  " + scene.path);
-                        settings.RemoveAssetEntry(scene.guid.ToString());
-                    }
-                }
+                if (scene.enabled is false) continue;
+                var entry = settings.FindAssetEntry((AssetGUID) scene.guid);
+                if (entry == null) continue;
+                Debug.LogWarning("An addressable scene was added to the build scenes list and can thus no longer be addressable.  " + scene.path);
+                settings.RemoveAssetEntry((AssetGUID) scene.guid);
             }
         }
 
         static void CheckForScenesInBuildList(IList<AddressableAssetEntry> entries)
         {
-            if (entries == null)
-                return;
+            Assert.IsNotNull(entries);
 
-            EditorBuildSettingsScene[] scenes = BuiltinSceneCache.scenes;
+            var scenes = BuiltinSceneCache.scenes;
             bool changed = false;
             foreach (var entry in entries)
             {

@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -15,8 +16,6 @@ namespace UnityEditor.AddressableAssets.GUI
     {
         static GUIStyle s_ToggleMixed;
         static GUIContent s_AddressableAssetToggleText;
-
-        static GUIContent s_SystemSettingsGUIContent = new GUIContent("System Settings", "View Addressable Asset Settings");
 
         static GUIContent s_GroupsDropdownLabelContent = new GUIContent("Group", "The Addressable Group that this asset is assigned to.");
 
@@ -34,216 +33,163 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static void SetAaEntry(AddressableAssetSettings aaSettings, List<TargetInfo> targetInfos, bool create)
         {
-            if (create && aaSettings.DefaultGroup.ReadOnly)
-            {
-                Debug.LogError("Current default group is ReadOnly.  Cannot add addressable assets to it");
-                return;
-            }
-
             Undo.RecordObject(aaSettings, "AddressableAssetSettings");
 
             if (!create)
             {
-                List<AddressableAssetEntry> removedEntries = new List<AddressableAssetEntry>(targetInfos.Count);
-                for (int i = 0; i < targetInfos.Count; ++i)
+                var removedEntries = new List<AddressableAssetEntry>(targetInfos.Count);
+                for (var i = 0; i < targetInfos.Count; ++i)
                 {
-                    AddressableAssetEntry e = aaSettings.FindAssetEntry(targetInfos[i].Guid);
-                    AddressableAssetUtility.OpenAssetIfUsingVCIntegration(e.parentGroup);
+                    var e = aaSettings.FindAssetEntry(targetInfos[i].Guid);
                     removedEntries.Add(e);
                     aaSettings.RemoveAssetEntry(removedEntries[i], false);
                 }
 
                 if (removedEntries.Count > 0)
-                    aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, removedEntries, true, false);
+                    aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, removedEntries, true);
             }
             else
             {
-                AddressableAssetGroup parentGroup = aaSettings.DefaultGroup;
+                var parentGroup = aaSettings.DefaultGroup;
                 var resourceTargets = targetInfos.Where(ti => AddressableAssetUtility.IsInResources(ti.Path));
-                if (resourceTargets.Any())
-                {
-                    var resourcePaths = resourceTargets.Select(t => t.Path).ToList();
-                    var resourceGuids = resourceTargets.Select(t => t.Guid).ToList();
-                    AddressableAssetUtility.SafeMoveResourcesToGroup(aaSettings, parentGroup, resourcePaths, resourceGuids);
-                }
+                foreach (var resourceTarget in resourceTargets)
+                    L.W($"Skipping marking resource asset '{resourceTarget.Path}' as addressable.");
 
-                var otherTargetInfos = targetInfos.Except(resourceTargets);
-                List<string> otherTargetGuids = new List<string>(targetInfos.Count);
-                foreach (var info in otherTargetInfos)
-                    otherTargetGuids.Add(info.Guid);
-
+                var otherTargetGuids  = targetInfos.Except(resourceTargets).Select(info => info.Guid).ToList();
                 var entriesCreated = new List<AddressableAssetEntry>();
                 var entriesMoved = new List<AddressableAssetEntry>();
                 aaSettings.CreateOrMoveEntries(otherTargetGuids, parentGroup, entriesCreated, entriesMoved, false, false);
 
-                bool openedInVC = false;
                 if (entriesMoved.Count > 0)
-                {
-                    AddressableAssetUtility.OpenAssetIfUsingVCIntegration(parentGroup);
-                    openedInVC = true;
-                    aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entriesMoved, true, false);
-                }
+                    aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entriesMoved, true);
 
                 if (entriesCreated.Count > 0)
-                {
-                    if (!openedInVC)
-                        AddressableAssetUtility.OpenAssetIfUsingVCIntegration(parentGroup);
-                    aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, entriesCreated, true, false);
-                }
+                    aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, entriesCreated, true);
             }
         }
 
         [UnityEngine.TestTools.ExcludeFromCoverage]
         static void OnPostHeaderGUI(Editor editor)
         {
+            var targets = editor.targets;
+            if (targets.Length == 0)
+                return;
+
+            // only display for the Prefab/Model importer not the displayed GameObjects
+            if (targets[0] is GameObject)
+                return;
+
             var aaSettings = AddressableAssetSettingsDefaultObject.Settings;
 
-            if (editor.targets.Length > 0)
+            var targetInfos = GatherTargetInfos(targets, aaSettings);
+            if (targetInfos.Count == 0)
+                return;
+
+            var targetHasAddressableSubObject = false;
+            var mainAssetsAddressable = 0;
+            foreach (var info in targetInfos)
             {
-                // only display for the Prefab/Model importer not the displayed GameObjects
-                if (editor.targets[0].GetType() == typeof(GameObject))
-                    return;
+                if (info.MainAssetEntry == null)
+                    continue;
+                mainAssetsAddressable++;
+                if (!info.IsMainAsset)
+                    targetHasAddressableSubObject = true;
+            }
 
-                foreach (var t in editor.targets)
+            // Overrides a DisabledScope in the EditorElement.cs that disables GUI drawn in the header when the asset cannot be edited.
+            bool prevEnabledState = UnityEngine.GUI.enabled;
+            if (targetHasAddressableSubObject)
+                UnityEngine.GUI.enabled = false;
+            else
+            {
+                UnityEngine.GUI.enabled = true;
+                foreach (var info in targetInfos)
                 {
-                    if (t is AddressableAssetGroupSchema)
-                    {
-                        GUILayout.BeginHorizontal();
-
-                        GUILayout.FlexibleSpace();
-                        if (GUILayout.Button(s_SystemSettingsGUIContent, "MiniButton"))
-                        {
-                            EditorGUIUtility.PingObject(AddressableAssetSettingsDefaultObject.Settings);
-                            Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
-                        }
-
-                        GUILayout.EndHorizontal();
-                        return;
-                    }
-                }
-
-                List<TargetInfo> targetInfos = GatherTargetInfos(editor.targets, aaSettings);
-                if (targetInfos.Count == 0)
-                    return;
-
-                bool targetHasAddressableSubObject = false;
-                int mainAssetsAddressable = 0;
-                int subAssetsAddressable = 0;
-                foreach (TargetInfo info in targetInfos)
-                {
-                    if (info.MainAssetEntry == null)
-                        continue;
-                    if (info.MainAssetEntry.IsSubAsset)
-                        subAssetsAddressable++;
-                    else
-                        mainAssetsAddressable++;
                     if (!info.IsMainAsset)
-                        targetHasAddressableSubObject = true;
-                }
-
-                // Overrides a DisabledScope in the EditorElement.cs that disables GUI drawn in the header when the asset cannot be edited.
-                bool prevEnabledState = UnityEngine.GUI.enabled;
-                if (targetHasAddressableSubObject)
-                    UnityEngine.GUI.enabled = false;
-                else
-                {
-                    UnityEngine.GUI.enabled = true;
-                    foreach (var info in targetInfos)
                     {
-                        if (!info.IsMainAsset)
-                        {
-                            UnityEngine.GUI.enabled = false;
-                            break;
-                        }
+                        UnityEngine.GUI.enabled = false;
+                        break;
                     }
                 }
+            }
 
-                int totalAddressableCount = mainAssetsAddressable + subAssetsAddressable;
-                if (totalAddressableCount == 0) // nothing is addressable
+            int totalAddressableCount = mainAssetsAddressable;
+            if (totalAddressableCount == 0) // nothing is addressable
+            {
+                if (GUILayout.Toggle(false, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
+                    SetAaEntry(AddressableAssetSettingsDefaultObject.GetSettings(true), targetInfos, true);
+            }
+            else if (totalAddressableCount == editor.targets.Length) // everything is addressable
+            {
+                var entryInfo = targetInfos[targetInfos.Count - 1];
+                if (entryInfo == null || entryInfo.MainAssetEntry == null)
+                    throw new NullReferenceException("EntryInfo incorrect for Addressables content.");
+
+                GUILayout.BeginHorizontal();
+
+                if (mainAssetsAddressable > 0)
                 {
-                    if (GUILayout.Toggle(false, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
-                        SetAaEntry(AddressableAssetSettingsDefaultObject.GetSettings(true), targetInfos, true);
+                    if (!GUILayout.Toggle(true, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
+                    {
+                        SetAaEntry(aaSettings, targetInfos, false);
+                        UnityEngine.GUI.enabled = prevEnabledState;
+                        GUIUtility.ExitGUI();
+                    }
                 }
-                else if (totalAddressableCount == editor.targets.Length) // everything is addressable
+                else if (GUILayout.Toggle(false, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
+                    SetAaEntry(aaSettings, targetInfos, true);
+
+                if (editor.targets.Length == 1)
                 {
-                    var entryInfo = targetInfos[targetInfos.Count - 1];
-                    if (entryInfo == null || entryInfo.MainAssetEntry == null)
-                        throw new NullReferenceException("EntryInfo incorrect for Addressables content.");
-
-                    GUILayout.BeginHorizontal();
-
-                    if (mainAssetsAddressable > 0 && subAssetsAddressable > 0)
+                    if (!entryInfo.IsMainAsset)
                     {
-                        if (s_ToggleMixed == null)
-                            s_ToggleMixed = new GUIStyle("ToggleMixed");
-                        if (GUILayout.Toggle(false, s_AddressableAssetToggleText, s_ToggleMixed, GUILayout.ExpandWidth(false)))
-                            SetAaEntry(aaSettings, targetInfos, true);
+                        bool preAddressPrevEnabledState = UnityEngine.GUI.enabled;
+                        UnityEngine.GUI.enabled = false;
+                        string address = entryInfo.Address + (entryInfo.IsMainAsset ? "" : $"[{entryInfo.TargetObject.name}]");
+                        EditorGUILayout.DelayedTextField(address, GUILayout.ExpandWidth(true));
+                        UnityEngine.GUI.enabled = preAddressPrevEnabledState;
                     }
-                    else if (mainAssetsAddressable > 0)
+                    else
                     {
-                        if (!GUILayout.Toggle(true, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
+                        string newAddress = EditorGUILayout.DelayedTextField(entryInfo.Address, GUILayout.ExpandWidth(true));
+                        if (newAddress != entryInfo.Address)
                         {
-                            SetAaEntry(aaSettings, targetInfos, false);
-                            UnityEngine.GUI.enabled = prevEnabledState;
-                            GUIUtility.ExitGUI();
-                        }
-                    }
-                    else if (GUILayout.Toggle(false, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
-                        SetAaEntry(aaSettings, targetInfos, true);
-
-                    if (editor.targets.Length == 1)
-                    {
-                        if (!entryInfo.IsMainAsset || entryInfo.MainAssetEntry.IsSubAsset)
-                        {
-                            bool preAddressPrevEnabledState = UnityEngine.GUI.enabled;
-                            UnityEngine.GUI.enabled = false;
-                            string address = entryInfo.Address + (entryInfo.IsMainAsset ? "" : $"[{entryInfo.TargetObject.name}]");
-                            EditorGUILayout.DelayedTextField(address, GUILayout.ExpandWidth(true));
-                            UnityEngine.GUI.enabled = preAddressPrevEnabledState;
-                        }
-                        else
-                        {
-                            string newAddress = EditorGUILayout.DelayedTextField(entryInfo.Address, GUILayout.ExpandWidth(true));
-                            if (newAddress != entryInfo.Address)
+                            if (newAddress.Contains('[') && newAddress.Contains(']'))
+                                Debug.LogErrorFormat("Rename of address '{0}' cannot contain '[ ]'.", entryInfo.Address);
+                            else
                             {
-                                if (newAddress.Contains('[') && newAddress.Contains(']'))
-                                    Debug.LogErrorFormat("Rename of address '{0}' cannot contain '[ ]'.", entryInfo.Address);
-                                else
-                                {
-                                    entryInfo.MainAssetEntry.address = newAddress;
-                                    AddressableAssetUtility.OpenAssetIfUsingVCIntegration(entryInfo.MainAssetEntry.parentGroup, true);
-                                }
+                                entryInfo.MainAssetEntry.address = newAddress;
                             }
                         }
                     }
-                    else
-                    {
-                        FindUniqueAssetGuids(targetInfos, out var uniqueAssetGuids, out var uniqueAddressableAssetGuids);
-                        EditorGUILayout.LabelField(uniqueAddressableAssetGuids.Count + " out of " + uniqueAssetGuids.Count + " assets are addressable.");
-                    }
-
-                    DrawSelectEntriesButton(targetInfos);
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    DrawGroupsDropdown(aaSettings, targetInfos);
-                    GUILayout.EndHorizontal();
                 }
-                else // mixed addressable selected
+                else
                 {
-                    GUILayout.BeginHorizontal();
-                    if (s_ToggleMixed == null)
-                        s_ToggleMixed = new GUIStyle("ToggleMixed");
-                    if (GUILayout.Toggle(false, s_AddressableAssetToggleText, s_ToggleMixed, GUILayout.ExpandWidth(false)))
-                        SetAaEntry(AddressableAssetSettingsDefaultObject.GetSettings(true), targetInfos, true);
                     FindUniqueAssetGuids(targetInfos, out var uniqueAssetGuids, out var uniqueAddressableAssetGuids);
                     EditorGUILayout.LabelField(uniqueAddressableAssetGuids.Count + " out of " + uniqueAssetGuids.Count + " assets are addressable.");
-                    DrawSelectEntriesButton(targetInfos);
-                    GUILayout.EndHorizontal();
                 }
 
-                UnityEngine.GUI.enabled = prevEnabledState;
+                DrawSelectEntriesButton(targetInfos);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                DrawGroupsDropdown(aaSettings, targetInfos);
+                GUILayout.EndHorizontal();
             }
+            else // mixed addressable selected
+            {
+                GUILayout.BeginHorizontal();
+                if (s_ToggleMixed == null)
+                    s_ToggleMixed = new GUIStyle("ToggleMixed");
+                if (GUILayout.Toggle(false, s_AddressableAssetToggleText, s_ToggleMixed, GUILayout.ExpandWidth(false)))
+                    SetAaEntry(AddressableAssetSettingsDefaultObject.GetSettings(true), targetInfos, true);
+                FindUniqueAssetGuids(targetInfos, out var uniqueAssetGuids, out var uniqueAddressableAssetGuids);
+                EditorGUILayout.LabelField(uniqueAddressableAssetGuids.Count + " out of " + uniqueAssetGuids.Count + " assets are addressable.");
+                DrawSelectEntriesButton(targetInfos);
+                GUILayout.EndHorizontal();
+            }
+
+            UnityEngine.GUI.enabled = prevEnabledState;
         }
 
         // Caching due to Gathering TargetInfos is an expensive operation
@@ -252,49 +198,48 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal static List<TargetInfo> GatherTargetInfos(Object[] targets, AddressableAssetSettings aaSettings)
         {
-            int selectionHashCode = targets[0].GetHashCode();
-            for (int i = 1; i < targets.Length; ++i)
+            var selectionHashCode = targets[0].GetHashCode();
+            for (var i = 1; i < targets.Length; ++i)
                 selectionHashCode = selectionHashCode * 31 ^ targets[i].GetHashCode();
 
-            List<TargetInfo> targetInfos = null;
             if (s_Cache == null && aaSettings != null)
                 s_Cache = new AddressableAssetSettings.Cache<int, List<TargetInfo>>(aaSettings);
-            if (s_Cache != null && s_Cache.TryGetCached(selectionHashCode, out targetInfos))
+            if (s_Cache != null && s_Cache.TryGetCached(selectionHashCode, out var targetInfos))
                 return targetInfos;
 
             targetInfos = new List<TargetInfo>(targets.Length);
-            AddressableAssetEntry entry;
             foreach (var t in targets)
             {
-                if (AddressableAssetUtility.TryGetPathAndGUIDFromTarget(t, out var path, out var guid))
-                {
-                    var mainAssetType = AssetDatabase.GetMainAssetTypeAtPath(path);
-                    // Is asset
-                    if (mainAssetType != null && !BuildUtility.IsEditorAssembly(mainAssetType.Assembly))
-                    {
-                        bool isMainAsset = t is AssetImporter || AssetDatabase.IsMainAsset(t);
-                        var info = new TargetInfo() {TargetObject = t, Guid = guid, Path = path, IsMainAsset = isMainAsset};
-                        if (aaSettings != null)
-                        {
-                            entry = aaSettings.FindAssetEntry(guid, true);
-                            if (entry != null)
-                                info.MainAssetEntry = entry;
-                        }
+                if (AddressableAssetUtility.TryGetPathAndGUIDFromTarget(t, out var path, out var rawGuid) is false)
+                    continue;
 
-                        targetInfos.Add(info);
-                    }
+                var mainAssetType = AssetDatabase.GetMainAssetTypeAtPath(path);
+                // Is asset
+                if (mainAssetType == null || mainAssetType == typeof(DefaultAsset) || BuildUtility.IsEditorType(mainAssetType))
+                    continue;
+
+                var guid = (AssetGUID) rawGuid;
+                var isMainAsset = t is AssetImporter || AssetDatabase.IsMainAsset(t);
+                var info = new TargetInfo() {TargetObject = t, Guid = guid, Path = path, IsMainAsset = isMainAsset};
+                if (aaSettings != null)
+                {
+                    var entry = aaSettings.FindAssetEntry(guid);
+                    if (entry != null)
+                        info.MainAssetEntry = entry;
                 }
+
+                targetInfos.Add(info);
             }
 
-            if (s_Cache != null && targetInfos != null && targetInfos.Count > 0)
+            if (s_Cache != null && targetInfos.Count > 0)
                 s_Cache.Add(selectionHashCode, targetInfos);
             return targetInfos;
         }
 
-        internal static void FindUniqueAssetGuids(List<TargetInfo> targetInfos, out HashSet<string> uniqueAssetGuids, out HashSet<string> uniqueAddressableAssetGuids)
+        internal static void FindUniqueAssetGuids(List<TargetInfo> targetInfos, out HashSet<AssetGUID> uniqueAssetGuids, out HashSet<AssetGUID> uniqueAddressableAssetGuids)
         {
-            uniqueAssetGuids = new HashSet<string>();
-            uniqueAddressableAssetGuids = new HashSet<string>();
+            uniqueAssetGuids = new HashSet<AssetGUID>();
+            uniqueAddressableAssetGuids = new HashSet<AssetGUID>();
             foreach (TargetInfo info in targetInfos)
             {
                 uniqueAssetGuids.Add(info.Guid);
@@ -344,10 +289,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 else
                 {
                     entries.Add(entry);
-                    if (entry.ReadOnly || entry.parentGroup.ReadOnly)
-                    {
-                        canEditGroup = false;
-                    }
 
                     if (displayGroup == null)
                         displayGroup = entry.parentGroup;
@@ -439,7 +380,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var groupItems = DragAndDrop.GetGenericData("AssetEntryTreeViewItem") as List<AssetEntryTreeViewItem>;
             if (isDragging)
             {
-                bool canDragGroup = groupItems != null && groupItems.Count == 1 && groupItems[0].IsGroup && !groupItems[0].group.ReadOnly;
+                bool canDragGroup = groupItems != null && groupItems.Count == 1 && groupItems[0].IsGroup;
                 DragAndDrop.visualMode = canDragGroup ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
             }
             else if (isDropping)
@@ -454,8 +395,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal class TargetInfo
         {
-            public UnityEngine.Object TargetObject;
-            public string Guid;
+            public Object TargetObject;
+            public AssetGUID Guid;
             public string Path;
             public bool IsMainAsset;
             public AddressableAssetEntry MainAssetEntry;

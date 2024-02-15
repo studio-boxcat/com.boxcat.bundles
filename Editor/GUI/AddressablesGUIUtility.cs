@@ -39,28 +39,6 @@ namespace UnityEditor.AddressableAssets.GUI
     {
         private static Dictionary<string, FoldoutSessionStateValue> m_CachedSessionStates = new Dictionary<string, FoldoutSessionStateValue>();
 
-        internal static GUIStyle GetStyle(string styleName)
-        {
-            GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
-            if (s == null)
-                s = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
-            if (s == null)
-            {
-                Debug.LogError("Missing built-in guistyle " + styleName);
-                s = new GUIStyle();
-            }
-
-            return s;
-        }
-
-        internal static string ConvertTextToStrikethrough(string value)
-        {
-            string str = "";
-            foreach (char c in value)
-                str = str + c + '\u0336';
-            return str;
-        }
-
         internal static bool GetFoldoutValue(string stateKey)
         {
             if (m_CachedSessionStates.TryGetValue(stateKey, out var val))

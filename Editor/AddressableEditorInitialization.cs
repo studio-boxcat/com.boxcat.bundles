@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets
 {
@@ -16,7 +17,7 @@ namespace UnityEditor.AddressableAssets
             bool editorInitialized = SessionState.GetBool(m_EditorInitializedBoolName, false);
             if (editorInitialized) return;
 
-            if (Directory.Exists(Addressables.LibraryPath))
+            if (Directory.Exists(PathConfig.LibraryPath))
                 PurgeInvalidAssetEntries(AddressableAssetSettingsDefaultObject.Settings);
 
             SessionState.SetBool(m_EditorInitializedBoolName, true);
@@ -48,7 +49,7 @@ namespace UnityEditor.AddressableAssets
                 }
             }
 
-            StringBuilder builder = new StringBuilder(
+            var builder = new StringBuilder(
                 "Addressables was unable to detect the following assets in the project " +
                 "but they were still part of an Addressable group.  They have been removed " +
                 "from Addressables.");

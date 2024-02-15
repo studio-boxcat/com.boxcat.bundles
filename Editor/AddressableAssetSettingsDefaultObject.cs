@@ -1,4 +1,3 @@
-using System;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -103,32 +102,13 @@ namespace UnityEditor.AddressableAssets
         {
             get
             {
-                if (s_DefaultSettingsObject == null)
-                {
-                    AddressableAssetSettingsDefaultObject so;
-                    if (EditorBuildSettings.TryGetConfigObject(kDefaultConfigObjectName, out so))
-                    {
-                        s_DefaultSettingsObject = so.LoadSettingsObject();
-                    }
-                    else
-                    {
-                        //legacy support, try to get the old config object and then remove it
-                        if (EditorBuildSettings.TryGetConfigObject(kDefaultConfigAssetName, out s_DefaultSettingsObject))
-                        {
-                            EditorBuildSettings.RemoveConfigObject(kDefaultConfigAssetName);
-                            so = CreateInstance<AddressableAssetSettingsDefaultObject>();
-                            so.SetSettingsObject(s_DefaultSettingsObject);
-                            AssetDatabase.CreateAsset(so, kDefaultConfigFolder + "/DefaultObject.asset");
-                            EditorUtility.SetDirty(so);
-                            AddressableAssetUtility.OpenAssetIfUsingVCIntegration(kDefaultConfigFolder + "/DefaultObject.asset");
-                            AssetDatabase.SaveAssets();
-                            EditorBuildSettings.AddConfigObject(kDefaultConfigObjectName, so, true);
-                        }
-                    }
-                }
-
-                return s_DefaultSettingsObject;
+                if (s_DefaultSettingsObject != null)
+                    return s_DefaultSettingsObject;
+                if (EditorBuildSettings.TryGetConfigObject(kDefaultConfigObjectName, out AddressableAssetSettingsDefaultObject so))
+                    return s_DefaultSettingsObject = so.LoadSettingsObject();
+                return null;
             }
+
             set
             {
                 if (value != null)
@@ -153,7 +133,6 @@ namespace UnityEditor.AddressableAssets
 
                 so.SetSettingsObject(s_DefaultSettingsObject);
                 EditorUtility.SetDirty(so);
-                AddressableAssetUtility.OpenAssetIfUsingVCIntegration(kDefaultConfigFolder + "/DefaultObject.asset");
                 AssetDatabase.SaveAssets();
             }
         }
@@ -166,7 +145,7 @@ namespace UnityEditor.AddressableAssets
         public static AddressableAssetSettings GetSettings(bool create)
         {
             if (Settings == null && create)
-                Settings = AddressableAssetSettings.Create(kDefaultConfigFolder, kDefaultConfigAssetName, true, true);
+                Settings = AddressableAssetSettings.Create(kDefaultConfigFolder, kDefaultConfigAssetName);
             return Settings;
         }
     }

@@ -1,7 +1,6 @@
 using System.IO;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -11,26 +10,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     [CreateAssetMenu(fileName = "BuildScriptPackedPlayMode.asset", menuName = "Addressables/Content Builders/Use Existing Build (requires built groups)")]
     public class BuildScriptPackedPlayMode : BuildScriptBase
     {
-        /// <inheritdoc />
-        public override string Name
-        {
-            get { return "Use Existing Build (requires built groups)"; }
-        }
-
-        private bool m_DataBuilt;
-
-        /// <inheritdoc />
-        public override void ClearCachedData()
-        {
-            m_DataBuilt = false;
-        }
-
-        /// <inheritdoc />
-        public override bool IsDataBuilt()
-        {
-            return m_DataBuilt;
-        }
-
         /// <inheritdoc />
         public override bool CanBuildData<T>()
         {
@@ -43,8 +22,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var timer = new System.Diagnostics.Stopwatch();
             timer.Start();
 
-            PackedPlayModeBuildLogs buildLogs = new PackedPlayModeBuildLogs();
-            BuildTarget dataBuildTarget = builderInput.Target;
+            var buildLogs = new PackedPlayModeBuildLogs();
+            var dataBuildTarget = builderInput.Target;
 
             if (BuildPipeline.GetBuildTargetGroup(dataBuildTarget) != BuildTargetGroup.Standalone)
             {
@@ -54,14 +33,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             if (buildLogs.RuntimeBuildLogs.Count > 0)
             {
-                var buildLogsPath = ResourcePath.BuildPath_LogsJson;
+                var buildLogsPath = PathConfig.BuildPath_LogsJson;
                 File.WriteAllText(buildLogsPath, JsonUtility.ToJson(buildLogs));
             }
 
-            //TODO: detect if the data that does exist is out of date..
-            AddressablesEditorInitializer.InitializeOverride = null;
+            EditorAddressablesImplFactory.UseCatalog();
             IDataBuilderResult res = new AddressablesPlayModeBuildResult() {Duration = timer.Elapsed.TotalSeconds};
-            m_DataBuilt = true;
             return (TResult) res;
         }
     }

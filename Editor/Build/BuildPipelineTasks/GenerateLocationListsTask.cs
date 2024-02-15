@@ -2,13 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 {
@@ -17,15 +14,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
     /// </summary>
     public class GenerateLocationListsTask : IBuildTask
     {
-        const int k_Version = 1;
-
         /// <summary>
         /// The GenerateLocationListsTask version.
         /// </summary>
-        public int Version
-        {
-            get { return k_Version; }
-        }
+        public int Version => 1;
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
@@ -33,16 +25,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         [InjectContext]
         IBundleWriteData m_WriteData;
-
-        [InjectContext]
-        IDependencyData m_DependencyData;
-
-        [InjectContext(ContextUsage.In, true)]
-        IBuildLogger m_Log;
-
-        [InjectContext(ContextUsage.In)]
-        IBuildParameters m_Parameters;
-
 #pragma warning restore 649
 
         /// <summary>
@@ -51,246 +33,72 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <returns>The success or failure ReturnCode</returns>
         public ReturnCode Run()
         {
-            Input input = new Input();
-            var aaContext = (AddressableAssetsBuildContext)m_AaBuildContext;
-            input.FileToBundle = m_WriteData.FileToBundle;
-            input.AssetToFiles = m_WriteData.AssetToFiles;
-            input.AssetToAssetInfo = m_DependencyData != null ? m_DependencyData.AssetInfo : null;
-            input.Logger = m_Log;
-            input.Settings = aaContext.Settings;
-            input.BundleToAssetGroup = aaContext.bundleToAssetGroup;
-            input.AddressableAssetEntries = aaContext.assetEntries;
-            input.Target = m_Parameters.Target;
+            // Build AssetGUID -> BundleKey dictionary.
+            var assetToFiles = m_WriteData.AssetToFiles.ToDictionary(
+                x => (AssetGUID) x.Key,
+                x => x.Value.Select(y => BundleKey.FromBuildName(m_WriteData.FileToBundle[y])).ToList());
 
-            Output output = ProcessInput(input);
-
-            if (aaContext.locations == null)
-                aaContext.locations = output.Locations;
-            else
-                aaContext.locations.AddRange(output.Locations);
-
-            if (aaContext.GuidToCatalogLocation == null)
-                aaContext.GuidToCatalogLocation = output.GuidToLocation;
-            else foreach (var (guid, entry) in output.GuidToLocation)
-                aaContext.GuidToCatalogLocation[guid] = entry;
-            
-            aaContext.assetGroupToBundles = output.AssetGroupToBundles;
-            aaContext.bundleToExpandedBundleDependencies = output.BundleToExpandedBundleDependencies;
-            aaContext.bundleToImmediateBundleDependencies = output.BundleToImmediateBundleDependencies;
-
+            var ctx = (AddressableAssetsBuildContext) m_AaBuildContext;
+            Process(
+                ctx.Settings,
+                assetToFiles,
+                out ctx.entries,
+                out ctx.bundleToImmediateBundleDependencies,
+                out ctx.bundleToExpandedBundleDependencies);
             return ReturnCode.Success;
-        }
-
-        /// <summary>
-        /// Storage for data gathered by the build pipeline.
-        /// </summary>
-        public struct Input
-        {
-            /// <summary>
-            /// Mapping from serialized filename to the bundle name
-            /// </summary>
-            public Dictionary<string, string> FileToBundle;
-
-            /// <summary>
-            /// Mapping of an asset to all the serialized files needed to load it. The first entry is the file that contains the asset itself.
-            /// </summary>
-            public Dictionary<GUID, List<string>> AssetToFiles;
-
-            /// <summary>
-            /// Map of Guid to AssetLoadInfo
-            /// </summary>
-            public Dictionary<GUID, AssetLoadInfo> AssetToAssetInfo;
-
-            /// <summary>
-            /// The logger used during the build.
-            /// </summary>
-            public IBuildLogger Logger;
-
-            /// <summary>
-            /// The current AddressableAssetSettings to be processed.
-            /// </summary>
-            public AddressableAssetSettings Settings;
-
-            /// <summary>
-            /// Mapping of the AssetBundle to the AddressableAssetGroup it was derived from
-            /// </summary>
-            public Dictionary<string, string> BundleToAssetGroup;
-
-            /// <summary>
-            /// All the AddressableAssetEntries to process
-            /// </summary>
-            public List<AddressableAssetEntry> AddressableAssetEntries;
-
-            /// <summary>
-            /// The BuildTarget to build for.
-            /// </summary>
-            public BuildTarget Target;
-        }
-
-        /// <summary>
-        /// Storage for location data, including: dependencies, locations, and provider types.
-        /// </summary>
-        public struct Output
-        {
-            /// <summary>
-            /// Content Catalog entries that were built into the Catalog.
-            /// </summary>
-            public List<ContentCatalogDataEntry> Locations;
-
-            /// <summary>
-            /// A mapping of Asset GUID's to resulting ContentCatalogDataEntry entries.
-            /// </summary>
-            internal Dictionary<GUID, ContentCatalogDataEntry> GuidToLocation;
-
-            /// <summary>
-            /// A mapping of AddressableAssetGroups to the AssetBundles generated from its data.
-            /// </summary>
-            public Dictionary<AddressableAssetGroup, List<string>> AssetGroupToBundles;
-
-            /// <summary>
-            /// A mapping of AssetBundles to the direct dependencies
-            /// </summary>
-            public Dictionary<string, List<string>> BundleToImmediateBundleDependencies;
-
-            /// <summary>
-            /// A mapping of AssetBundles to their expanded dependencies.
-            /// </summary>
-            public Dictionary<string, List<string>> BundleToExpandedBundleDependencies;
-        }
-
-        static AddressableAssetGroup GetGroupFromBundle(string bundleName, Dictionary<string, string> bundleToAssetGroupGUID, AddressableAssetSettings settings)
-        {
-            if (!bundleToAssetGroupGUID.TryGetValue(bundleName, out string groupGuid))
-                return settings.DefaultGroup;
-            return settings.FindGroup(g => g != null && g.Guid == groupGuid);
-        }
-
-        static TValue GetOrCreate<TKey, TValue>(IDictionary<TKey, TValue> dict, TKey key) where TValue : new()
-        {
-            TValue val;
-
-            if (!dict.TryGetValue(key, out val))
-            {
-                val = new TValue();
-                dict.Add(key, val);
-            }
-
-            return val;
-        }
-
-        class BundleEntry
-        {
-            public string BundleName;
-            public HashSet<BundleEntry> Dependencies = new HashSet<BundleEntry>();
-            public HashSet<BundleEntry> ExpandedDependencies;
-            public List<GUID> Assets = new List<GUID>();
-            public AddressableAssetGroup Group;
-            public HashSet<string> AssetInternalIds = new HashSet<string>();
-        }
-
-        static private void ExpandDependencies(BundleEntry entry)
-        {
-            HashSet<BundleEntry> visited = new HashSet<BundleEntry>();
-            Queue<BundleEntry> toVisit = new Queue<BundleEntry>();
-            toVisit.Enqueue(entry);
-            while (toVisit.Count > 0)
-            {
-                BundleEntry cur = toVisit.Dequeue();
-                visited.Add(cur);
-                foreach (BundleEntry dep in cur.Dependencies)
-                    if (!visited.Contains(dep))
-                        toVisit.Enqueue(dep);
-            }
-
-            entry.ExpandedDependencies = visited;
-        }
-
-        static BundleEntry GetOrCreateBundleEntry(string bundleName, Dictionary<string, BundleEntry> bundleToEntry)
-        {
-            if (!bundleToEntry.TryGetValue(bundleName, out BundleEntry e))
-                bundleToEntry.Add(bundleName, e = new BundleEntry() {BundleName = bundleName});
-            return e;
         }
 
         /// <summary>
         /// Processes the Input data from the build and returns an organized struct of information, including dependencies and catalog loctions.
         /// </summary>
-        /// <param name="input">Data captured as part of the build process.</param>
         /// <returns>An object that contains organized information about dependencies and catalog locations.</returns>
-        public static Output ProcessInput(Input input)
+        static void Process(
+            AddressableAssetSettings settings,
+            Dictionary<AssetGUID, List<BundleKey>> assetToFiles,
+            out Dictionary<AssetGUID, EntryDef> entries,
+            out Dictionary<BundleKey, HashSet<BundleKey>> bundleToImmediateBundleDependencies,
+            out Dictionary<BundleKey, HashSet<BundleKey>> bundleToExpandedBundleDependencies)
         {
-            var locations = new List<ContentCatalogDataEntry>();
-            var assetGroupToBundles = new Dictionary<AddressableAssetGroup, List<string>>();
-            var bundleToEntry = new Dictionary<string, BundleEntry>();
-
-            // Create a bundle entry for every bundle that our assets could reference
-            foreach (List<string> files in input.AssetToFiles.Values)
-                files.ForEach(x => GetOrCreateBundleEntry(input.FileToBundle[x], bundleToEntry));
-
-            // build list of assets each bundle has as well as the dependent bundles
-            using (input.Logger.ScopedStep(LogLevel.Info, "Calculate Bundle Dependencies"))
-            {
-                foreach (KeyValuePair<GUID, List<string>> k in input.AssetToFiles)
+            entries = settings.groups.SelectMany(g => g.entries).ToDictionary(
+                e => e.guid,
+                e =>
                 {
-                    string bundle = input.FileToBundle[k.Value[0]];
-                    BundleEntry bundleEntry = bundleToEntry[bundle];
+                    var guid = e.guid;
+                    var deps = assetToFiles[guid];
+                    var bundle = deps[0]; // First bundle is the containing bundle.
+                    return new EntryDef(guid, AddressUtils.Hash(e.address), bundle, deps.ToHashSet());
+                });
 
-                    bundleEntry.Assets.Add(k.Key);
-                    bundleEntry.Dependencies.UnionWith(k.Value.Select(x => bundleToEntry[input.FileToBundle[x]]));
-                }
-            }
+            // Build bundle deps.
+            bundleToImmediateBundleDependencies = entries.Values
+                // Construct depender to dependee mapping
+                .SelectMany(x => x.Dependencies.Select(y => new {x.Bundle, y}))
+                // Group by depender
+                .GroupBy(x => x.Bundle)
+                // Convert to HashSet
+                .ToDictionary(g => g.Key, g => g.Select(x => x.y).ToHashSet());
 
-            using (input.Logger.ScopedStep(LogLevel.Info, "ExpandDependencies"))
+            // Add builtin bundles.
+            bundleToImmediateBundleDependencies.Add(
+                BundleKey.FromBuildName(BuildUtility.BuiltInShaderBundle),
+                new HashSet<BundleKey> {BundleKey.FromBuildName(BuildUtility.BuiltInShaderBundle)});
+
+            // Expand bundle deps.
+            bundleToExpandedBundleDependencies = new Dictionary<BundleKey, HashSet<BundleKey>>();
+            foreach (var bundle in bundleToImmediateBundleDependencies.Keys)
             {
-                foreach (BundleEntry bEntry in bundleToEntry.Values)
-                    ExpandDependencies(bEntry);
-            }
-
-            // Assign each bundle a group
-            foreach (BundleEntry bEntry in bundleToEntry.Values)
-                bEntry.Group = GetGroupFromBundle(bEntry.BundleName, input.BundleToAssetGroup, input.Settings);
-
-            // Create a location for each bundle
-            foreach (BundleEntry bEntry in bundleToEntry.Values)
-            {
-                locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bEntry.BundleName, bEntry.BundleName));
-            }
-
-            var guidToLocation = new Dictionary<GUID, ContentCatalogDataEntry>();
-            using (input.Logger.ScopedStep(LogLevel.Info, "Calculate Locations"))
-            {
-                // build a mapping of asset guid to AddressableAssetEntry
-                Dictionary<string, AddressableAssetEntry> guidToEntry = input.AddressableAssetEntries.ToDictionary(x => x.guid, x => x);
-
-                foreach (BundleEntry bEntry in bundleToEntry.Values)
+                var visited = new HashSet<BundleKey>();
+                var stack = new Stack<BundleKey>();
+                stack.Push(bundle);
+                while (stack.Count > 0)
                 {
-                    var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema.IncludeAddressInCatalog is false)
-                        continue;
-
-                    foreach (GUID assetGUID in bEntry.Assets)
-                    {
-                        var entry = guidToEntry[assetGUID.ToString()];
-                        var deps = bEntry.ExpandedDependencies.Select(x => x.BundleName);
-                        var e = entry.CreateCatalogEntry(deps, input.AssetToAssetInfo, bEntry.AssetInternalIds);
-                        locations.Add(e);
-                        guidToLocation.Add(assetGUID, e);
-                    }
+                    var current = stack.Pop();
+                    if (visited.Add(current) is false) continue;
+                    foreach (var dep in bundleToImmediateBundleDependencies[current])
+                        stack.Push(dep);
                 }
+                bundleToExpandedBundleDependencies.Add(bundle, visited);
             }
-
-            // create the assetGroupToBundles mapping
-            foreach (BundleEntry bEntry in bundleToEntry.Values)
-                GetOrCreate(assetGroupToBundles, bEntry.Group).Add(bEntry.BundleName);
-
-            var output = new Output();
-            output.Locations = locations;
-            output.GuidToLocation = guidToLocation;
-            output.AssetGroupToBundles = assetGroupToBundles;
-            output.BundleToImmediateBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.Dependencies.Select(y => y.BundleName).ToList());
-            output.BundleToExpandedBundleDependencies =
-                bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.ExpandedDependencies.Where(y => !x.Dependencies.Contains(y)).Select(y => y.BundleName).ToList());
-            return output;
         }
     }
 }

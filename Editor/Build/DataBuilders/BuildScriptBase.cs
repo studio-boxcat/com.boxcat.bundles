@@ -1,18 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Initialization;
-using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.ResourceManagement.Util;
-using UnityEngine.Serialization;
+using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -21,29 +13,18 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// </summary>
     public class BuildScriptBase : ScriptableObject, IDataBuilder
     {
-        /// <summary>
-        /// Stores the logged information of all the build tasks.
-        /// </summary>
-        public IBuildLogger Log
-        {
-            get { return m_Log; }
-        }
-
         [NonSerialized]
         internal IBuildLogger m_Log;
 
         /// <summary>
         /// The descriptive name used in the UI.
         /// </summary>
-        public virtual string Name
-        {
-            get { return "Undefined"; }
-        }
+        public string Name => GetType().Name;
 
         internal static void WriteBuildLog(BuildLog log, string directory)
         {
             Directory.CreateDirectory(directory);
-            PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildScriptBase).Assembly);
+            var info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildScriptBase).Assembly);
             log.AddMetaData(info.name, info.version);
             File.WriteAllText(Path.Combine(directory, "AddressablesBuildTEP.json"), log.FormatForTraceEventProfiler());
         }
@@ -64,12 +45,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 return AddressableAssetBuildResult.CreateResult<TResult>(0, message);
             }
 
-            AddressableAnalytics.BuildType buildType = AddressableAnalytics.DetermineBuildType();
-            m_Log = (builderInput.Logger != null) ? builderInput.Logger : new BuildLog();
+            var buildType = AddressableAnalytics.DetermineBuildType();
+            m_Log = builderInput.Logger ?? new BuildLog();
 
-            TResult result = default;
+            TResult result;
             // Append the file registry to the results
-            using (m_Log.ScopedStep(LogLevel.Info, $"Building {this.Name}"))
+            using (m_Log.ScopedStep(LogLevel.Info, $"Building {Name}"))
             {
                 try
                 {
@@ -79,25 +60,20 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 {
                     Debug.LogException(e);
 
-                    string errMessage;
-                    if (e.Message == "path")
-                        errMessage = "Invalid path detected during build. Check for unmatched brackets in your active profile's variables.";
-                    else
-                        errMessage = e.Message;
+                    var errMessage = e.Message == "path"
+                        ? "Invalid path detected during build. Check for unmatched brackets in your active profile's variables."
+                        : e.Message;
 
                     return AddressableAssetBuildResult.CreateResult<TResult>(0, errMessage);
                 }
-
-                if (result != null)
-                    result.FileRegistry = builderInput.Registry;
             }
 
             if (builderInput.Logger == null && m_Log != null)
-                WriteBuildLog((BuildLog)m_Log, Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath);
+                WriteBuildLog((BuildLog) m_Log, Path.GetDirectoryName(Application.dataPath) + "/" + PathConfig.LibraryPath);
 
-            if (result is AddressableAssetBuildResult)
+            if (result is AddressableAssetBuildResult buildResult)
             {
-                AddressableAnalytics.ReportBuildEvent(builderInput, result as AddressableAssetBuildResult, buildType);
+                AddressableAnalytics.ReportBuildEvent(builderInput, buildResult, buildType);
             }
 
             return result;
@@ -112,56 +88,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <returns>The build data result</returns>
         protected virtual TResult BuildDataImplementation<TResult>(AddressablesDataBuilderInput builderInput) where TResult : IDataBuilderResult
         {
-            return default(TResult);
-        }
-
-        /// <summary>
-        /// Loops over each group, after doing some data checking.
-        /// </summary>
-        /// <param name="aaContext">The Addressables builderInput object to base the group processing on</param>
-        /// <returns>An error string if there were any problems processing the groups</returns>
-        protected virtual string ProcessAllGroups(AddressableAssetsBuildContext aaContext)
-        {
-            try
-            {
-                if (aaContext == null ||
-                    aaContext.Settings == null ||
-                    aaContext.Settings.groups == null)
-                {
-                    return "No groups found to process in build script " + Name;
-                }
-
-                //intentionally for not foreach so groups can be added mid-loop.
-                for (int index = 0; index < aaContext.Settings.groups.Count; index++)
-                {
-                    AddressableAssetGroup assetGroup = aaContext.Settings.groups[index];
-                    if (assetGroup == null)
-                        continue;
-
-                    EditorUtility.DisplayProgressBar($"Processing Addressable Group", assetGroup.Name, (float)index / aaContext.Settings.groups.Count);
-                    var errorString = ProcessGroup(assetGroup, aaContext);
-                    if (!string.IsNullOrEmpty(errorString))
-                    {
-                        return errorString;
-                    }
-                }
-            } finally
-            {
-                EditorUtility.ClearProgressBar();
-            }
-
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// Build processing of an individual group.
-        /// </summary>
-        /// <param name="assetGroup">The group to process</param>
-        /// <param name="aaContext">The Addressables builderInput object to base the group processing on</param>
-        /// <returns>An error string if there were any problems processing the groups</returns>
-        protected virtual string ProcessGroup(AddressableAssetGroup assetGroup, AddressableAssetsBuildContext aaContext)
-        {
-            return string.Empty;
+            return default;
         }
 
         /// <summary>
@@ -196,13 +123,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         /// <param name="path">The path of the file to write.</param>
         /// <param name="content">The content of the file.</param>
-        /// <param name="registry">The file registry used to track all produced artifacts.</param>
         /// <returns>True if the file was written.</returns>
-        protected internal static bool WriteFile(string path, byte[] content, FileRegistry registry)
+        protected static bool WriteFile(string path, byte[] content)
         {
             try
             {
-                registry.AddFile(path);
                 var dir = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
@@ -211,34 +136,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
-                registry.RemoveFile(path);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Utility method to write a file.  The directory will be created if it does not exist.
-        /// </summary>
-        /// <param name="path">The path of the file to write.</param>
-        /// <param name="content">The content of the file.</param>
-        /// <param name="registry">The file registry used to track all produced artifacts.</param>
-        /// <returns>True if the file was written.</returns>
-        protected static bool WriteFile(string path, string content, FileRegistry registry)
-        {
-            try
-            {
-                registry.AddFile(path);
-                var dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-                File.WriteAllText(path, content);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                registry.RemoveFile(path);
+                L.Exception(ex);
                 return false;
             }
         }
@@ -248,15 +146,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         public virtual void ClearCachedData()
         {
-        }
-
-        /// <summary>
-        /// Checks to see if the data is built for the given builder.
-        /// </summary>
-        /// <returns>Returns true if the data is built. Returns false otherwise.</returns>
-        public virtual bool IsDataBuilt()
-        {
-            return false;
         }
     }
 }

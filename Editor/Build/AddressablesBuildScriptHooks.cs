@@ -1,20 +1,7 @@
-using System;
-using UnityEngine;
-using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Build
 {
-    /// <summary>
-    /// Entry point to set callbacks for builds.
-    /// </summary>
-    public static class BuildScript
-    {
-        /// <summary>
-        /// Global delegate for handling the result of AddressableAssets builds.  This will get called for player builds and when entering play mode.
-        /// </summary>
-        public static Action<AddressableAssetBuildResult> buildCompleted;
-    }
-
     static class AddressablesBuildScriptHooks
     {
         [InitializeOnLoadMethod]
@@ -25,53 +12,32 @@ namespace UnityEditor.AddressableAssets.Build
 
         static void OnEditorPlayModeChanged(PlayModeStateChange state)
         {
+            if (state != PlayModeStateChange.ExitingEditMode)
+                return;
+
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null)
                 return;
-            if (state == PlayModeStateChange.ExitingEditMode)
+
+            var builder = settings.ActivePlayModeDataBuilder;
+            if (builder == null)
             {
-                if (settings.ActivePlayModeDataBuilder == null)
-                {
-                    var err = "Active play mode build script is null.";
-                    L.E(err);
+                L.E("Active play mode build script is null.");
+                return;
+            }
 
-                    if (BuildScript.buildCompleted != null)
-                    {
-                        var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(0, err);
-                        BuildScript.buildCompleted(result);
-                    }
+            if (!builder.CanBuildData<AddressablesPlayModeBuildResult>())
+            {
+                L.E($"Active build script {builder} cannot build AddressablesPlayModeBuildResult.");
+                return;
+            }
 
-                    return;
-                }
-
-                if (!settings.ActivePlayModeDataBuilder.CanBuildData<AddressablesPlayModeBuildResult>())
-                {
-                    var err = string.Format("Active build script {0} cannot build AddressablesPlayModeBuildResult.", settings.ActivePlayModeDataBuilder);
-                    L.E(err);
-
-                    if (BuildScript.buildCompleted != null)
-                    {
-                        var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(0, err);
-                        BuildScript.buildCompleted(result);
-                    }
-
-                    return;
-                }
-
-                L.I("[Addressables] BuildScriptHooks: OnEditorPlayModeChanged - " + settings.ActivePlayModeDataBuilder.Name);
-
-                var res = settings.ActivePlayModeDataBuilder.BuildData<AddressablesPlayModeBuildResult>(new AddressablesDataBuilderInput(settings));
-                if (!string.IsNullOrEmpty(res.Error))
-                {
-                    Debug.LogError(res.Error);
-                    EditorApplication.isPlaying = false;
-                }
-                else
-                {
-                    if (BuildScript.buildCompleted != null)
-                        BuildScript.buildCompleted(res);
-                    settings.DataBuilderCompleted(settings.ActivePlayModeDataBuilder, res);
-                }
+            L.I("[Addressables] BuildScriptHooks: " + settings.ActivePlayModeDataBuilder.Name);
+            var res = settings.ActivePlayModeDataBuilder.BuildData<AddressablesPlayModeBuildResult>(new AddressablesDataBuilderInput(settings));
+            if (!string.IsNullOrEmpty(res.Error))
+            {
+                L.E(res.Error);
+                EditorApplication.isPlaying = false;
             }
         }
     }

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline;
 using UnityEngine;
 
@@ -19,7 +17,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         protected internal struct CheckDupeResult
         {
-            public AddressableAssetGroup Group;
+            public BundleKey Bundle;
             public string DuplicatedFile;
             public string AssetPath;
             public GUID DuplicatedGroupGuid;
@@ -34,19 +32,13 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         /// <inheritdoc />
-        public override bool CanFix
-        {
-            get { return true; }
-        }
+        public override bool CanFix => false;
 
         /// <inheritdoc />
-        public override string ruleName
-        {
-            get { return "Check Duplicate Bundle Dependencies"; }
-        }
+        public override string ruleName => "Check Duplicate Bundle Dependencies";
 
         [NonSerialized]
-        internal readonly Dictionary<string, Dictionary<string, List<string>>> m_AllIssues = new Dictionary<string, Dictionary<string, List<string>>>();
+        internal readonly Dictionary<BundleKey, List<string>> m_AllIssues = new();
 
         [SerializeField]
         internal HashSet<GUID> m_ImplicitAssets;
@@ -88,26 +80,20 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             if (!savedData.ResultsInverted)
             {
                 m_Results = (from issueGroup in m_AllIssues
-                    from bundle in issueGroup.Value
-                    from item in bundle.Value
+                    from item in issueGroup.Value
                     select new AnalyzeResult
                     {
-                        resultName = issueGroup.Key + kDelimiter +
-                                     ConvertBundleName(bundle.Key, issueGroup.Key) + kDelimiter +
-                                     item,
+                        resultName = issueGroup.Key.ToString() + kDelimiter + item,
                         severity = MessageType.Warning
                     }).ToList();
             }
             else
             {
                 m_Results = (from issueGroup in m_AllIssues
-                    from bundle in issueGroup.Value
-                    from item in bundle.Value
+                    from item in issueGroup.Value
                     select new AnalyzeResult
                     {
-                        resultName = item + kDelimiter +
-                                     ConvertBundleName(bundle.Key, issueGroup.Key) + kDelimiter +
-                                     issueGroup.Key,
+                        resultName = item + kDelimiter + issueGroup.Key,
                         severity = MessageType.Warning
                     }).ToList();
             }
@@ -147,21 +133,19 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             AnalyzeSystem.ReloadUI();
         }
 
-        private string ReverseStringFromIndex(string data, int startingIndex, char delimiter)
+        private static string ReverseStringFromIndex(string data, int startingIndex, char delimiter)
         {
             string[] splitData = data.Split(delimiter);
             int i = startingIndex;
             int k = splitData.Length - 1;
             while (i < k)
             {
-                string temp = splitData[i];
-                splitData[i] = splitData[k];
-                splitData[k] = temp;
+                (splitData[i], splitData[k]) = (splitData[k], splitData[i]);
                 i++;
                 k--;
             }
 
-            return String.Join(kDelimiter.ToString(), splitData);
+            return string.Join(kDelimiter.ToString(), splitData);
         }
 
         /// <summary>
@@ -192,7 +176,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 }
 
                 var implicitGuids = GetImplicitGuidToFilesMap();
-                var checkDupeResults = CalculateDuplicates(implicitGuids, context);
+                var checkDupeResults = CalculateDuplicates(implicitGuids);
                 BuildImplicitDuplicatedAssetsSet(checkDupeResults);
                 m_ResultsData = checkDupeResults.ToList();
             }
@@ -211,9 +195,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// Calculate duplicate dependencies
         /// </summary>
         /// <param name="implicitGuids">Map of implicit guids to their bundle files</param>
-        /// <param name="aaContext">The build context information</param>
         /// <returns>Enumerable of results from duplicates check</returns>
-        protected internal IEnumerable<CheckDupeResult> CalculateDuplicates(Dictionary<GUID, List<string>> implicitGuids, AddressableAssetsBuildContext aaContext)
+        protected internal IEnumerable<CheckDupeResult> CalculateDuplicates(Dictionary<GUID, List<string>> implicitGuids)
         {
             //Get all guids that have more than one bundle referencing them
             IEnumerable<KeyValuePair<GUID, List<string>>> validGuids =
@@ -227,16 +210,12 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 from file in guidToFile.Value
 
                 //Get the files that belong to those guids
-                let fileToBundle = ExtractData.WriteData.FileToBundle[file]
-
-                //Get the bundles that belong to those files
-                let bundleToGroup = aaContext.bundleToAssetGroup[fileToBundle]
+                let bundle = BundleKey.FromBuildName(ExtractData.WriteData.FileToBundle[file])
 
                 //Get the asset groups that belong to those bundles
-                let selectedGroup = aaContext.Settings.FindGroup(findGroup => findGroup != null && findGroup.Guid == bundleToGroup)
                 select new CheckDupeResult
                 {
-                    Group = selectedGroup,
+                    Bundle = bundle,
                     DuplicatedFile = file,
                     AssetPath = AssetDatabase.GUIDToAssetPath(guidToFile.Key.ToString()),
                     DuplicatedGroupGuid = guidToFile.Key
@@ -249,43 +228,20 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
             foreach (var checkDupeResult in checkDupeResults)
             {
-                Dictionary<string, List<string>> groupData;
-                if (!m_AllIssues.TryGetValue(checkDupeResult.Group.Name, out groupData))
+                if (!m_AllIssues.TryGetValue(checkDupeResult.Bundle, out var groupData))
                 {
-                    groupData = new Dictionary<string, List<string>>();
-                    m_AllIssues.Add(checkDupeResult.Group.Name, groupData);
+                    groupData = new List<string>();
+                    m_AllIssues.Add(checkDupeResult.Bundle, groupData);
                 }
 
-                List<string> assets;
-                if (!groupData.TryGetValue(ExtractData.WriteData.FileToBundle[checkDupeResult.DuplicatedFile], out assets))
-                {
-                    assets = new List<string>();
-                    groupData.Add(ExtractData.WriteData.FileToBundle[checkDupeResult.DuplicatedFile], assets);
-                }
-
-                assets.Add(checkDupeResult.AssetPath);
+                groupData.Add(checkDupeResult.AssetPath);
                 m_ImplicitAssets.Add(checkDupeResult.DuplicatedGroupGuid);
             }
         }
 
-        /// <summary>
-        /// Fix duplicates by moving to a new group
-        /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
         public override void FixIssues(AddressableAssetSettings settings)
         {
-            if (m_ImplicitAssets == null)
-                CheckForDuplicateDependencies(settings);
-
-            if (m_ImplicitAssets.Count == 0)
-                return;
-
-            var group = settings.CreateGroup("Duplicate Asset Isolation", false, false, false, null, typeof(BundledAssetGroupSchema));
-
-            foreach (var asset in m_ImplicitAssets)
-                settings.CreateOrMoveEntry(asset.ToString(), group, false, false);
-
-            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
+            // No fix for this rule
         }
 
         /// <inheritdoc />

@@ -24,19 +24,6 @@ namespace UnityEditor.AddressableAssets.Build
         public BuildTarget Target { get; private set; }
 
         /// <summary>
-        /// Registry of files created during the build
-        /// </summary>
-        public FileRegistry Registry { get; private set; }
-
-        //used only by tests to inject custom info into build...
-        internal string PathSuffix = string.Empty;
-
-        /// <summary>
-        /// The name of the default Runtime Catalog file.
-        /// </summary>
-        public string RuntimeCatalogFilename = "catalog.bin";
-
-        /// <summary>
         /// Creates a default context object with values taken from the AddressableAssetSettings parameter.
         /// </summary>
         /// <param name="settings">The settings object to pull values from.</param>
@@ -53,7 +40,6 @@ namespace UnityEditor.AddressableAssets.Build
 
             TargetGroup = buildTargetGroup;
             Target = buildTarget;
-            Registry = new FileRegistry();
         }
 
         internal bool IsBuildAndRelease = false;

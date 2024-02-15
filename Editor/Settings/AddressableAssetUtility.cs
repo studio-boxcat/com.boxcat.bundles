@@ -1,13 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditor.Build.Utilities;
 using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -18,56 +12,9 @@ namespace UnityEditor.AddressableAssets.Settings
 
     internal static class AddressableAssetUtility
     {
-#if !UNITY_2020_3_OR_NEWER
-        //these extention methods are needed prior to 2020.3 since they are not available
-        public static void Append(this ref Hash128 thisHash, string val)
-        {
-            Hash128 valHash = Hash128.Compute(val);
-            HashUtilities.AppendHash(ref valHash, ref thisHash);
-        }
-
-        public static void Append(this ref Hash128 thisHash, int val)
-        {
-            Hash128 valHash = default;
-            HashUtilities.ComputeHash128(ref val, ref valHash);
-            HashUtilities.AppendHash(ref valHash, ref thisHash);
-        }
-
-        public static void Append(this ref Hash128 thisHash, Hash128[] vals)
-        {
-            Hash128 valHash = default;
-            for (int i = 0; i < vals.Length; i++)
-            {
-                HashUtilities.ComputeHash128(ref vals[i], ref valHash);
-                HashUtilities.AppendHash(ref valHash, ref thisHash);
-            }
-        }
-
-        public static void Append<T>(this ref Hash128 thisHash, ref T val) where T : unmanaged
-        {
-            Hash128 valHash = default;
-            HashUtilities.ComputeHash128(ref val, ref valHash);
-            HashUtilities.AppendHash(ref valHash, ref thisHash);
-        }
-#endif
-
         internal static bool IsInResources(string path)
         {
-#if NET_UNITY_4_8
-            return path.Replace('\\', '/').Contains("/Resources/", StringComparison.OrdinalIgnoreCase);
-#else
-            return path.Replace('\\', '/').ToLower().Contains("/resources/");
-#endif
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        internal static bool StringContains(string input, string value, StringComparison comp)
-        {
-#if NET_UNITY_4_8
-            return input.Contains(value, comp);
-#else
-            return input.Contains(value);
-#endif
+            return path.Contains("/Resources/", StringComparison.Ordinal);
         }
 
         internal static bool TryGetPathAndGUIDFromTarget(Object target, out string path, out string guid)
@@ -78,181 +25,58 @@ namespace UnityEditor.AddressableAssets.Settings
                 path = string.Empty;
                 return false;
             }
+
             if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out guid, out long id))
             {
                 guid = string.Empty;
                 path = string.Empty;
                 return false;
             }
+
             path = AssetDatabase.GetAssetOrScenePath(target);
-            if (!IsPathValidForEntry(path))
-                return false;
-            return true;
+            return IsPathValidForEntry(path);
         }
 
-        private static string isEditorFolder = $"{Path.DirectorySeparatorChar}Editor";
-        private static string insideEditorFolder = $"{Path.DirectorySeparatorChar}Editor{Path.DirectorySeparatorChar}";
-        static HashSet<string> excludedExtensions = new HashSet<string>(new string[] { ".cs", ".js", ".boo", ".exe", ".dll", ".meta", ".preset", ".asmdef" });
+        static readonly string[] _excludedExtensions = {".cs", ".js", ".boo", ".exe", ".dll", ".meta", ".preset", ".asmdef"};
+
         internal static bool IsPathValidForEntry(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return false;
 
-            if (path.Contains('\\'))
-                path = path.Replace('\\', Path.DirectorySeparatorChar);
+            Assert.IsFalse(path.Contains('\\'), "Path contains '\\' - not a valid path for AddressableAssetEntry: " + path);
 
-            if (Path.DirectorySeparatorChar != '/' && path.Contains('/'))
-                path = path.Replace('/', Path.DirectorySeparatorChar);
-
-            if (!path.StartsWith("Assets", StringComparison.OrdinalIgnoreCase) && !IsPathValidPackageAsset(path))
+            if (!path.StartsWith("Assets", StringComparison.Ordinal) && !IsPathValidPackageAsset(path))
                 return false;
 
-            string ext = Path.GetExtension(path);
-            if (string.IsNullOrEmpty(ext))
+            if (IsExcludedExtension(path))
+                return false;
+
+            // asset type
+            if (path.Contains("/Editor/", StringComparison.Ordinal))
+                return false;
+            if (path.Contains("/Gizmos/", StringComparison.Ordinal))
+                return false;
+
+            // assets in config folder are not valid entries
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            return settings == null || !path.StartsWith(settings.ConfigFolder, StringComparison.Ordinal);
+
+            static bool IsExcludedExtension(string path)
             {
-                // is folder
-                if (path == "Assets")
-                    return false;
-                int editorIndex = path.IndexOf(isEditorFolder, StringComparison.OrdinalIgnoreCase);
-                if (editorIndex != -1)
+                foreach (var ext in _excludedExtensions)
                 {
-                    int length = path.Length;
-                    if (editorIndex == length - 7)
-                        return false;
-                    if (path[editorIndex + 7] == '/')
-                        return false;
-                    // Could still have something like Assets/editorthings/Editor/things, but less likely
-                    if (StringContains(path, insideEditorFolder, StringComparison.OrdinalIgnoreCase))
-                        return false;
+                    if (path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+                        return true;
                 }
-                if (String.Equals(path, CommonStrings.UnityEditorResourcePath, StringComparison.Ordinal) ||
-                    String.Equals(path, CommonStrings.UnityDefaultResourcePath, StringComparison.Ordinal) ||
-                    String.Equals(path, CommonStrings.UnityBuiltInExtraPath, StringComparison.Ordinal))
-                    return false;
+                return false;
             }
-            else
+
+            static bool IsPathValidPackageAsset(string path)
             {
-                // asset type
-                if (StringContains(path, insideEditorFolder, StringComparison.OrdinalIgnoreCase))
-                    return false;
-                if (excludedExtensions.Contains(ext))
-                    return false;
+                return path.StartsWith("Packages/", StringComparison.Ordinal)
+                       && path.EndsWith("package.json", StringComparison.Ordinal) is false;
             }
-
-            var settings = AddressableAssetSettingsDefaultObject.SettingsExists ? AddressableAssetSettingsDefaultObject.Settings : null;
-            if (settings != null && path.StartsWith(settings.ConfigFolder, StringComparison.Ordinal))
-                return false;
-
-            return true;
-        }
-
-        internal static bool IsPathValidPackageAsset(string pathLowerCase)
-        {
-            string[] splitPath = pathLowerCase.Split(Path.DirectorySeparatorChar);
-
-            if (splitPath.Length < 3)
-                return false;
-            if (!String.Equals(splitPath[0], "packages", StringComparison.OrdinalIgnoreCase))
-                return false;
-            if (String.Equals(splitPath[2], "package.json", StringComparison.OrdinalIgnoreCase))
-                return false;
-            return true;
-        }
-
-        static readonly HashSet<Type> validTypes = new HashSet<Type>();
-
-        internal static Type MapEditorTypeToRuntimeType(Type t)
-        {
-            Assert.AreNotEqual(typeof(DefaultAsset), t);
-
-            //type is valid and already seen (most common)
-            if (validTypes.Contains(t))
-                return t;
-
-            //removes the need to check this outside of this call
-            if (t == null)
-                return t;
-
-            //check for editor type, this will get hit once for each new type encountered
-            if (!t.Assembly.IsDefined(typeof(AssemblyIsEditorAssembly), true) && !Build.BuildUtility.IsEditorAssembly(t.Assembly))
-            {
-                validTypes.Add(t);
-                return t;
-            }
-
-            //try to remap the editor type to a runtime type
-            return MapEditorTypeToRuntimeTypeInternal(t);
-        }
-
-        static Type MapEditorTypeToRuntimeTypeInternal(Type t)
-        {
-            if (t == typeof(UnityEditor.Animations.AnimatorController))
-                return typeof(RuntimeAnimatorController);
-            if (t == typeof(UnityEditor.SceneAsset))
-                return typeof(UnityEngine.ResourceManagement.ResourceProviders.SceneInstance);
-            if (t.FullName == "UnityEditor.Audio.AudioMixerController")
-                return typeof(UnityEngine.Audio.AudioMixer);
-            if (t.FullName == "UnityEditor.Audio.AudioMixerGroupController")
-                return typeof(UnityEngine.Audio.AudioMixerGroup);
-            return null;
-        }
-
-        internal static void ConvertAssetBundlesToAddressables()
-        {
-            AssetDatabase.RemoveUnusedAssetBundleNames();
-            var bundleList = AssetDatabase.GetAllAssetBundleNames();
-
-            float fullCount = bundleList.Length;
-            int currCount = 0;
-
-            var settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
-            foreach (var bundle in bundleList)
-            {
-                if (EditorUtility.DisplayCancelableProgressBar("Converting Legacy Asset Bundles", bundle, currCount / fullCount))
-                    break;
-
-                currCount++;
-                var group = settings.CreateGroup(bundle, false, false, false, null);
-                var schema = group.AddSchema<BundledAssetGroupSchema>();
-                schema.Validate();
-                schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
-
-                var assetList = AssetDatabase.GetAssetPathsFromAssetBundle(bundle);
-
-                foreach (var asset in assetList)
-                {
-                    var guid = AssetDatabase.AssetPathToGUID(asset);
-                    settings.CreateOrMoveEntry(guid, group, false, false);
-                    var imp = AssetImporter.GetAtPath(asset);
-                    if (imp != null)
-                        imp.SetAssetBundleNameAndVariant(string.Empty, string.Empty);
-                }
-            }
-
-            if (fullCount > 0)
-                settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
-            EditorUtility.ClearProgressBar();
-            AssetDatabase.RemoveUnusedAssetBundleNames();
-        }
-
-        /// <summary>
-        /// Get all types that can be assigned to type T
-        /// </summary>
-        /// <typeparam name="T">The class type to use as the base class or interface for all found types.</typeparam>
-        /// <returns>A list of types that are assignable to type T.  The results are cached.</returns>
-        public static List<Type> GetTypes<T>()
-        {
-            return TypeManager<T>.Types;
-        }
-
-        /// <summary>
-        /// Get all types that can be assigned to type rootType.
-        /// </summary>
-        /// <param name="rootType">The class type to use as the base class or interface for all found types.</param>
-        /// <returns>A list of types that are assignable to type T.  The results are not cached.</returns>
-        public static List<Type> GetTypes(Type rootType)
-        {
-            return TypeManager.GetManagerTypes(rootType);
         }
 
         class TypeManager
@@ -299,53 +123,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        internal static bool SafeMoveResourcesToGroup(AddressableAssetSettings settings, AddressableAssetGroup targetGroup, List<string> paths, List<string> guids, bool showDialog = true)
-        {
-            if (targetGroup == null)
-            {
-                Debug.LogWarning("No valid group to move Resources to");
-                return false;
-            }
-
-            if (paths == null || paths.Count == 0)
-            {
-                Debug.LogWarning("No valid Resources found to move");
-                return false;
-            }
-
-            if (guids == null)
-            {
-                guids = new List<string>();
-                foreach (var p in paths)
-                    guids.Add(AssetDatabase.AssetPathToGUID(p));
-            }
-
-            Dictionary<string, string> guidToNewPath = new Dictionary<string, string>();
-
-            var message = "Any assets in Resources that you wish to mark as Addressable must be moved within the project. We will move the files to:\n\n";
-            for (int i = 0; i < guids.Count; i++)
-            {
-                var newName = paths[i].Replace("\\", "/");
-                newName = newName.Replace("Resources", "Resources_moved");
-                newName = newName.Replace("resources", "resources_moved");
-                if (newName == paths[i])
-                    continue;
-
-                guidToNewPath.Add(guids[i], newName);
-                message += newName + "\n";
-            }
-
-            message += "\nAre you sure you want to proceed?";
-            if (!showDialog || EditorUtility.DisplayDialog("Move From Resources", message, "Yes", "No"))
-            {
-                settings.MoveAssetsFromResources(guidToNewPath, targetGroup);
-                return true;
-            }
-
-            return false;
-        }
-
-        static Dictionary<Type, string> s_CachedDisplayNames = new Dictionary<Type, string>();
+        static Dictionary<Type, string> s_CachedDisplayNames = new();
 
         internal static string GetCachedTypeDisplayName(Type type)
         {
@@ -357,7 +135,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     var displayNameAtr = type.GetCustomAttribute<DisplayNameAttribute>();
                     if (displayNameAtr != null)
                     {
-                        result = (string)displayNameAtr.DisplayName;
+                        result = displayNameAtr.DisplayName;
                     }
                     else
                         result = type.Name;
@@ -420,94 +198,6 @@ namespace UnityEditor.AddressableAssets.Settings
             return op.assetList;
         }
 
-        private static bool MakeAssetEditable(Asset asset)
-        {
-            if (!AssetDatabase.IsOpenForEdit(asset.path))
-                return AssetDatabase.MakeEditable(asset.path);
-            return false;
-        }
-
-        internal static bool OpenAssetIfUsingVCIntegration(Object target, bool exitGUI = false)
-        {
-            if (!IsUsingVCIntegration() || target == null)
-                return false;
-            return OpenAssetIfUsingVCIntegration(AssetDatabase.GetAssetOrScenePath(target), exitGUI);
-        }
-
-        internal static bool OpenAssetIfUsingVCIntegration(string path, bool exitGUI = false)
-        {
-            if (!IsUsingVCIntegration() || string.IsNullOrEmpty(path))
-                return false;
-
-            AssetList assets = GetVCAssets(path);
-            var uneditableAssets = new List<Asset>();
-            string message = "Check out file(s)?\n\n";
-            foreach (Asset asset in assets)
-            {
-                if (!Provider.IsOpenForEdit(asset))
-                {
-                    uneditableAssets.Add(asset);
-                    message += $"{asset.path}\n";
-                }
-            }
-
-            if (uneditableAssets.Count == 0)
-                return false;
-
-            bool openedAsset = true;
-            if (EditorUtility.DisplayDialog("Attempting to modify files that are uneditable", message, "Yes", "No"))
-            {
-                foreach (Asset asset in uneditableAssets)
-                {
-                    if (!MakeAssetEditable(asset))
-                        openedAsset = false;
-                }
-            }
-            else
-                openedAsset = false;
-
-            if (exitGUI)
-                GUIUtility.ExitGUI();
-            return openedAsset;
-        }
-
-        internal static string GetMd5Hash(string path)
-        {
-            string hashString;
-            using (var md5 = MD5.Create())
-            {
-                using (var stream = File.OpenRead(path))
-                {
-                    var hash = md5.ComputeHash(stream);
-                    hashString = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                }
-            }
-
-            return hashString;
-        }
-
-
-        internal static System.Threading.Tasks.Task ParallelForEachAsync<T>(this IEnumerable<T> source, int dop, Func<T, System.Threading.Tasks.Task> body)
-        {
-            async System.Threading.Tasks.Task AwaitPartition(IEnumerator<T> partition)
-            {
-                using (partition)
-                {
-                    while (partition.MoveNext())
-                    {
-                        await body(partition.Current);
-                    }
-                }
-            }
-
-            return System.Threading.Tasks.Task.WhenAll(
-                Partitioner
-                    .Create(source)
-                    .GetPartitions(dop)
-                    .AsParallel()
-                    .Select(p => AwaitPartition(p)));
-        }
-
         internal class SortedDelegate<T1, T2, T3, T4>
         {
             struct QueuedValues
@@ -523,7 +213,7 @@ namespace UnityEditor.AddressableAssets.Settings
             private readonly SortedList<int, Delegate> m_SortedInvocationList = new SortedList<int, Delegate>();
 
             private readonly List<QueuedValues> m_InvokeQueue = new List<QueuedValues>();
-            private readonly List<(int, Delegate)> m_RegisterQueue = new List<(int, Delegate)> ();
+            private readonly List<(int, Delegate)> m_RegisterQueue = new List<(int, Delegate)>();
             private bool m_IsInvoking;
 
             /// <summary>
@@ -701,7 +391,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((SortedDelegate<T1, T2, T3, T4>)obj);
+                return Equals((SortedDelegate<T1, T2, T3, T4>) obj);
             }
 
             public override int GetHashCode()
@@ -716,7 +406,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 if (entry.parentGroup != group)
                 {
-                    settings.MoveEntry(entry, group, entry.ReadOnly, true);
+                    settings.MoveEntry(entry, group, true);
                 }
             }
         }

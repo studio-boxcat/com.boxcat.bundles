@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -28,11 +27,6 @@ namespace UnityEditor.AddressableAssets.Build
         /// Path of runtime settings file
         /// </summary>
         public string OutputPath { get; set; }
-
-        /// <summary>
-        /// Registry of files created during the build
-        /// </summary>
-        public FileRegistry FileRegistry { get; set; }
 
         /// <summary>
         /// Helper method to create the desired result of a data builder.  This should always be used to create the build result
@@ -88,21 +82,19 @@ namespace UnityEditor.AddressableAssets.Build
         public class BundleBuildResult
         {
             /// <summary>
+            /// The Addressable Group that was responsible for generating a given AssetBundle
+            /// </summary>
+            public BundleKey BundleKey;
+            /// <summary>
             /// The file path of the bundle.
             /// </summary>
             public string FilePath;
-            /// <summary>
-            /// The internal AssetBundle name, this is not always the same as the file name.
-            /// </summary>
-            public string InternalBundleName;
-            /// <summary>
-            /// The Addressable Group that was responsible for generating a given AssetBundle
-            /// </summary>
-            public AddressableAssetGroup SourceAssetGroup;
-            /// <summary>
-            /// The asset hash of the assets included inside the AssetBundle
-            /// </summary>
-            public string Hash;
+
+            public BundleBuildResult(BundleKey bundleKey, string filePath)
+            {
+                BundleKey = bundleKey;
+                FilePath = filePath;
+            }
         }
 
         /// <summary>

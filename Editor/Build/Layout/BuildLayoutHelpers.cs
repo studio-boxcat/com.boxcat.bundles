@@ -1,9 +1,8 @@
-using System.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
@@ -66,56 +65,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             return EnumerateBundles(layout).SelectMany(b => b.Files);
         }
 
-        private static Dictionary<System.Type, AssetType> m_SystemTypeToAssetType = null;
-        private static Dictionary<System.Type, AssetType> SystemTypeToAssetType
-        {
-            get
-            {
-                if (m_SystemTypeToAssetType == null)
-                {
-                    m_SystemTypeToAssetType = new Dictionary<Type, AssetType>()
-                    {
-                        { typeof(SceneAsset), AssetType.Scene }
-                    };
-                }
-                return m_SystemTypeToAssetType;
-            }
-        }
-
-        private static List<(System.Type, AssetType)> m_AssignableSystemTypeToAssetType = null;
-        private static List<(System.Type, AssetType)> AssignableSystemTypeToAssetType
-        {
-            get
-            {
-                if (m_AssignableSystemTypeToAssetType == null)
-                {
-                    m_AssignableSystemTypeToAssetType = new List<(Type, AssetType)>()
-                    {
-                        (typeof(ScriptableObject), AssetType.ScriptableObject),
-                        (typeof(MonoBehaviour), AssetType.MonoBehaviour),
-                        (typeof(Component), AssetType.Component)
-                    };
-                }
-                return m_AssignableSystemTypeToAssetType;
-            }
-        }
-
-        private static Dictionary<System.Type, AssetType> m_RuntimeSystemTypeToAssetType = null;
-        private static Dictionary<System.Type, AssetType> RuntimeSystemTypeToAssetType
-        {
-            get
-            {
-                if (m_RuntimeSystemTypeToAssetType == null)
-                {
-                    m_RuntimeSystemTypeToAssetType = new Dictionary<Type, AssetType>()
-                    {
-                        { typeof(RuntimeAnimatorController), AssetType.AnimationController }
-                    };
-                }
-                return m_RuntimeSystemTypeToAssetType;
-            }
-        }
-
         /// <summary>
         /// Gets the enum AssetType associated with the param systemType ofType
         /// </summary>
@@ -123,31 +72,27 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// <returns>An AssetType or <see cref="AssetType.Other" /> if null or unknown.</returns>
         public static AssetType GetAssetType(Type ofType)
         {
-            if (ofType == null)
-                return AssetType.Other;
+            Assert.IsNotNull(ofType);
 
-            if (AssetType.TryParse(ofType.Name, out AssetType assetType))
-                return assetType;
+            if (ofType == typeof(SceneAsset))
+                return AssetType.Scene;
+            if (ofType == typeof(Animations.AnimatorController))
+                return AssetType.AnimationController;
 
-            // types where the class name doesn't equal the AssetType (legacy enum values)
-            if (SystemTypeToAssetType.TryGetValue(ofType, out assetType))
-                return assetType;
+            if (typeof(ScriptableObject).IsAssignableFrom(ofType))
+                return AssetType.ScriptableObject;
+            if (typeof(MonoBehaviour).IsAssignableFrom(ofType))
+                return AssetType.MonoBehaviour;
+            if (typeof(Component).IsAssignableFrom(ofType))
+                return AssetType.Component;
 
-            foreach ((Type, AssetType) typeAssignment in AssignableSystemTypeToAssetType)
-            {
-                if (typeAssignment.Item1.IsAssignableFrom(ofType))
-                    return typeAssignment.Item2;
-            }
+            if (ofType.FullName == "UnityEditor.Audio.AudioMixerController")
+                return AssetType.AudioMixer;
+            if (ofType.FullName == "UnityEditor.Audio.AudioMixerGroupController")
+                return AssetType.AudioMixerGroup;
 
-            ofType = AddressableAssetUtility.MapEditorTypeToRuntimeType(ofType);
-            if (ofType == null)
-                return AssetType.Other;
-            if (SystemTypeToAssetType.TryGetValue(ofType, out assetType))
-                return assetType;
-            if (RuntimeSystemTypeToAssetType.TryGetValue(ofType, out assetType))
-                return assetType;
-
-            return AssetType.Other;
+            return Enum.TryParse(ofType.Name, out AssetType assetType)
+                ? assetType : AssetType.Other;
         }
     }
 }

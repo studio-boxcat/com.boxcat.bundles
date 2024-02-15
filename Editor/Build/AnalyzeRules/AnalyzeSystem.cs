@@ -7,6 +7,7 @@ using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -44,13 +45,9 @@ namespace UnityEditor.AddressableAssets.Build
             Rules.Add(new TRule());
         }
 
-        internal static string AnalyzeRuleDataFolder
-        {
-            get { return $"{Addressables.LibraryPath}/AnalyzeData"; }
-        }
-
-        internal static string AnalyzeRuleDataName => "AnalyzeRuleData.json";
-        internal static string AnalyzeRuleDataPath => AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
+        internal const string AnalyzeRuleDataFolder = PathConfig.LibraryPath + "/AnalyzeData";
+        internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
+        internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
         internal static string AnalyzeRuleDataAssetsFolderPath
         {
@@ -58,7 +55,7 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 var settings = AddressableAssetSettingsDefaultObject.Settings;
                 var path = AddressableAssetSettingsDefaultObject.kDefaultConfigFolder;
-                if (settings != null && settings.IsPersisted)
+                if (settings != null)
                     path = settings.ConfigFolder;
 
                 return path + "/AnalyzeData/";

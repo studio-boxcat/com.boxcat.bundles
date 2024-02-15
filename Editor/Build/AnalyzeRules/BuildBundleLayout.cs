@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
@@ -40,47 +37,45 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         {
             get
             {
-                if (m_ResultData == null)
+                if (m_ResultData != null)
+                    return m_ResultData;
+
+                if (ExtractData == null)
                 {
-                    if (ExtractData == null)
-                    {
-                        Debug.LogError("RefreshAnalysis needs to be called before getting results");
-                        return new List<BuildBundleLayoutResultData>(0);
-                    }
+                    Debug.LogError("RefreshAnalysis needs to be called before getting results");
+                    return new List<BuildBundleLayoutResultData>(0);
+                }
 
-                    m_ResultData = new List<BuildBundleLayoutResultData>(512);
+                m_ResultData = new List<BuildBundleLayoutResultData>(512);
 
-                    foreach (var bundleBuild in AllBundleInputDefs)
+                foreach (var bundleBuild in AllBundleInputDefs)
+                foreach (string assetName in bundleBuild.assetNames)
+                {
+                    m_ResultData.Add(new BuildBundleLayoutResultData()
                     {
-                        foreach (string assetName in bundleBuild.assetNames)
-                        {
+                        AssetBundleName = bundleBuild.assetBundleName,
+                        AssetPath = assetName,
+                        Explicit = true
+                    });
+                }
+
+                List<string> assets = new List<string>();
+                foreach (KeyValuePair<string, string> fileToBundle in ExtractData.WriteData.FileToBundle)
+                {
+                    assets.Clear();
+                    string assetBundleName = fileToBundle.Value;
+
+                    var implicitGuids = GetImplicitGuidsForBundle(fileToBundle.Key);
+                    foreach (GUID guid in implicitGuids)
+                    {
+                        string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
+                        if (AddressableAssetUtility.IsPathValidForEntry(assetPath))
                             m_ResultData.Add(new BuildBundleLayoutResultData()
                             {
-                                AssetBundleName = bundleBuild.assetBundleName,
-                                AssetPath = assetName,
-                                Explicit = true
+                                AssetBundleName = assetBundleName,
+                                AssetPath = assetPath,
+                                Explicit = false
                             });
-                        }
-                    }
-
-                    List<string> assets = new List<string>();
-                    foreach (KeyValuePair<string, string> fileToBundle in ExtractData.WriteData.FileToBundle)
-                    {
-                        assets.Clear();
-                        string assetBundleName = fileToBundle.Value;
-
-                        var implicitGuids = GetImplicitGuidsForBundle(fileToBundle.Key);
-                        foreach (GUID guid in implicitGuids)
-                        {
-                            string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
-                            if (AddressableAssetUtility.IsPathValidForEntry(assetPath))
-                                m_ResultData.Add(new BuildBundleLayoutResultData()
-                                {
-                                    AssetBundleName = assetBundleName,
-                                    AssetPath = assetPath,
-                                    Explicit = false
-                                });
-                        }
                     }
                 }
 
@@ -103,7 +98,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             CalculateInputDefinitions(settings);
             var context = GetBuildContext(settings);
             RefreshBuild(context);
-            ConvertBundleNamesToGroupNames(context);
             foreach (BuildBundleLayoutResultData result in BuildBundleLayoutResults)
             {
                 m_Results.Add(new AnalyzeResult

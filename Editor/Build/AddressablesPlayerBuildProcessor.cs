@@ -1,13 +1,10 @@
-using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
-using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build;
-using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement;
+using UnityEngine.Assertions;
 
 /// <summary>
 /// Maintains Addresssables build data when processing a player build.
@@ -15,57 +12,17 @@ using UnityEngine.ResourceManagement;
 public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
 {
     /// <summary>
-    /// Functor to override Addressables build when building Player.
-    /// </summary>
-    /// <remarks>
-    /// Functor is invoked where Addressables settings state to build Addressables content when performing a Player build.
-    ///
-    /// Available in Unity 2021.2 or later.
-    /// </remarks>
-    public static Func<AddressableAssetSettings, AddressablesPlayerBuildResult> BuildAddressablesOverride { get; set; }
-
-    /// <summary>
     /// Returns the player build processor callback order.
     /// </summary>
-    public override int callbackOrder
-    {
-        get { return 1; }
-    }
+    public override int callbackOrder => 1;
 
     [InitializeOnLoadMethod]
-    private static void CleanTemporaryPlayerBuildData()
+    static void CleanTemporaryPlayerBuildData()
     {
-        RemovePlayerBuildLinkXML(AddressableAssetSettingsDefaultObject.Settings);
-    }
-
-    internal static void RemovePlayerBuildLinkXML(AddressableAssetSettings settings)
-    {
-        string linkProjectPath = GetLinkPath(settings, false);
-        string guid = AssetDatabase.AssetPathToGUID(linkProjectPath);
-        if (!string.IsNullOrEmpty(guid))
-            AssetDatabase.DeleteAsset(linkProjectPath);
-        else if (File.Exists(linkProjectPath))
-            File.Delete(linkProjectPath);
-
-        DirectoryUtility.DeleteDirectory(Path.GetDirectoryName(linkProjectPath));
-    }
-
-    private static string GetLinkPath(AddressableAssetSettings settings, bool createFolder)
-    {
-        string folderPath;
-        if (settings == null)
-            folderPath = "Assets/Addressables_Temp";
-        else
-            folderPath = settings.ConfigFolder;
-
-        if (createFolder && !Directory.Exists(folderPath))
-        {
-            Directory.CreateDirectory(folderPath);
-            AssetDatabase.ImportAsset(folderPath);
-        }
-
-        return Path.Combine(folderPath, "link.xml");
-        ;
+        var linkPath = GetAssetsLinkPath(AddressableAssetSettingsDefaultObject.Settings, false);
+        var guid = AssetDatabase.AssetPathToGUID(linkPath);
+        if (!string.IsNullOrEmpty(guid)) AssetDatabase.DeleteAsset(linkPath);
+        else if (File.Exists(linkPath)) File.Delete(linkPath);
     }
 
     /// <summary>
@@ -75,65 +32,37 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
     {
         var settings = AddressableAssetSettingsDefaultObject.Settings;
-        PrepareForPlayerbuild(settings, buildPlayerContext, ShouldBuildAddressablesForPlayerBuild(settings));
-    }
+        Assert.IsNotNull(settings, "AddressableAssetSettings object is null");
+        Assert.IsNotNull(buildPlayerContext, "BuildPlayerContext object is null");
 
-    internal static void PrepareForPlayerbuild(AddressableAssetSettings settings, BuildPlayerContext buildPlayerContext, bool buildAddressables)
-    {
-        if (settings != null && buildAddressables)
+        // Add asset bundles with catalog.bin to streaming assets.
+        if (Directory.Exists(PathConfig.BuildPath_BundleRoot))
         {
-            AddressablesPlayerBuildResult result;
-            if (BuildAddressablesOverride != null)
-            {
-                try
-                {
-                    result = BuildAddressablesOverride.Invoke(settings);
-                }
-                catch (Exception e)
-                {
-                    result = new AddressablesPlayerBuildResult();
-                    result.Error = "Exception in BuildAddressablesOverride: " + e;
-                }
-            }
-            else
-                AddressableAssetSettings.BuildPlayerContent(out result);
-
-            if (result != null && !string.IsNullOrEmpty(result.Error))
-                Debug.LogError($"Failed to build Addressables content, content not included in Player Build. \"{result.Error}\"");
+            buildPlayerContext.AddAdditionalPathToStreamingAssets(
+                PathConfig.BuildPath_BundleRoot, PathConfig.RuntimeStreamingAssetsSubFolder);
         }
 
-        if (buildPlayerContext != null)
+        // Copy link.xml into Assets folder.
         {
-            if (Directory.Exists(ResourcePath.BuildPath))
-                buildPlayerContext.AddAdditionalPathToStreamingAssets(ResourcePath.BuildPath, "aa");
-        }
+            var srcPath = PathConfig.BuildPath_LinkXML;
+            Assert.IsTrue(File.Exists(srcPath), $"Link.xml file not found at {srcPath}");
 
-        string buildPath = ResourcePath.BuildPath_LinkXML;
-        if (File.Exists(buildPath))
-        {
-            string projectPath = GetLinkPath(settings, true);
-            File.Copy(buildPath, projectPath, true);
-            AssetDatabase.ImportAsset(projectPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.DontDownloadFromCacheServer);
+            var dstPath = GetAssetsLinkPath(settings, true);
+            File.Copy(srcPath, dstPath, true);
+            AssetDatabase.ImportAsset(dstPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.DontDownloadFromCacheServer);
         }
     }
 
-    internal static bool ShouldBuildAddressablesForPlayerBuild(AddressableAssetSettings settings)
+    static string GetAssetsLinkPath(AddressableAssetSettings settings, bool createFolder)
     {
-        if (settings == null)
-            return false;
+        Assert.IsNotNull(settings, "AddressableAssetSettings object is null");
 
-        switch (settings.BuildAddressablesWithPlayerBuild)
+        var folderPath = settings.ConfigFolder;
+        if (createFolder && !Directory.Exists(folderPath))
         {
-            case AddressableAssetSettings.PlayerBuildOption.DoNotBuildWithPlayer:
-                return false;
-            case AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer:
-                break;
-            case AddressableAssetSettings.PlayerBuildOption.PreferencesValue:
-                if (!EditorPrefs.GetBool(AddressablesPreferences.kBuildAddressablesWithPlayerBuildKey, true))
-                    return false;
-                break;
+            Directory.CreateDirectory(folderPath);
+            AssetDatabase.ImportAsset(folderPath);
         }
-
-        return true;
+        return Path.Combine(folderPath, "link.xml");
     }
 }

@@ -77,21 +77,14 @@ namespace UnityEditor.AddressableAssets.GUI
             m_GroupEditor?.OnDisable();
         }
 
-        internal void OfferToConvert(AddressableAssetSettings settings)
+        internal static void OfferToConvert(AddressableAssetSettings settings)
         {
             var bundleList = AssetDatabase.GetAllAssetBundleNames();
-            if (settings != null && bundleList.Length > 0)
-            {
-                var displayChoice = EditorUtility.DisplayDialog("Legacy Bundles Detected",
-                    "We have detected the use of legacy bundles in this project.  Would you like to auto-convert those into Addressables? \nThis will take each asset bundle you have defined (we have detected " +
-                    bundleList.Length +
-                    " bundles), create an Addressables group with a matching name, then move all assets from those bundles into corresponding groups.  This will remove the asset bundle assignment from all assets, and remove all asset bundle definitions from this project.  This cannot be undone.",
-                    "Convert", "Ignore");
-                if (displayChoice)
-                {
-                    AddressableAssetUtility.ConvertAssetBundlesToAddressables();
-                }
-            }
+            if (settings == null || bundleList.Length <= 0) return;
+            EditorUtility.DisplayDialog(
+                "Legacy Bundles Detected",
+                $"We have detected the use of legacy bundles in this project.\n{string.Join("\n", bundleList)}",
+                "Ok");
         }
 
         public void OnGUI()
@@ -103,7 +96,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     m_GroupEditor = null;
                     AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                        AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, true, true);
+                        AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
                     OfferToConvert(AddressableAssetSettingsDefaultObject.Settings);
                 }
 
@@ -121,18 +114,15 @@ namespace UnityEditor.AddressableAssets.GUI
                         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
                         foreach (var path in DragAndDrop.paths)
                         {
-                            if (AddressableAssetUtility.IsPathValidForEntry(path))
-                            {
-                                var guid = AssetDatabase.AssetPathToGUID(path);
-                                if (!string.IsNullOrEmpty(guid))
-                                {
-                                    if (AddressableAssetSettingsDefaultObject.Settings == null)
-                                        AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                                            AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, true, true);
-                                    Undo.RecordObject(AddressableAssetSettingsDefaultObject.Settings, "AddressableAssetSettings");
-                                    AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(guid, AddressableAssetSettingsDefaultObject.Settings.DefaultGroup);
-                                }
-                            }
+                            if (!AddressableAssetUtility.IsPathValidForEntry(path)) continue;
+                            var guid = (AssetGUID) AssetDatabase.AssetPathToGUID(path);
+                            if (guid.IsInvalid()) continue;
+
+                            if (AddressableAssetSettingsDefaultObject.Settings == null)
+                                AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
+                                    AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
+                            Undo.RecordObject(AddressableAssetSettingsDefaultObject.Settings, "AddressableAssetSettings");
+                            AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(guid, AddressableAssetSettingsDefaultObject.Settings.DefaultGroup);
                         }
 
                         break;

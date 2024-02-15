@@ -48,6 +48,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// </summary>
         AudioMixer,
 
+        AudioMixerGroup,
+
         // Video
         /// <summary>
         /// Video asset
@@ -228,31 +230,5 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Scene SphereCollider component
         /// </summary>
         SphereCollider,
-    }
-
-    /// <summary>
-    /// Bundle status after an update build
-    /// </summary>
-    public enum BundleBuildStatus
-    {
-        /// <summary>
-        /// Asset bundle is newly created for this build
-        /// </summary>
-        New = 0,
-
-        /// <summary>
-        /// Asset bundle has been modified (Remote bundle expected)
-        /// </summary>
-        Modified,
-
-        /// <summary>
-        /// Prevent updates, updated Asset bundle has been modified and reverted to previous details
-        /// </summary>
-        ModifiedUpdatePrevented,
-
-        /// <summary>
-        /// Asset bundle was not modified and data remains the same
-        /// </summary>
-        Unmodified
     }
 }

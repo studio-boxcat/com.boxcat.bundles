@@ -437,7 +437,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         public bool IsError
         {
-            get { return !AddressableAssetUtility.StringContains(displayName, "No issues found", StringComparison.Ordinal); }
+            get { return !displayName.Contains("No issues found", StringComparison.Ordinal); }
         }
 
         public AnalyzeResultsTreeViewItem(int id, int depth, string displayName, MessageType type)

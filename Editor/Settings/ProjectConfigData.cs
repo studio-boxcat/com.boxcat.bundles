@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using JetBrains.Annotations;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Settings
@@ -16,17 +17,18 @@ namespace UnityEditor.AddressableAssets.Settings
         [Serializable]
         class ConfigSaveData
         {
-            [FormerlySerializedAs("m_localLoadSpeed")]
+            // XXX: Unused but keeping for ConfigSaveData compatibility.
             [SerializeField]
             internal long localLoadSpeedInternal = 1024 * 1024 * 10;
 
-            [FormerlySerializedAs("m_hierarchicalSearch")]
+            // XXX: Unused but keeping for ConfigSaveData compatibility.
             [SerializeField]
-            internal bool hierarchicalSearchInternal = true;
+            internal bool hierarchicalSearchInternal = false;
 
             [SerializeField]
             internal int activePlayModeIndex = 0;
 
+            // XXX: Unused but keeping for ConfigSaveData compatibility.
             [SerializeField]
             internal bool showGroupsAsHierarchy = false;
 
@@ -37,7 +39,8 @@ namespace UnityEditor.AddressableAssets.Settings
             internal ReportFileFormat buildLayoutReportFileFormat = ReportFileFormat.JSON;
 
             [SerializeField]
-            internal List<string> buildReports = new List<string>();
+            internal List<string> buildReports = new();
+
 #if UNITY_2022_2_OR_NEWER
             [SerializeField]
             internal bool autoOpenAddressablesReport = true;
@@ -179,17 +182,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Removes the build report located at reportFilePath from the list of build reports shown in the Build Reports window
-        /// </summary>
-        /// <param name="reportFilePath"></param>
-        public static void RemoveBuildReportFilePath(string reportFilePath)
-        {
-            ValidateData();
-            s_Data.buildReports.Remove(reportFilePath);
-            SaveData();
-        }
-
-        /// <summary>
         /// Removes all build reports from the Build Reports window
         /// </summary>
         public static void ClearBuildReportFilePaths()
@@ -203,12 +195,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The active play mode data builder index.
         /// </summary>
-        public static int ActivePlayModeIndex
+        public static byte ActivePlayModeIndex
         {
             get
             {
                 ValidateData();
-                return s_Data.activePlayModeIndex;
+                return (byte) s_Data.activePlayModeIndex;
             }
             set
             {
@@ -218,99 +210,39 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        /// <summary>
-        /// The local bundle loading speed used in the Simulate Groups (advanced) playmode.
-        /// </summary>
-        public static long LocalLoadSpeed
-        {
-            get
-            {
-                ValidateData();
-                return s_Data.localLoadSpeedInternal;
-            }
-            set
-            {
-                ValidateData();
-                s_Data.localLoadSpeedInternal = value;
-                SaveData();
-            }
-        }
-
-        /// <summary>
-        /// Whether to allow searching for assets parsed hierarchally in the Addressables Groups window.
-        /// </summary>
-        public static bool HierarchicalSearch
-        {
-            get
-            {
-                ValidateData();
-                return s_Data.hierarchicalSearchInternal;
-            }
-            set
-            {
-                ValidateData();
-                s_Data.hierarchicalSearchInternal = value;
-                SaveData();
-            }
-        }
-
-        /// <summary>
-        /// Whether to display groups names parsed hierarchally in the Addressables Groups window.
-        /// </summary>
-        public static bool ShowGroupsAsHierarchy
-        {
-            get
-            {
-                ValidateData();
-                return s_Data.showGroupsAsHierarchy;
-            }
-            set
-            {
-                ValidateData();
-                s_Data.showGroupsAsHierarchy = value;
-                SaveData();
-            }
-        }
-
         static void ValidateData()
         {
+            if (s_Data != null) return;
+
+            var dataPath = Path.GetFullPath(".");
+            dataPath = dataPath.Replace("\\", "/");
+            dataPath += "/Library/AddressablesConfig.dat";
+
+            if (File.Exists(dataPath))
+            {
+                var bf = new BinaryFormatter();
+                try
+                {
+                    using var file = new FileStream(dataPath, FileMode.Open, FileAccess.Read);
+                    if (bf.Deserialize(file) is ConfigSaveData data)
+                        s_Data = data;
+                }
+                catch
+                {
+                    //if the current class doesn't match what's in the file, Deserialize will throw. since this data is non-critical, we just wipe it
+                    L.W("Error reading Addressable Asset project config (play mode, etc.). Resetting to default.");
+                    File.Delete(dataPath);
+                }
+            }
+
+            //check if some step failed.
             if (s_Data == null)
             {
-                var dataPath = Path.GetFullPath(".");
-                dataPath = dataPath.Replace("\\", "/");
-                dataPath += "/Library/AddressablesConfig.dat";
-
-                if (File.Exists(dataPath))
-                {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    try
-                    {
-                        using (FileStream file = new FileStream(dataPath, FileMode.Open, FileAccess.Read))
-                        {
-                            var data = bf.Deserialize(file) as ConfigSaveData;
-                            if (data != null)
-                            {
-                                s_Data = data;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        //if the current class doesn't match what's in the file, Deserialize will throw. since this data is non-critical, we just wipe it
-                        L.W("Error reading Addressable Asset project config (play mode, etc.). Resetting to default.");
-                        File.Delete(dataPath);
-                    }
-                }
-
-                //check if some step failed.
-                if (s_Data == null)
-                {
-                    s_Data = new ConfigSaveData();
-                }
-
-                if(s_Data.buildReports == null)
-                    s_Data.buildReports = new List<string>();
+                s_Data = new ConfigSaveData();
             }
+
+            if (s_Data.buildReports == null)
+                s_Data.buildReports = new List<string>();
         }
 
         static void SaveData()
@@ -322,9 +254,8 @@ namespace UnityEditor.AddressableAssets.Settings
             dataPath = dataPath.Replace("\\", "/");
             dataPath += "/Library/AddressablesConfig.dat";
 
-            BinaryFormatter bf = new BinaryFormatter();
-            FileStream file = File.Create(dataPath);
-
+            var bf = new BinaryFormatter();
+            var file = File.Create(dataPath);
             bf.Serialize(file, s_Data);
             file.Close();
         }

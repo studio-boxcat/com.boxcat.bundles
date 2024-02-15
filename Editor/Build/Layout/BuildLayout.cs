@@ -4,11 +4,53 @@ using System.IO;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Content;
 using UnityEngine;
-using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
+    [Serializable]
+    public struct AssetId : IEquatable<AssetId>
+    {
+        public string Value;
+        public bool IsPath;
+
+        public AssetId(AssetGUID guid)
+        {
+            Value = guid.Value;
+            IsPath = false;
+        }
+
+        public AssetId(GUID guid)
+        {
+            Value = guid.ToString();
+            IsPath = false;
+        }
+
+        public AssetId(string path)
+        {
+            Value = path;
+            IsPath = true;
+        }
+
+        public override string ToString() => Value;
+
+        public static implicit operator AssetId(AssetGUID guid) => new(guid);
+        public static implicit operator AssetId(GUID guid) => new(guid);
+        public static implicit operator AssetId(string path) => new(path);
+        public static explicit operator GUID(AssetId id)
+        {
+            Assert.IsTrue(id.IsPath);
+            return new GUID(id.Value);
+        }
+
+        public bool Equals(AssetId other) => Value == other.Value && IsPath == other.IsPath;
+        public override bool Equals(object obj) => obj is AssetId other && Equals(other);
+        public override int GetHashCode() => HashCode.Combine(Value, IsPath);
+
+        public static bool operator ==(AssetId x, AssetId y) => x.Equals(y);
+        public static bool operator !=(AssetId x, AssetId y) => !x.Equals(y);
+    }
+
     /// <summary>
     /// A storage class used to gather data about an Addressable build.
     /// </summary>
@@ -26,32 +68,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             internal BuildLayout m_BuildLayout;
 
             /// <summary>
-            /// Build Platform Addressables build is targeting
-            /// </summary>
-            public BuildTarget BuildTarget
-            {
-                get
-                {
-                    if (m_BuildLayout == null)
-                        return BuildTarget.NoTarget;
-                    return m_BuildLayout.BuildTarget;
-                }
-            }
-
-            /// <summary>
-            /// Hash of the build results
-            /// </summary>
-            public string BuildResultHash
-            {
-                get
-                {
-                    if (m_BuildLayout == null)
-                        return null;
-                    return m_BuildLayout.BuildResultHash;
-                }
-            }
-
-            /// <summary>
             /// DateTime at the start of building Addressables
             /// </summary>
             public DateTime BuildStart
@@ -61,19 +77,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                     if (m_BuildLayout == null)
                         return DateTime.MinValue;
                     return m_BuildLayout.BuildStart;
-                }
-            }
-
-            /// <summary>
-            /// Time in seconds taken to build Addressables Content
-            /// </summary>
-            public double Duration
-            {
-                get
-                {
-                    if (m_BuildLayout == null)
-                        return 0;
-                    return m_BuildLayout.Duration;
                 }
             }
 
@@ -112,11 +115,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Build Platform Addressables build is targeting
         /// </summary>
         public BuildTarget BuildTarget;
-
-        /// <summary>
-        /// Hash of the build results
-        /// </summary>
-        public string BuildResultHash;
 
         /// <summary>
         /// DateTime at the start of building Addressables
@@ -177,12 +175,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public string BuildScript;
 
         /// <summary>
-        /// Default group at the time of building
-        /// </summary>
-        [SerializeReference]
-        public Group DefaultGroup;
-
-        /// <summary>
         /// The Addressable Groups that reference this data
         /// </summary>
         [SerializeReference]
@@ -215,7 +207,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         private class BuildLayoutHeader
         {
             public BuildTarget BuildTarget;
-            public string BuildResultHash;
             public string BuildStartTime;
             public double Duration;
             public string BuildError;
@@ -267,7 +258,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 BuildLayoutHeader header = new BuildLayoutHeader()
                 {
                     BuildTarget = this.BuildTarget,
-                    BuildResultHash = this.BuildResultHash,
                     BuildStartTime = this.BuildStartTime,
                     Duration = this.Duration,
                     BuildError = this.BuildError
@@ -431,11 +421,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string SettingsHash;
 
             /// <summary>
-            /// Addressables setting value set for if the build created unique bundle ids
-            /// </summary>
-            public bool UniqueBundleIds;
-
-            /// <summary>
             /// Addressables setting value set for if the build used non recursive dependency calculation
             /// </summary>
             public bool NonRecursiveBuilding;
@@ -444,27 +429,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Addressables setting value set for if the build used contiguous bundle objects
             /// </summary>
             public bool ContiguousBundles;
-
-            /// <summary>
-            /// Addressables setting value set for disabling sub asset representation in the Bundle
-            /// </summary>
-            public bool DisableSubAssetRepresentations;
-
-            /// <summary>
-            /// Internal naming prefix of the built in shaders bundle
-            /// </summary>
-            public string ShaderBundleNaming;
-
-            /// <summary>
-            /// Internal naming prefix of the monoScript bundle,
-            /// No MonoScript bundle is built if set to disabled
-            /// </summary>
-            public string MonoScriptBundleNaming;
-
-            /// <summary>
-            /// Addressables setting value set for is the unity version was stripped from the built bundles
-            /// </summary>
-            public bool StripUnityVersionFromBundleBuild;
         }
 
         /// <summary>
@@ -508,11 +472,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string Name;
 
             /// <summary>
-            /// The Guid of the AddressableAssetGroup
-            /// </summary>
-            public string Guid;
-
-            /// <summary>
             /// The packing mode as defined by the BundledAssetGroupSchema on the AddressableAssetGroup
             /// </summary>
             public string PackingMode;
@@ -521,58 +480,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// A list of the AssetBundles associated with the Group
             /// </summary>
             [SerializeReference]
-            public List<Bundle> Bundles = new List<Bundle>();
-
-            /// <summary>
-            /// Data about the AddressableAssetGroupSchemas associated with the Group
-            /// </summary>
-            [SerializeReference]
-            public List<SchemaData> Schemas = new List<SchemaData>();
-        }
-
-        /// <summary>
-        /// Data container for AddressableAssetGroupSchemas
-        /// </summary>
-        [Serializable]
-        public class SchemaData : ISerializationCallbackReceiver
-        {
-            /// <summary>
-            /// The Guid of the AddressableAssetGroupSchema
-            /// </summary>
-            public string Guid;
-
-            /// <summary>
-            /// The class type of the AddressableAssetGroupSchema
-            /// </summary>
-            public string Type;
-
-            /// <summary>
-            /// These key-value-pairs include data about the AddressableAssetGroupSchema, such as PackingMode and Compression.
-            /// </summary>
-            public List<Tuple<string, string>> KvpDetails = new List<Tuple<string, string>>();
-
-            [SerializeField]
-            private StringPair[] SchemaDataPairs;
-
-            /// <summary>
-            /// Converts the unserializable KvpDetails to a serializable type for writing
-            /// </summary>
-            public void OnBeforeSerialize()
-            {
-                SchemaDataPairs = new StringPair[KvpDetails.Count];
-                for (int i = 0; i < SchemaDataPairs.Length; ++i)
-                    SchemaDataPairs[i] = new StringPair() {Key = KvpDetails[i].Item1, Value = KvpDetails[i].Item2};
-            }
-
-            /// <summary>
-            /// Writes data to KvpDetails after Deserializing to temporary data fields
-            /// </summary>
-            public void OnAfterDeserialize()
-            {
-                for (int i = 0; i < SchemaDataPairs.Length; ++i)
-                    KvpDetails.Add(new Tuple<string, string>(SchemaDataPairs[i].Key, SchemaDataPairs[i].Value));
-                SchemaDataPairs = null;
-            }
+            public List<Bundle> Bundles = new();
         }
 
         /// <summary>
@@ -584,12 +492,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// The name of the AssetBundle
             /// </summary>
-            public string Name;
+            public BundleKey Key;
 
-            /// <summary>
-            /// Name used to identify the asset bundle
-            /// </summary>
-            public string InternalName;
+            public string Name => Key.ToString();
 
             /// <summary>
             /// The file size of the AssetBundle on disk, in bytes
@@ -747,25 +652,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
 
             /// <summary>
-            /// The Compression method used for the AssetBundle.
-            /// </summary>
-            public string Compression;
-
-            /// <summary>
             /// A reference to the Group data that this AssetBundle was generated from
             /// </summary>
             [SerializeReference]
             public Group Group;
 
-            /// <summary>
-            /// Path Provider uses to load the Asset Bundle
-            /// </summary>
-            public string LoadPath;
-
-            /// <summary>
-            /// Result provided by the Provider loading the Asset Bundle
-            /// </summary>
-            public string ResultType;
+            public string LoadPath => Key.GetBuildName();
 
             /// <summary>
             /// List of the Files referenced by the AssetBundle
@@ -953,22 +845,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// The Asset Guid.
             /// </summary>
-            public string Guid;
+            public AssetId Guid;
 
             /// <summary>
             /// The Asset path on disk
             /// </summary>
             public string AssetPath;
-
-            /// <summary>
-            /// Name used to identify the asset within the asset bundle containing it
-            /// </summary>
-            public string InternalId;
-
-            /// <summary>
-            /// Hash of the asset content
-            /// </summary>
-            public Hash128 AssetHash;
 
             /// <summary>
             /// Objects that consist of the overall asset
@@ -984,11 +866,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// True if is a scene asset, else false
             /// </summary>
             public bool IsScene => AssetPath.EndsWith(".unity", StringComparison.Ordinal);
-
-            /// <summary>
-            /// Guid of the Addressable group this Asset entry was built using.
-            /// </summary>
-            public string GroupGuid;
 
             /// <summary>
             /// The Addressable address defined in the Addressable Group window for an Asset.
@@ -1051,7 +928,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// The Guid of the Asset
             /// </summary>
-            public string AssetGuid;
+            public AssetId AssetGuid;
 
             /// <summary>
             /// The Asset path on disk
@@ -1110,7 +987,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// The Guid of the Asset with duplicates
             /// </summary>
-            public string AssetGuid;
+            public AssetId AssetGuid;
             /// <summary>
             /// A list of duplicated objects and the bundles that contain them.
             /// </summary>
@@ -1142,46 +1019,39 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// <summary>
         /// The default AssetBundle name to the Bundle data map.
         /// </summary>
-        public Dictionary<string, BuildLayout.Bundle> Bundles = new Dictionary<string, BuildLayout.Bundle>();
+        public Dictionary<BundleKey, BuildLayout.Bundle> Bundles = new();
 
         /// <summary>
         /// File name to File data map.
         /// </summary>
-        public Dictionary<string, BuildLayout.File> Files = new Dictionary<string, BuildLayout.File>();
+        public Dictionary<string, BuildLayout.File> Files = new();
 
-        internal Dictionary<BuildLayout.File, FileObjectData> FileToFileObjectData = new Dictionary<BuildLayout.File, FileObjectData>();
+        internal Dictionary<BuildLayout.File, FileObjectData> FileToFileObjectData = new();
 
         /// <summary>
         /// Guid to ExplicitAsset data map.
         /// </summary>
-        public Dictionary<string, BuildLayout.ExplicitAsset> GuidToExplicitAsset = new Dictionary<string, BuildLayout.ExplicitAsset>();
+        public Dictionary<AssetId, BuildLayout.ExplicitAsset> GuidToExplicitAsset = new();
 
         /// <summary>
         /// Group name to Group data map.
         /// </summary>
-        public Dictionary<string, BuildLayout.Group> GroupLookup = new Dictionary<string, BuildLayout.Group>();
-
-        /// <summary>
-        /// The remapped AssetBundle name to the Bundle data map
-        /// </summary>
-        internal Dictionary<string, BuildLayout.Bundle> FilenameToBundle = new Dictionary<string, BuildLayout.Bundle>();
+        public Dictionary<BundleKey, BuildLayout.Group> GroupLookup = new();
 
 
         /// Maps used for lookups while building the BuildLayout
-        internal Dictionary<string, List<BuildLayout.DataFromOtherAsset>> UsedImplicits = new Dictionary<string, List<BuildLayout.DataFromOtherAsset>>();
+        internal Dictionary<AssetId, List<BuildLayout.DataFromOtherAsset>> UsedImplicits = new();
 
-        internal Dictionary<string, ContentCatalogDataEntry> BundleNameToCatalogEntry = new Dictionary<string, ContentCatalogDataEntry>();
-
-        internal Dictionary<string, AddressableAssetEntry> GuidToEntry = new Dictionary<string, AddressableAssetEntry>();
-        internal Dictionary<string, AssetType> AssetPathToTypeMap = new Dictionary<string, AssetType>();
+        internal Dictionary<AssetId, AddressableAssetEntry> GuidToEntry = new();
+        internal Dictionary<string, AssetType> AssetPathToTypeMap = new();
     }
 
     internal class FileObjectData
     {
         // id's for internal explicit asset and implicit asset
-        public Dictionary<ObjectIdentifier, (int, int)> InternalObjectIds = new Dictionary<ObjectIdentifier, (int, int)>();
+        public Dictionary<ObjectIdentifier, (int, int)> InternalObjectIds = new();
 
-        public Dictionary<BuildLayout.ObjectData, ObjectIdentifier> Objects = new Dictionary<BuildLayout.ObjectData, ObjectIdentifier>();
+        public Dictionary<BuildLayout.ObjectData, ObjectIdentifier> Objects = new();
 
         public void Add(ObjectIdentifier buildObjectIdentifier, BuildLayout.ObjectData layoutObject, int assetId, int objectIndex)
         {

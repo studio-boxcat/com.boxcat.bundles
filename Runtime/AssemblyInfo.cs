@@ -5,7 +5,4 @@ using System.Runtime.CompilerServices;
 
 #if UNITY_EDITOR
 [assembly: InternalsVisibleTo("Unity.Addressables.Editor")]
-[assembly: InternalsVisibleTo("Unity.Addressables.Editor.Tests")]
 #endif
-[assembly: InternalsVisibleTo("Unity.Addressables.Tests")]
-[assembly: InternalsVisibleTo("Unity.Addressables.Samples.Tests")]

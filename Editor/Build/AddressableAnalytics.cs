@@ -5,11 +5,8 @@ using System.Reflection;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Utilities;
-using UnityEngine;
 using UnityEngine.Analytics;
-using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEditor.AddressableAssets
 {
@@ -33,9 +30,6 @@ namespace UnityEditor.AddressableAssets
             public int NumberOfAddressableAssets;
             public int NumberOfAssetBundles;
             public int NumberOfGroups;
-            public int NumberOfGroupsUsingLZ4;
-            public int NumberOfGroupsUsingLZMA;
-            public int NumberOfGroupsUncompressed;
             public int NumberOfGroupsPackedTogether;
             public int NumberOfGroupsPackedSeparately;
             public int MaxNumberOfAddressableAssetsInAGroup;
@@ -82,9 +76,6 @@ namespace UnityEditor.AddressableAssets
             RunCheckBundleDupeDependenciesRule = 6,
             RunCheckResourcesDupeDependenciesRule = 7,
             RunCheckSceneDupeDependenciesRule = 8,
-            ContentUpdateCancelled = 10,
-            ContentUpdateHasChangesInUpdateRestrictionWindow = 11,
-            ContentUpdateContinuesWithoutChanges = 12,
             RunContentUpdateBuild = 13,
             CannotLocateBinFile = 14,
             BuildFailedDueToModifiedStaticEntries = 15,
@@ -202,10 +193,6 @@ namespace UnityEditor.AddressableAssets
             BuildScriptType buildScriptType = DetermineBuildScriptType(currentSettings.ActivePlayerDataBuilder);
             int numberOfAddressableAssets = 0;
 
-            int numberOfGroupsUncompressed = 0;
-            int numberOfGroupsUsingLZMA = 0;
-            int numberOfGroupsUsingLZ4 = 0;
-
             int numberOfGroupsPackedSeparately = 0;
             int numberOfGroupsPackedTogether = 0;
 
@@ -220,32 +207,14 @@ namespace UnityEditor.AddressableAssets
 
                 numberOfAddressableAssets += group.entries.Count;
 
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema == null)
-                    continue;
-
-                var bundleMode = schema.BundleMode;
-                var compressionType = schema.Compression;
-
-                switch (compressionType)
-                {
-                    case BundledAssetGroupSchema.BundleCompressionMode.Uncompressed:
-                        numberOfGroupsUncompressed += 1;
-                        break;
-                    case BundledAssetGroupSchema.BundleCompressionMode.LZ4:
-                        numberOfGroupsUsingLZ4 += 1;
-                        break;
-                    case BundledAssetGroupSchema.BundleCompressionMode.LZMA:
-                        numberOfGroupsUsingLZMA += 1;
-                        break;
-                }
+                var bundleMode = group.BundleMode;
 
                 switch (bundleMode)
                 {
-                    case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
+                    case BundlePackingMode.PackSeparately:
                         numberOfGroupsPackedSeparately += 1;
                         break;
-                    case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
+                    case BundlePackingMode.PackTogether:
                         numberOfGroupsPackedTogether += 1;
                         break;
                 }
@@ -273,9 +242,6 @@ namespace UnityEditor.AddressableAssets
                 MaxNumberOfAddressableAssetsInAGroup = maxNumberOfAssetsInAGroup,
                 NumberOfGroups = currentSettings.groups.Count,
                 TotalBuildTime = totalBuildDurationSeconds,
-                NumberOfGroupsUsingLZ4 = numberOfGroupsUsingLZ4,
-                NumberOfGroupsUsingLZMA = numberOfGroupsUsingLZMA,
-                NumberOfGroupsUncompressed = numberOfGroupsUncompressed,
                 NumberOfGroupsPackedTogether = numberOfGroupsPackedTogether,
                 NumberOfGroupsPackedSeparately = numberOfGroupsPackedSeparately,
                 BuildTarget = (int)EditorUserBuildSettings.activeBuildTarget,
