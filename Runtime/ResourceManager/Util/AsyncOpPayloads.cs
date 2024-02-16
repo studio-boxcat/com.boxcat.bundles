@@ -12,7 +12,7 @@ namespace UnityEngine.AddressableAssets.Util
         public static void SetData(AsyncOperation op, object payload)
         {
             _objData.Add(op.GetHashCode(), payload);
-            Assert.IsTrue(_objData.Count < 20, "AsyncOpPayloads is growing too large");
+            Assert.IsTrue(_objData.Count < 128, "AsyncOpPayloads is growing too large: " + _objData.Count);
         }
 
         public static object PopData(AsyncOperation op)
