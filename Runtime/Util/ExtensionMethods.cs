@@ -22,7 +22,7 @@ namespace UnityEngine.AddressableAssets.Util
         public static void WaitForComplete(this AsyncOperation op)
         {
 #if DEBUG
-            var timeout = DateTime.Now.AddSeconds(2);
+            var timeout = DateTime.Now.AddSeconds(1);
             while (op.isDone is false)
             {
                 if (DateTime.Now > timeout)

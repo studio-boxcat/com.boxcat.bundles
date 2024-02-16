@@ -36,7 +36,7 @@ namespace UnityEngine.AddressableAssets
 
         static string _buildPath;
         public static string BuildPath => _buildPath ??=
-            $"{LibraryPath}{RuntimeStreamingAssetsSubFolder}/{UnityEditor.EditorUserBuildSettings.activeBuildTarget}";
+            $"{LibraryPath}{UnityEditor.EditorUserBuildSettings.activeBuildTarget}";
 
         public static string BuildPath_BundleRoot => BuildPath + "/AssetBundles";
         public static string BuildPath_CatalogBin => BuildPath + "/AssetBundles/catalog.bin";
