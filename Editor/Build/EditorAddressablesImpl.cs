@@ -3,6 +3,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.AsyncOperations;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
@@ -105,7 +106,10 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     if (g == null) continue;
                     foreach (var e in g.entries)
-                        _addressToEntry.Add(e.address, e);
+                    {
+                        var added = _addressToEntry.TryAdd(e.address, e);
+                        if (added is false) L.E(e.MainAsset, "Address already exists: " + e.address);
+                    }
                 }
             }
         }

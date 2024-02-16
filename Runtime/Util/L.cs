@@ -46,6 +46,11 @@ namespace UnityEngine.AddressableAssets.Util
             Debug.LogErrorFormat(format, args);
         }
 
+        public static void E(Object context, string msg)
+        {
+            Debug.LogError(msg, context);
+        }
+
         public static void Exception(Exception ex)
         {
             Debug.LogException(ex);
