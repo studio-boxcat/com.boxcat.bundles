@@ -32,34 +32,37 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
                 .ContinueWith(_ => LoadImmediate());
         }
 
-        public bool IsDone => _result is not null || _loadTime >= DateTime.Now;
+        public override string ToString() => $"EditorAssetOp:{_path} ({(_result != default ? "Loaded" : "Loading")})";
 
-        public TObject Result
+        public bool TryGetResult(out TObject result)
         {
-            get
+            if (_result is not null)
             {
-                if (_result is not null)
-                    return _result;
+                result = _result;
+                return true;
+            }
+
+            // Even if _result is null, we still want to return true if the load time has passed.
+            if (_loadTime >= DateTime.Now)
+            {
                 LoadImmediate();
                 Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
-                return _result;
+                result = _result;
+                return true;
             }
+
+            result = null;
+            return false;
         }
 
-        public void AddOnComplete(Action<TObject> onComplete)
+        public TObject WaitForCompletion()
         {
-            if (IsDone)
-            {
-                Assert.IsNotNull(Result, $"Failed to load asset at path: {_path}");
-                onComplete.SafeInvoke(Result);
-                return;
-            }
-
-            _onComplete += onComplete;
+            if (_result is not null)
+                return _result;
+            LoadImmediate();
+            Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
+            return _result;
         }
-
-        public void AddOnComplete(Action<TObject, object> onComplete, object payload)
-            => AddOnComplete(obj => onComplete(obj, payload));
 
         void LoadImmediate()
         {
@@ -74,17 +77,30 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             onComplete?.Invoke(_result);
         }
 
+        public void AddOnComplete(Action<TObject> onComplete)
+        {
+            if (TryGetResult(out var result))
+            {
+                Assert.IsNotNull(result, $"Failed to load asset at path: {_path}");
+                onComplete.SafeInvoke(result);
+                return;
+            }
+
+            _onComplete += onComplete;
+        }
+
+        public void AddOnComplete(Action<TObject, object> onComplete, object payload)
+            => AddOnComplete(obj => onComplete(obj, payload));
+
+        public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object> onComplete, object payload)
+            => AddOnComplete(obj => onComplete(this, obj, payload));
+
         static float GetDelay()
         {
             var noDelay = Random.value < 0.05f; // 5% chance of no delay.
             if (noDelay) return 0f;
             var loadDelay = Random.Range(0, 0.3f); // 0s - 0.3s delay.
             return loadDelay;
-        }
-
-        public string GetDebugName()
-        {
-            return $"EditorAssetOp:{_path} ({(IsDone ? "Loaded" : "Loading")})";
         }
     }
 }

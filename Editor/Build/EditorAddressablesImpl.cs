@@ -50,6 +50,11 @@ namespace UnityEditor.AddressableAssets.Settings
             return new EditorAssetOp<TObject>(_pathMap[address]);
         }
 
+        public TObject LoadAsset<TObject>(string address) where TObject : Object
+        {
+            return AssetDatabase.LoadAssetAtPath<TObject>(_pathMap[address]);
+        }
+
         public IAssetOp<Scene> LoadSceneAsync(string address)
         {
             RebuildInternalData();

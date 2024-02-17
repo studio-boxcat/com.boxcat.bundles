@@ -22,7 +22,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             _callbacks.Add((callback, payload));
         }
 
-        public void Invoke<TResult>(TResult result)
+        public void Invoke<TResult>(IAssetOp<TResult> op, TResult result)
         {
             Assert.IsNotNull(_callbacks);
 
@@ -37,6 +37,9 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
                             break;
                         case Action<TResult, object> actionWithPayload:
                             actionWithPayload(result, payload);
+                            break;
+                        case Action<IAssetOp<TResult>, TResult, object> actionWithOp:
+                            actionWithOp(op, result, payload);
                             break;
                         default:
                             L.W($"Unknown callback type: {callback.GetType()}");

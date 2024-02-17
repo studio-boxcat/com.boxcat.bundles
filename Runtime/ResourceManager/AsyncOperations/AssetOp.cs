@@ -63,84 +63,66 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             // Possible to be resolved while StartResolve() is called.
             // In this case, callbackRegistered will be false, so we can call OnDepLoaded immediately.
             var deps = _b.Catalog.GetDependencies(bundleId);
-            var callbackRegistered = _b.Loader.StartResolve(bundleId, deps, this, _onDepLoaded);
+            var callbackRegistered = _b.Loader.ResolveAsync(bundleId, deps, this, _onDepLoaded);
             if (callbackRegistered is false)
                 OnDepLoaded(_b.Loader.GetResolvedBundle(bundleId));
         }
 
-        public bool IsDone
+        public override string ToString()
         {
-            get
+            if (_b is null) return "AssetOp:" + _result + " (Loaded)";
+            return "AssetOp:" + _b.Address.ReadableString() + " (Loading)";
+        }
+
+        public bool TryGetResult(out TResult result)
+        {
+            // If result is already loaded, return true.
+            if (_b is null)
             {
-                // If result is already loaded, return true.
-                if (_b is null)
-                {
-                    Assert.IsNull(_op, "Operation should be null when result is set");
-                    return true;
-                }
-
-                // If dep is not loaded, _op will be null.
-                if (_op is null || _op.isDone is false)
-                    return false;
-
-                // If OnComplete is not yet called but operation is done, call it.
-                ForceOnComplete(_op);
-                Assert.IsNull(_op, "Operation should be null after completion");
-                Assert.IsNull(_b, "Block should be null after completion");
+                Assert.IsNull(_op, "Operation should be null when result is set");
+                Assert.AreNotEqual(default, _result, "Result should not be null when result is set");
+                result = default;
                 return true;
             }
+
+            // If dep is not loaded, _op will be null.
+            if (_op is null || _op.isDone is false)
+            {
+                Assert.AreEqual(default, _result, "Result should be null when operation is not done");
+                result = default;
+                return false;
+            }
+
+            // If OnComplete is not yet called but operation is done, call it.
+            CompleteManually();
+            Assert.IsNull(_op, "Operation should be null after completion");
+            Assert.IsNull(_b, "Block should be null after completion");
+            Assert.AreNotEqual(default, _result, "Result should not be null after completion");
+            result = _result;
+            return true;
         }
 
-        public TResult Result
+        public TResult WaitForCompletion()
         {
-            get
-            {
-                // If result is already loaded, return it.
-                if (_b is null)
-                    return _result;
-
-                // If dep is not loaded, _op will be null.
-                // In this case, load dependencies immediately.
-                if (_op is null)
-                {
-                    _b.Loader.CompleteResolveImmediate(_b.Bundle);
-                    Assert.IsNotNull(_op, "OnDepLoaded() should have been called after dependencies are loaded");
-                }
-
-                // Wait for operation to be done.
-                _op.WaitForComplete();
-
-                // Manually call OnComplete
-                ForceOnComplete(_op);
-                Assert.IsNull(_op, "Operation should be null after completion");
-                Assert.IsNull(_b, "Block should be null after completion");
-
+            // If result is already loaded, return it.
+            if (_b is null)
                 return _result;
-            }
-        }
 
-        public void AddOnComplete(Action<TResult> onComplete)
-        {
-            if (_b is null)
+            // If dep is not loaded yet, _op will be null.
+            // In this case, load dependencies immediately.
+            if (_op is null)
             {
-                Assert.IsNull(_op, "Operation should be null when result is set");
-                onComplete.SafeInvoke(_result);
-                return;
+                _b.Loader.CompleteResolveImmediate(_b.Bundle);
+                Assert.IsNotNull(_op, "OnDepLoaded() should have been called after dependencies are loaded");
             }
 
-            _b.OnComplete.Add(onComplete, null);
-        }
+            // Immediately complete the operation.
+            _b.Provider.GetResult(_op); // accessing asset before isDone is true will stall the loading process.
+            Assert.IsNull(_op, "Operation should be null after completion");
+            Assert.IsNull(_b, "Block should be null after completion");
+            Assert.AreNotEqual(default, "Result should not be null after completion");
 
-        public void AddOnComplete(Action<TResult, object> onComplete, object payload)
-        {
-            if (_b is null)
-            {
-                Assert.IsNull(_op, "Operation should be null when result is set");
-                onComplete(_result, payload);
-                return;
-            }
-
-            _b.OnComplete.Add(onComplete, payload);
+            return _result;
         }
 
         static readonly Action<AssetBundle, object> _onDepLoaded = static (bundle, thiz) => ((AssetOp<TResult>) thiz).OnDepLoaded(bundle);
@@ -150,7 +132,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             Assert.IsNull(_op, "Operation should be null before execution");
             Assert.IsNotNull(_b, "Block should not be null before execution");
 
-            _op = _b.Provider.Execute(bundle, _b.Address);
+            _op = _b.Provider.LoadAsync(bundle, _b.Address);
 
             if (_op.isDone)
             {
@@ -170,14 +152,6 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             ((AssetOp<TResult>) thiz).OnComplete(op);
         };
 
-        void ForceOnComplete(AsyncOperation req)
-        {
-            var payload = AsyncOpPayloads.PopData(req);
-            Assert.AreEqual(this, payload, $"Payload mismatch: payload={payload?.GetType()}, this={GetType()}");
-            req.completed -= _onComplete; // Prevent double call
-            OnComplete(req);
-        }
-
         void OnComplete(AsyncOperation req)
         {
             Assert.IsNotNull(_op, "OnComplete is called twice");
@@ -190,16 +164,57 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             _op = null;
 
             _result = (TResult) b.Provider.GetResult(op);
-            b.OnComplete.Invoke(_result);
+            b.OnComplete.Invoke(this, _result);
             b.Return();
         }
 
-#if DEBUG
-        public string GetDebugName()
+        void CompleteManually()
         {
-            if (_b is null) return "AssetOp:" + _result + " (Loaded)";
-            return "AssetOp:" + _b.Address.ReadableString() + " (Loading)";
+            Assert.IsNotNull(_op, "Operation should not be null");
+            Assert.IsFalse(_op.isDone, "Operation should not be done");
+
+            // Remove payload and call OnComplete to prevent double call.
+            var payload = AsyncOpPayloads.PopData(_op);
+            Assert.AreEqual(this, payload, $"Payload mismatch: payload={payload?.GetType()}, this={GetType()}");
+            _op.completed -= _onComplete;
+
+            OnComplete(_op);
         }
-#endif
+
+        public void AddOnComplete(Action<TResult> onComplete)
+        {
+            if (_b is null)
+            {
+                Assert.IsNull(_op, "Operation should be null when result is set");
+                onComplete(_result);
+                return;
+            }
+
+            _b.OnComplete.Add(onComplete, null);
+        }
+
+        public void AddOnComplete(Action<TResult, object> onComplete, object payload)
+        {
+            if (_b is null)
+            {
+                Assert.IsNull(_op, "Operation should be null when result is set");
+                onComplete(_result, payload);
+                return;
+            }
+
+            _b.OnComplete.Add(onComplete, payload);
+        }
+
+        public void AddOnComplete(Action<IAssetOp<TResult>, TResult, object> onComplete, object payload)
+        {
+            if (_b is null)
+            {
+                Assert.IsNull(_op, "Operation should be null when result is set");
+                onComplete(this, _result, payload);
+                return;
+            }
+
+            _b.OnComplete.Add(onComplete, payload);
+        }
     }
 }

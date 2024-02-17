@@ -25,42 +25,38 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             AsyncOpPayloads.SetScene(_op, scene);
         }
 
-        public bool IsDone
+        public override string ToString() => "EditorSceneOp:" + (_op?.ToString() ?? _scene.name);
+
+        public bool TryGetResult(out Scene result)
         {
-            get
+            if (_op is not null)
             {
-                if (_op is not null)
+                if (_op.isDone)
                 {
-                    if (_op.isDone)
-                    {
-                        OnComplete(_op);
-                        Assert.IsTrue(_scene.IsValid(), "Scene is not valid");
-                    }
-                }
-
-                if (_scene.IsValid() is false)
-                    return false;
-
-                Assert.IsTrue(_scene.isLoaded, "Scene is not loaded");
-                return true;
-            }
-        }
-
-        public Scene Result
-        {
-            get
-            {
-                if (_op is not null)
-                {
-                    _op.WaitForComplete();
                     OnComplete(_op);
                     Assert.IsTrue(_scene.IsValid(), "Scene is not valid");
                 }
-
-                Assert.IsTrue(_scene.IsValid(), "Scene is not valid");
-                Assert.IsTrue(_scene.isLoaded, "Scene is not loaded");
-                return _scene;
             }
+
+            if (_scene.IsValid() is false)
+            {
+                result = default;
+                return false;
+            }
+
+            Assert.IsTrue(_scene.isLoaded, "Scene is not loaded");
+            result = _scene;
+            return true;
+        }
+
+        public Scene WaitForCompletion()
+        {
+            if (_op is not null)
+                throw new NotSupportedException("Sync operation is not supported");
+
+            Assert.IsTrue(_scene.IsValid(), "Scene is not valid");
+            Assert.IsTrue(_scene.isLoaded, "Scene is not loaded");
+            return _scene;
         }
 
         void OnComplete(AsyncOperation asyncOperation)
@@ -100,10 +96,8 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
         public void AddOnComplete(Action<Scene, object> onComplete, object payload)
             => AddOnComplete(obj => onComplete(obj, payload));
 
-        public string GetDebugName()
-        {
-            return "EditorSceneOp:" + (_op?.ToString() ?? _scene.name);
-        }
+        public void AddOnComplete(Action<IAssetOp<Scene>, Scene, object> onComplete, object payload)
+            => AddOnComplete(obj => onComplete(this, obj, payload));
     }
 }
 #endif

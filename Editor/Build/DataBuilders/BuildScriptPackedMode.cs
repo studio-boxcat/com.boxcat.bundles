@@ -68,7 +68,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var aaSettings = builderInput.AddressableSettings;
 
             m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
-            m_Linker.AddAssemblies(typeof(Addressables).Assembly, typeof(ResourceManager).Assembly);
 
             return new AddressableAssetsBuildContext
             {
@@ -145,7 +144,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 {
                     using (m_Log.ScopedStep(LogLevel.Info, bundleKey.ToString()))
                     {
-                        var targetPath = CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].GetFileName());
+                        var targetPath = CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].Name());
                         addrResult?.AssetBundleBuildResults.Add(
                             new AddressablesPlayerBuildResult.BundleBuildResult(bundleKey, targetPath));
                     }

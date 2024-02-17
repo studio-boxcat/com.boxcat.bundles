@@ -36,6 +36,12 @@ namespace UnityEngine.AddressableAssets
             return op;
         }
 
+        public static TObject LoadAsset<TObject>(string key) where TObject : Object
+        {
+            L.I($"[Addressables] Load: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            return _impl.LoadAsset<TObject>(key);
+        }
+
         public static IAssetOp<Scene> LoadSceneAsync(string key)
         {
             L.I($"[Addressables] Load Start: {key} ~ {_impl.GetType().Name})");

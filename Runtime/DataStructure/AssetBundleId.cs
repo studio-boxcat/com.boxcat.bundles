@@ -22,7 +22,7 @@ namespace UnityEngine.AddressableAssets
             sb[startIndex + 1] = Hex.Char((byte) id & 0xF);
         }
 
-        public static string GetFileName(this AssetBundleId id)
+        public static string Name(this AssetBundleId id)
         {
             return Hex.To2((byte) id);
         }

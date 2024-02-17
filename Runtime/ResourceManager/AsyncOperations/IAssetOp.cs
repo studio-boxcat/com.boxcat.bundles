@@ -4,14 +4,10 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
 {
     public interface IAssetOp<TResult>
     {
-        bool IsDone { get; }
-        TResult Result { get; }
+        bool TryGetResult(out TResult result);
+        TResult WaitForCompletion();
         void AddOnComplete(Action<TResult> onComplete);
         void AddOnComplete(Action<TResult, object> onComplete, object payload);
-        TResult WaitForCompletion() => Result;
-
-#if DEBUG
-        string GetDebugName();
-#endif
+        void AddOnComplete(Action<IAssetOp<TResult>, TResult, object> onComplete, object payload);
     }
 }

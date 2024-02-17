@@ -8,7 +8,7 @@ namespace UnityEngine.AddressableAssets
     /// <summary>
     /// Entry point for ResourceManager API
     /// </summary>
-    public class ResourceManager
+    public class AddressablesImpl : IAddressablesImpl
     {
         readonly ResourceCatalog _catalog;
         readonly AssetBundleLoader _loader;
@@ -17,20 +17,29 @@ namespace UnityEngine.AddressableAssets
         readonly List<AssetOpBlock> _opBlockPool = new();
 
 
-        public ResourceManager(ResourceCatalog catalog)
+        public AddressablesImpl(ResourceCatalog catalog)
         {
             _catalog = catalog;
             _loader = new AssetBundleLoader(catalog.GetBundleCount());
         }
 
-        public IAssetOp<TObject> LoadAsset<TObject>(string address) where TObject : Object
+        public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object
         {
             var b = GetOpBlock();
             InitOpBlock(b, address, _bundledAssetProvider);
             return new AssetOp<TObject>(b);
         }
 
-        public IAssetOp<Scene> LoadScene(string address)
+        public TObject LoadAsset<TObject>(string address) where TObject : Object
+        {
+            var addressHash = AddressUtils.Hash(address);
+            var bundleId = _catalog.GetContainingBundle(addressHash);
+            if (_loader.TryGetResolvedBundle(bundleId, out var bundle) is false)
+                bundle = _loader.ResolveImmediate(bundleId, _catalog.GetDependencies(bundleId));
+            return bundle.LoadAsset<TObject>(addressHash.Name());
+        }
+
+        public IAssetOp<Scene> LoadSceneAsync(string address)
         {
             var b = GetOpBlock();
             InitOpBlock(b, address, _sceneProvider);
