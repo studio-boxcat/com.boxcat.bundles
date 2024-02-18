@@ -28,18 +28,12 @@ namespace UnityEditor.AddressableAssets.GUI
             Path,
         }
 
-        ColumnId[] m_SortOptions =
-        {
-            ColumnId.Id,
-            ColumnId.Type,
-            ColumnId.Path,
-        };
-
         public AddressableAssetEntryTreeView(TreeViewState state, MultiColumnHeaderState mchs, AddressableAssetsSettingsGroupEditor ed) : base(state, new MultiColumnHeader(mchs))
         {
             showBorder = true;
             m_Editor = ed;
             columnIndexForTreeFoldouts = 0;
+            multiColumnHeader.canSort = false;
             multiColumnHeader.sortingChanged += OnSortingChanged;
 
             BuiltinSceneCache.sceneListChanged += OnScenesChanged;
@@ -153,19 +147,9 @@ namespace UnityEditor.AddressableAssets.GUI
             return base.BuildRows(root);
         }
 
-        internal IList<TreeViewItem> Search(string search)
+        internal void Search(string search)
         {
-            if (false)
-            {
-                customSearchString = search;
-                Reload();
-            }
-            else
-            {
-                searchString = search;
-            }
-
-            return GetRows();
+            searchString = search;
         }
 
         protected IList<TreeViewItem> Search(IList<TreeViewItem> rows)
@@ -174,15 +158,10 @@ namespace UnityEditor.AddressableAssets.GUI
                 return new List<TreeViewItem>();
 
             m_SearchedEntries.Clear();
-            List<TreeViewItem> items = new List<TreeViewItem>(rows.Count);
-            foreach (TreeViewItem item in rows)
+            var items = new List<TreeViewItem>(rows.Count);
+            foreach (var item in rows)
             {
-                if (false)
-                {
-                    if (SearchHierarchical(item, customSearchString))
-                        items.Add(item);
-                }
-                else if (DoesItemMatchSearch(item, searchString))
+                if (DoesItemMatchSearch(item, searchString))
                     items.Add(item);
             }
 
@@ -202,8 +181,8 @@ namespace UnityEditor.AddressableAssets.GUI
             if (aeItem == null || search == null)
                 return false;
 
-            if (m_SearchedEntries.ContainsKey(aeItem))
-                return m_SearchedEntries[aeItem];
+            if (m_SearchedEntries.TryGetValue(aeItem, out var hierarchical))
+                return hierarchical;
 
             if (ancestorMatching == null)
                 ancestorMatching = DoesAncestorMatch(aeItem, search);
@@ -244,17 +223,11 @@ namespace UnityEditor.AddressableAssets.GUI
             return isMatching;
         }
 
-        internal void ClearSearch()
-        {
-            customSearchString = string.Empty;
-            searchString = string.Empty;
-            m_SearchedEntries.Clear();
-        }
-
         void SortChildren(TreeViewItem root)
         {
             if (!root.hasChildren)
                 return;
+
             foreach (var child in root.children)
             {
                 if (child != null && IsExpanded(child.id))
@@ -267,12 +240,8 @@ namespace UnityEditor.AddressableAssets.GUI
             if (children == null)
                 return;
 
-            var sortedColumns = multiColumnHeader.state.sortedColumns;
-            if (sortedColumns.Length == 0)
-                return;
-
-            List<AssetEntryTreeViewItem> kids = new List<AssetEntryTreeViewItem>();
-            List<TreeViewItem> copy = new List<TreeViewItem>(children);
+            var kids = new List<AssetEntryTreeViewItem>();
+            var copy = new List<TreeViewItem>(children);
             children.Clear();
             foreach (var c in copy)
             {
@@ -282,25 +251,20 @@ namespace UnityEditor.AddressableAssets.GUI
                     children.Add(c);
             }
 
-            ColumnId col = m_SortOptions[sortedColumns[0]];
-            bool ascending = multiColumnHeader.IsSortedAscending(sortedColumns[0]);
-
-            IEnumerable<AssetEntryTreeViewItem> orderedKids = kids;
-            switch (col)
+            kids.Sort((x, y) =>
             {
-                case ColumnId.Type:
-                    break;
-                case ColumnId.Path:
-                    orderedKids = kids.Order(l => l.entry.AssetPath, ascending);
-                    break;
-                default:
-                    orderedKids = kids.Order(l => l.displayName, ascending);
-                    break;
-            }
-
-            foreach (var o in orderedKids)
-                children.Add(o);
-
+                var a = x.entry;
+                var b = y.entry;
+                // any empty address should be at the end
+                if (string.IsNullOrEmpty(a.address) && !string.IsNullOrEmpty(b.address))
+                    return 1;
+                if (string.IsNullOrEmpty(b.address) && !string.IsNullOrEmpty(a.address))
+                    return -1;
+                // Then sort by asset path
+                return string.Compare(a.AssetPath, b.AssetPath, StringComparison.Ordinal);
+            });
+            foreach (var kid in kids)
+                children.Add(kid);
 
             foreach (var child in children)
             {
@@ -404,15 +368,10 @@ namespace UnityEditor.AddressableAssets.GUI
 
         protected override void RowGUI(RowGUIArgs args)
         {
-            if (m_LabelStyle == null)
-            {
-                m_LabelStyle = new GUIStyle("PR Label");
-                if (m_LabelStyle == null)
-                    m_LabelStyle = UnityEngine.GUI.skin.GetStyle("Label");
-            }
+            m_LabelStyle ??= new GUIStyle("PR Label");
 
-            var item = args.item as AssetEntryTreeViewItem;
-            if (item == null || item.group == null && item.entry == null)
+            if (args.item is not AssetEntryTreeViewItem item
+                || item.group == null && item.entry == null)
             {
                 using (new EditorGUI.DisabledScope(true))
                     base.RowGUI(args);
@@ -450,7 +409,6 @@ namespace UnityEditor.AddressableAssets.GUI
                             path = "Missing File";
                         m_LabelStyle.Draw(cellRect, path, false, false, args.selected, args.focused);
                     }
-
                     break;
                 case ColumnId.Type:
                     if (item.assetIcon != null)
@@ -480,7 +438,6 @@ namespace UnityEditor.AddressableAssets.GUI
             retVal[counter].width = 260;
             retVal[counter].maxWidth = 10000;
             retVal[counter].headerTextAlignment = TextAlignment.Left;
-            retVal[counter].canSort = true;
             retVal[counter].autoResize = true;
             counter++;
 
@@ -489,16 +446,14 @@ namespace UnityEditor.AddressableAssets.GUI
             retVal[counter].width = 20;
             retVal[counter].maxWidth = 20;
             retVal[counter].headerTextAlignment = TextAlignment.Left;
-            retVal[counter].canSort = false;
             retVal[counter].autoResize = true;
             counter++;
 
             retVal[counter].headerContent = new GUIContent("Path", "Current Path of asset");
             retVal[counter].minWidth = 100;
-            retVal[counter].width = 150;
+            retVal[counter].width = 300;
             retVal[counter].maxWidth = 10000;
             retVal[counter].headerTextAlignment = TextAlignment.Left;
-            retVal[counter].canSort = true;
             retVal[counter].autoResize = true;
 
             return retVal;
@@ -1162,29 +1117,6 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             set => base.displayName = value;
-        }
-    }
-
-    static class MyExtensionMethods
-    {
-        // Find digits in a string
-        static Regex s_Regex = new(@"\d+", RegexOptions.Compiled);
-
-        public static IEnumerable<T> Order<T>(this IEnumerable<T> items, Func<T, string> selector, bool ascending)
-        {
-            if (EditorPrefs.HasKey("AllowAlphaNumericHierarchy") && EditorPrefs.GetBool("AllowAlphaNumericHierarchy"))
-            {
-                // Find the length of the longest number in the string
-                var maxDigits = items
-                    .SelectMany(i => s_Regex.Matches(selector(i)).Select(digitChunk => (int?) digitChunk.Value.Length))
-                    .Max() ?? 0;
-
-                // in the evaluator, pad numbers with zeros so they all have the same length
-                var tempSelector = selector;
-                selector = i => s_Regex.Replace(tempSelector(i), match => match.Value.PadLeft(maxDigits, '0'));
-            }
-
-            return ascending ? items.OrderBy(selector) : items.OrderByDescending(selector);
         }
     }
 }

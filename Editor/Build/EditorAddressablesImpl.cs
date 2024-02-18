@@ -93,7 +93,6 @@ namespace UnityEditor.AddressableAssets.Settings
             string Map(string address)
             {
                 Assert.IsNotNull(address, "Address cannot be null");
-                Assert.IsFalse(address.Contains('[') || address.Contains(']'), "Address cannot contain '[ ]': " + address);
                 Assert.IsFalse(string.IsNullOrEmpty(address), "Address cannot be empty");
 
                 var found = _addressToEntry.TryGetValue(address, out var e);
@@ -112,6 +111,8 @@ namespace UnityEditor.AddressableAssets.Settings
                     if (g == null) continue;
                     foreach (var e in g.entries)
                     {
+                        // Empty address means it's only for including this asset into the group.
+                        if (string.IsNullOrEmpty(e.address)) continue;
                         var added = _addressToEntry.TryAdd(e.address, e);
                         if (added is false) L.E(e.MainAsset, "Address already exists: " + e.address);
                     }
