@@ -73,5 +73,10 @@ namespace UnityEditor.AddressableAssets
             Bundle = bundle;
             Dependencies = dependencies;
         }
+
+        public override string ToString()
+        {
+            return $"{Address.ReadableString()} ({GUID}) - ({Bundle})";
+        }
     }
 }
