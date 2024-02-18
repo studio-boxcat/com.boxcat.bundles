@@ -82,11 +82,9 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get
             {
-                if (string.IsNullOrEmpty(m_GUID))
-                {
-                    var isAsset = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out m_GUID, out long _);
-                    Assert.IsTrue(isAsset, "AddressableAssetGroup is not an asset.");
-                }
+                if (!string.IsNullOrEmpty(m_GUID)) return m_GUID;
+                var isAsset = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out m_GUID, out long _);
+                Assert.IsTrue(isAsset, "AddressableAssetGroup is not an asset.");
                 return m_GUID;
             }
         }
@@ -115,7 +113,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Is the default group.
         /// </summary>
-        public virtual bool Default => Guid == Settings.DefaultGroup.Guid;
+        public bool Default => Guid == Settings.DefaultGroup.Guid;
 
         /// <summary>
         /// Compares two asset entries based on their guids.
@@ -125,15 +123,14 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>Returns 0 if both entries are null or equivalent.
         /// Returns -1 if the first entry is null or the first entry precedes the second entry in the sort order.
         /// Returns 1 if the second entry is null or the first entry follows the second entry in the sort order.</returns>
-        public virtual int Compare(AddressableAssetEntry x, AddressableAssetEntry y)
+        public int Compare(AddressableAssetEntry x, AddressableAssetEntry y)
         {
-            if (x == null && y == null)
-                return 0;
-            if (x == null)
-                return -1;
-            if (y == null)
-                return 1;
-            return x.guid.CompareTo(y.guid);
+            return x switch
+            {
+                null when y is null => 0,
+                null => -1,
+                _ => y is null ? 1 : x.guid.CompareTo(y.guid)
+            };
         }
 
         Hash128 m_CurrentHash;
@@ -229,12 +226,10 @@ namespace UnityEditor.AddressableAssets.Settings
         public void SetDirty(AddressableAssetSettings.ModificationEvent modificationEvent, object eventData, bool postEvent, bool groupModified = false)
         {
             m_CurrentHash = default;
-            if (Settings != null)
-            {
-                if (groupModified && true && this != null)
-                    EditorUtility.SetDirty(this);
-                Settings.SetDirty(modificationEvent, eventData, postEvent, false);
-            }
+            if (Settings == null) return;
+            if (groupModified && this != null)
+                EditorUtility.SetDirty(this);
+            Settings.SetDirty(modificationEvent, eventData, postEvent, false);
         }
 
         /// <summary>
@@ -258,20 +253,11 @@ namespace UnityEditor.AddressableAssets.Settings
                 entry.parentGroup = null;
             }
 
-            if (removeEntries.Count() > 0)
+            if (removeEntries.Any())
             {
                 m_SerializeEntries = null;
                 SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, removeEntries.ToArray(), postEvent, true);
             }
-        }
-
-        /// <summary>
-        /// Check to see if a group is the Default Group.
-        /// </summary>
-        /// <returns></returns>
-        public bool IsDefaultGroup()
-        {
-            return Guid == m_Settings.DefaultGroup.Guid;
         }
     }
 }

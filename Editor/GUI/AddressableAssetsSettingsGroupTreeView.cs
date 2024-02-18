@@ -6,6 +6,7 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
+using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -275,8 +276,7 @@ namespace UnityEditor.AddressableAssets.GUI
             children.Clear();
             foreach (var c in copy)
             {
-                var child = c as AssetEntryTreeViewItem;
-                if (child != null && child.entry != null)
+                if (c is AssetEntryTreeViewItem {entry: not null} child)
                     kids.Add(child);
                 else
                     children.Add(c);
@@ -650,8 +650,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             bool isGroup = false;
             bool isEntry = false;
-            bool hasReadOnly = false;
-            bool isMissingPath = false;
             foreach (var item in selectedNodes)
             {
                 if (item.group != null)
@@ -661,60 +659,42 @@ namespace UnityEditor.AddressableAssets.GUI
                 else if (item.entry != null)
                 {
                     isEntry = true;
-                    isMissingPath |= string.IsNullOrEmpty(item.entry.AssetPath);
-                }
-                else if (!string.IsNullOrEmpty(item.folderPath))
-                {
-                    hasReadOnly = true;
                 }
             }
 
             if (isEntry && isGroup)
                 return;
 
-            GenericMenu menu = new GenericMenu();
-            if (!hasReadOnly)
+            var menu = new GenericMenu();
+            if (isGroup)
             {
-                if (isGroup)
+                var group = selectedNodes.First().group;
+                if (!group.Default)
+                    menu.AddItem(new GUIContent("Remove Group(s)"), false, RemoveGroup, selectedNodes);
+                if (selectedNodes.Count == 1)
                 {
-                    var group = selectedNodes.First().group;
-                    if (!group.IsDefaultGroup())
-                        menu.AddItem(new GUIContent("Remove Group(s)"), false, RemoveGroup, selectedNodes);
-                    if (selectedNodes.Count == 1)
-                    {
-                        if (!group.IsDefaultGroup())
-                            menu.AddItem(new GUIContent("Set as Default"), false, SetGroupAsDefault, selectedNodes);
-                        menu.AddItem(new GUIContent("Inspect Group Settings"), false, GoToGroupAsset, selectedNodes);
-                    }
-
-                    foreach (var i in AddressableAssetSettings.CustomAssetGroupCommands)
-                        menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemGroups, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
+                    if (!group.Default)
+                        menu.AddItem(new GUIContent("Set as Default"), false, SetGroupAsDefault, selectedNodes);
+                    menu.AddItem(new GUIContent("Inspect Group Settings"), false, GoToGroupAsset, selectedNodes);
                 }
-                else if (isEntry)
-                {
-                    menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
 
-                    if (selectedNodes.Count == 1)
-                        menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
-                    else if (selectedNodes.Count > 1)
-                        menu.AddItem(new GUIContent("Copy " + selectedNodes.Count + " Addresses to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
+                foreach (var i in AddressableAssetSettings.CustomAssetGroupCommands)
+                    menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemGroups, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
+            }
+            else if (isEntry)
+            {
+                menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
 
-                    foreach (var i in AddressableAssetSettings.CustomAssetEntryCommands)
-                        menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemEntries, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
-                }
-                else
-                    menu.AddItem(new GUIContent("Clear missing references."), false, RemoveMissingReferences);
+                if (selectedNodes.Count == 1)
+                    menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
+                else if (selectedNodes.Count > 1)
+                    menu.AddItem(new GUIContent("Copy " + selectedNodes.Count + " Addresses to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
+
+                foreach (var i in AddressableAssetSettings.CustomAssetEntryCommands)
+                    menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemEntries, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
             }
             else
-            {
-                if (isEntry)
-                {
-                    if (selectedNodes.Count == 1)
-                        menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
-                    else if (selectedNodes.Count > 1)
-                        menu.AddItem(new GUIContent("Copy " + selectedNodes.Count + " Addresses to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
-                }
-            }
+                menu.AddItem(new GUIContent("Clear missing references."), false, RemoveMissingReferences);
 
             if (selectedNodes.Count == 1)
             {
@@ -728,10 +708,9 @@ namespace UnityEditor.AddressableAssets.GUI
             menu.ShowAsContext();
         }
 
-        void GoToGroupAsset(object context)
+        static void GoToGroupAsset(object context)
         {
-            List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
-            if (selectedNodes == null || selectedNodes.Count == 0)
+            if (context is not List<AssetEntryTreeViewItem> selectedNodes || selectedNodes.Count == 0)
                 return;
             var group = selectedNodes.First().group;
             if (group == null)
@@ -1134,7 +1113,6 @@ namespace UnityEditor.AddressableAssets.GUI
     {
         public AddressableAssetEntry entry;
         public AddressableAssetGroup group;
-        public string folderPath;
         public Texture2D assetIcon;
         public bool isRenaming;
 
@@ -1142,7 +1120,6 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             entry = e;
             group = null;
-            folderPath = string.Empty;
             assetIcon = entry == null ? null : AssetDatabase.GetCachedIcon(e.AssetPath) as Texture2D;
             isRenaming = false;
         }
@@ -1151,7 +1128,6 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             entry = null;
             group = g;
-            folderPath = string.Empty;
             assetIcon = null;
             isRenaming = false;
         }
@@ -1162,12 +1138,30 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             get
             {
-                if (!isRenaming && group != null && group.Default)
-                    return base.displayName + " (Default)";
-                return base.displayName;
+                var baseName = base.displayName;
+
+                // If currently renaming, return the base name
+                if (isRenaming)
+                    return baseName;
+
+                if (group != null)
+                {
+                    if (group.Default)
+                        return baseName + " (Default)";
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(entry.address))
+                    {
+                        Assert.IsTrue(string.IsNullOrEmpty(baseName));
+                        return "NA (" + entry.MainAsset.name + ")";
+                    }
+                }
+
+                return baseName;
             }
 
-            set { base.displayName = value; }
+            set => base.displayName = value;
         }
     }
 

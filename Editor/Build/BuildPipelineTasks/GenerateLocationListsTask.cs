@@ -66,7 +66,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     var guid = e.guid;
                     var deps = assetToFiles[guid];
                     var bundle = deps[0]; // First bundle is the containing bundle.
-                    return new EntryDef(guid, AddressUtils.Hash(e.address), bundle, deps.ToHashSet());
+                    Address? address = string.IsNullOrEmpty(e.address) ? null : AddressUtils.Hash(e.address);
+                    return new EntryDef(guid, address, bundle, deps.ToHashSet());
                 });
 
             // Build bundle deps.

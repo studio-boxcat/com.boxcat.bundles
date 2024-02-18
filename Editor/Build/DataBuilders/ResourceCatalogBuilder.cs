@@ -22,8 +22,19 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var (spanData, depData) = BuildDepSpan(deps);
             Assert.AreEqual(bundleKeys.Count, spanData.Length, "Invalid span data length.");
 
-            // Sort entries by Address.
-            var sortedEntries = entries.OrderBy(x => x.Address).ToList();
+            // Get all addresses.
+            var addresses = entries
+                .Where(x => x.Address.HasValue)
+                .Select(x =>
+                {
+                    var address = (uint) x.Address.Value;
+                    var bundle = x.Bundle;
+                    Assert.AreEqual(0, address & 0xFF000000, "MSB 1 byte is reserved for AssetBundleId.");
+                    return (uint) ((byte) keyToId[bundle] << 24) | address;
+                })
+                .OrderBy(x => x)
+                .ToList();
+            Assert.AreEqual(addresses.Count, addresses.Distinct().Count(), "Duplicate address found.");
 
             // AssetBundleCount: ushort
             // ResourceLocationCount: ushort
@@ -35,7 +46,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             //     Address: 3 bytes
             // AssetBundleDepData: byte[]
             var bundleCount = bundleKeys.Count;
-            var locCount = sortedEntries.Count;
+            var locCount = addresses.Count;
             Assert.IsTrue(bundleCount <= byte.MaxValue, "Too many asset bundles.");
             var data = new byte[
                 2 + 2
@@ -64,10 +75,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
 
                 // Write ResourceLocations.
-                foreach (var entry in sortedEntries)
+                foreach (var address in addresses)
                 {
-                    Assert.AreEqual(0, (uint) entry.Address & 0xFF000000, "MSB 1 byte is reserved for AssetBundleId.");
-                    *(uint*) p = (uint) ((byte) keyToId[entry.Bundle] << 24) | (uint) entry.Address;
+                    *(uint*) p = address;
                     p += 4;
                 }
 

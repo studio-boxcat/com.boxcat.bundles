@@ -62,11 +62,11 @@ namespace UnityEditor.AddressableAssets
     public readonly struct EntryDef
     {
         public readonly AssetGUID GUID;
-        public readonly Address Address;
+        public readonly Address? Address;
         public readonly BundleKey Bundle;
         public readonly HashSet<BundleKey> Dependencies;
 
-        public EntryDef(AssetGUID guid, Address address, BundleKey bundle, HashSet<BundleKey> dependencies)
+        public EntryDef(AssetGUID guid, Address? address, BundleKey bundle, HashSet<BundleKey> dependencies)
         {
             GUID = guid;
             Address = address;
@@ -76,7 +76,12 @@ namespace UnityEditor.AddressableAssets
 
         public override string ToString()
         {
-            return $"{Address.ReadableString()} ({GUID}) - ({Bundle})";
+            if (Address is null)
+            {
+                var name = System.IO.Path.GetFileName(AssetDatabase.GUIDToAssetPath(GUID.Value));
+                return $"{name}  ({GUID}) > {Bundle}";
+            }
+            return $"{Address.Value.ReadableString()} ({GUID}) > {Bundle}";
         }
     }
 }

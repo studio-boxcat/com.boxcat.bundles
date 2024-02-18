@@ -147,14 +147,6 @@ namespace UnityEditor.AddressableAssets.GUI
                         m_EntryTree.SetSelection(selectedIds);
                     return;
                 }
-                else if (!string.IsNullOrEmpty(item.folderPath) && item.hasChildren)
-                {
-                    foreach (TreeViewItem child in item.children)
-                    {
-                        if (child is AssetEntryTreeViewItem c)
-                            items.Push(c);
-                    }
-                }
             }
         }
 

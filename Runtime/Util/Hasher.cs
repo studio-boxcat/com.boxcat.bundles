@@ -20,35 +20,28 @@ namespace UnityEngine.AddressableAssets.Util
         }
 
 #if DEBUG
-        static readonly Dictionary<uint, string> _debug_ReverseHashMap = new();
+        static readonly Dictionary<uint, string> _debug_HashToStr = new();
 
         static void Debug_AddReverseHash(uint hash, string str)
         {
-            if (_debug_ReverseHashMap.TryGetValue(hash, out var existing))
+            if (_debug_HashToStr.TryGetValue(hash, out var existing))
             {
                 Assert.AreEqual(str, existing, $"Hash collision detected: {hash} -> {str} and {existing}");
             }
             else
             {
-                _debug_ReverseHashMap.Add(hash, str);
+                _debug_HashToStr.Add(hash, str);
             }
         }
 
         internal static bool Debug_TryReverseHash(uint hash, out string str)
         {
-            return _debug_ReverseHashMap.TryGetValue(hash, out str);
+            return _debug_HashToStr.TryGetValue(hash, out str);
         }
 
         internal static void Debug_ForceAddReverseHash(uint hash, string str)
         {
-            if (_debug_ReverseHashMap.TryGetValue(hash, out var existing))
-            {
-                Assert.AreEqual(str, existing, $"Hash collision detected: {hash} -> {str} and {existing}");
-            }
-            else
-            {
-                _debug_ReverseHashMap.Add(hash, str);
-            }
+            Debug_AddReverseHash(hash, str);
         }
 #endif
     }
