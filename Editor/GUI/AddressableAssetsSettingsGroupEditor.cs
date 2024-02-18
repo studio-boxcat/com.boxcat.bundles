@@ -246,9 +246,9 @@ namespace UnityEditor.AddressableAssets.GUI
                             Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
                         });
 
-                        menu.AddItem(new GUIContent("Window/Analyze"), false, AnalyzeWindow.ShowWindow);
+                        menu.AddItem(new GUIContent("Analyze"), false, AnalyzeWindow.ShowWindow);
 
-                        menu.AddItem(new GUIContent("Window/Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
+                        menu.AddItem(new GUIContent("Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
 
                         menu.DropDown(rMode);
                     }

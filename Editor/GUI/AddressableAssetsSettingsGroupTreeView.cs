@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -65,29 +63,22 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnPostProcessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
-            foreach (Object obj in Selection.objects)
+            foreach (var obj in Selection.objects)
             {
-                if (obj == null)
-                    continue;
-                if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj.GetInstanceID(), out string guid, out long localId))
-                {
-                    if (obj is GameObject go)
-                    {
-#if UNITY_2021_2_OR_NEWER
-                        if (UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(go) != null)
-                            return;
-#else
-                        if (UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(go) != null)
-                            return;
-#endif
-                        var containingScene = go.scene;
-                        if (containingScene.IsValid() && containingScene.isLoaded)
-                            return;
-                    }
+                if (obj == null) continue;
+                if (AssetDatabase.Contains(obj)) continue;
 
-                    m_ForceSelectionClear = true;
-                    return;
+                if (obj is GameObject go)
+                {
+                    if (SceneManagement.PrefabStageUtility.GetPrefabStage(go) != null)
+                        return;
+                    var containingScene = go.scene;
+                    if (containingScene.IsValid() && containingScene.isLoaded)
+                        return;
                 }
+
+                m_ForceSelectionClear = true;
+                return;
             }
         }
 
@@ -689,7 +680,6 @@ namespace UnityEditor.AddressableAssets.GUI
                     var group = selectedNodes.First().group;
                     if (!group.IsDefaultGroup())
                         menu.AddItem(new GUIContent("Remove Group(s)"), false, RemoveGroup, selectedNodes);
-                    menu.AddItem(new GUIContent("Simplify Addressable Names"), false, SimplifyAddresses, selectedNodes);
                     if (selectedNodes.Count == 1)
                     {
                         if (!group.IsDefaultGroup())
@@ -703,7 +693,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 else if (isEntry)
                 {
                     menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
-                    menu.AddItem(new GUIContent("Simplify Addressable Names"), false, SimplifyAddresses, selectedNodes);
 
                     if (selectedNodes.Count == 1)
                         menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
@@ -761,59 +750,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             buffer = buffer.TrimEnd(',');
             GUIUtility.systemCopyBuffer = buffer;
-        }
-
-        void MoveEntriesToNewGroupWithSettings(object context)
-        {
-            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
-            var entries = new List<AddressableAssetEntry>();
-            foreach (AssetEntryTreeViewItem item in pair.Item2)
-            {
-                if (item.entry != null)
-                    entries.Add(item.entry);
-            }
-
-            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
-            if (pair.Item1 == null)
-                window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, MoveEntriesToNewGroupWithSettings);
-            else
-                window.Initialize(m_Editor.settings, entries, false, false, pair.Item1.mousePosition, MoveEntriesToNewGroupWithSettings);
-        }
-
-        static void MoveEntriesToNewGroupWithSettings(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
-        {
-            var newGroup = settings.CreateGroup(AddressableAssetSettings.kNewGroupName, false, true);
-            foreach (AddressableAssetEntry entry in entries)
-            {
-                settings.MoveEntry(entry, newGroup, true);
-            }
-        }
-
-        void MoveEntriesToGroup(object context)
-        {
-            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
-            var entries = new List<AddressableAssetEntry>();
-            bool mixedGroups = false;
-            AddressableAssetGroup displayGroup = null;
-            foreach (AssetEntryTreeViewItem item in pair.Item2)
-            {
-                if (item.entry != null)
-                {
-                    entries.Add(item.entry);
-                    if (displayGroup == null)
-                        displayGroup = item.entry.parentGroup;
-                    else if (item.entry.parentGroup != displayGroup)
-                    {
-                        mixedGroups = true;
-                    }
-                }
-            }
-
-            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
-            if (pair.Item1 == null)
-                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, Vector2.zero, AddressableAssetUtility.MoveEntriesToGroup);
-            else
-                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, pair.Item1.mousePosition, AddressableAssetUtility.MoveEntriesToGroup);
         }
 
         internal void CreateNewGroup()
@@ -876,46 +812,6 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        protected void SimplifyAddresses(object context)
-        {
-            SimplifyAddressesImpl(context);
-        }
-
-        internal void SimplifyAddressesImpl(object context)
-        {
-            List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
-            if (selectedNodes == null || selectedNodes.Count < 1)
-                return;
-            var entries = new List<AddressableAssetEntry>();
-            HashSet<AddressableAssetGroup> modifiedGroups = new HashSet<AddressableAssetGroup>();
-            foreach (var item in selectedNodes)
-            {
-                if (item.IsGroup)
-                {
-                    foreach (var e in item.group.entries)
-                    {
-                        e.SetAddress(Path.GetFileNameWithoutExtension(e.address), false);
-                        entries.Add(e);
-                    }
-
-                    modifiedGroups.Add(item.group);
-                }
-                else
-                {
-                    item.entry.SetAddress(Path.GetFileNameWithoutExtension(item.entry.address), false);
-                    entries.Add(item.entry);
-                    modifiedGroups.Add(item.entry.parentGroup);
-                }
-            }
-
-            foreach (var g in modifiedGroups)
-            {
-                g.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, false, true);
-            }
-
-            m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, true, false);
-        }
-
         protected void RemoveEntry(object context)
         {
             RemoveEntryImpl(context);
@@ -925,11 +821,12 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             if (forceRemoval || EditorUtility.DisplayDialog("Delete selected entries?", "Are you sure you want to delete the selected entries?\n\nYou cannot undo this action.", "Yes", "No"))
             {
-                List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
+                var selectedNodes = context as List<AssetEntryTreeViewItem>;
                 if (selectedNodes == null || selectedNodes.Count < 1)
                     return;
+
                 var entries = new List<AddressableAssetEntry>();
-                HashSet<AddressableAssetGroup> modifiedGroups = new HashSet<AddressableAssetGroup>();
+                var modifiedGroups = new HashSet<AddressableAssetGroup>();
                 foreach (var item in selectedNodes)
                 {
                     if (item.entry != null)

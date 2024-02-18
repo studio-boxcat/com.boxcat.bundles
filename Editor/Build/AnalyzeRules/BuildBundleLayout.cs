@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
@@ -9,24 +12,16 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Result data for assets included in the bundle layout
         /// </summary>
-        protected internal struct BuildBundleLayoutResultData
+        protected struct BuildBundleLayoutResultData
         {
             public string AssetBundleName;
-            public string AssetPath;
-            public bool Explicit;
+            public List<string> Dependencies;
+            public List<string> Explicits;
+            public List<string> Implicits;
         }
 
         /// <inheritdoc />
-        public override bool CanFix
-        {
-            get { return false; }
-        }
-
-        /// <inheritdoc />
-        public override string ruleName
-        {
-            get { return "Bundle Layout Preview"; }
-        }
+        public override string ruleName => "Bundle Layout Preview";
 
         private List<BuildBundleLayoutResultData> m_ResultData = null;
 
@@ -34,54 +29,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// Results of the build Layout.
         /// </summary>
         protected IEnumerable<BuildBundleLayoutResultData> BuildBundleLayoutResults
-        {
-            get
-            {
-                if (m_ResultData != null)
-                    return m_ResultData;
-
-                if (ExtractData == null)
-                {
-                    Debug.LogError("RefreshAnalysis needs to be called before getting results");
-                    return new List<BuildBundleLayoutResultData>(0);
-                }
-
-                m_ResultData = new List<BuildBundleLayoutResultData>(512);
-
-                foreach (var bundleBuild in AllBundleInputDefs)
-                foreach (string assetName in bundleBuild.assetNames)
-                {
-                    m_ResultData.Add(new BuildBundleLayoutResultData()
-                    {
-                        AssetBundleName = bundleBuild.assetBundleName,
-                        AssetPath = assetName,
-                        Explicit = true
-                    });
-                }
-
-                List<string> assets = new List<string>();
-                foreach (KeyValuePair<string, string> fileToBundle in ExtractData.WriteData.FileToBundle)
-                {
-                    assets.Clear();
-                    string assetBundleName = fileToBundle.Value;
-
-                    var implicitGuids = GetImplicitGuidsForBundle(fileToBundle.Key);
-                    foreach (GUID guid in implicitGuids)
-                    {
-                        string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
-                        if (AddressableAssetUtility.IsPathValidForEntry(assetPath))
-                            m_ResultData.Add(new BuildBundleLayoutResultData()
-                            {
-                                AssetBundleName = assetBundleName,
-                                AssetPath = assetPath,
-                                Explicit = false
-                            });
-                    }
-                }
-
-                return m_ResultData;
-            }
-        }
+            => m_ResultData ??= BuildResult(AllBundleInputDefs, ExtractData.WriteData);
 
         /// <inheritdoc />
         public override List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
@@ -91,20 +39,21 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
-                m_Results.Add(new AnalyzeResult {resultName = ruleName + "Cannot run Analyze with unsaved scenes"});
+                m_Results.Add(new AnalyzeResult(ruleName + "Cannot run Analyze with unsaved scenes"));
                 return m_Results;
             }
 
             CalculateInputDefinitions(settings);
-            var context = GetBuildContext(settings);
+            var context = new AddressableAssetsBuildContext(settings);
             RefreshBuild(context);
-            foreach (BuildBundleLayoutResultData result in BuildBundleLayoutResults)
+            foreach (var resultData in BuildBundleLayoutResults)
             {
-                m_Results.Add(new AnalyzeResult
-                {
-                    resultName = result.AssetBundleName + kDelimiter
-                                                        + (result.Explicit ? "Explicit" : "Implicit") + kDelimiter + result.AssetPath
-                });
+                var prefix = resultData.AssetBundleName + kDelimiter + "Explicit" + kDelimiter;
+                foreach (var path in resultData.Explicits)
+                    m_Results.Add(new AnalyzeResult(prefix + path));
+                prefix = resultData.AssetBundleName + kDelimiter + "Implicit" + kDelimiter;
+                foreach (var path in resultData.Implicits)
+                    m_Results.Add(new AnalyzeResult(prefix + path));
             }
 
             if (m_Results.Count == 0)
@@ -128,6 +77,34 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             {
                 AnalyzeSystem.RegisterNewRule<BuildBundleLayout>();
             }
+        }
+
+        static List<BuildBundleLayoutResultData> BuildResult(
+            List<AssetBundleBuild> buildInput, IBundleWriteData buildOutput)
+        {
+            var result = new List<BuildBundleLayoutResultData>(buildInput.Count);
+
+            var bundleToFile = buildOutput.FileToBundle
+                .ToDictionary(x => x.Value, x => x.Key);
+
+            foreach (var bundleBuild in buildInput)
+            {
+                var bundleName = bundleBuild.assetBundleName;
+                var explicitAssets = new List<string>(bundleBuild.assetNames);
+                var implicitAssets = buildOutput.FileToObjects[bundleToFile[bundleName]]
+                    .Where(x => !buildOutput.AssetToFiles.ContainsKey(x.guid)) // Exclude explicit assets
+                    .Select(x => AssetDatabase.GUIDToAssetPath(x.guid))
+                    .ToList();
+
+                result.Add(new BuildBundleLayoutResultData()
+                {
+                    AssetBundleName = bundleName,
+                    Explicits = explicitAssets,
+                    Implicits = implicitAssets,
+                });
+            }
+
+            return result;
         }
     }
 }

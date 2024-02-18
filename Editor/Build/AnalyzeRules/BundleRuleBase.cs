@@ -68,24 +68,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         /// <summary>
-        /// Get context for current Addressables settings
-        /// </summary>
-        /// <param name="settings"> The current Addressables settings object </param>
-        /// <returns> The build context information </returns>
-        protected internal AddressableAssetsBuildContext GetBuildContext(AddressableAssetSettings settings)
-        {
-            return new AddressableAssetsBuildContext
-            {
-                Settings = settings,
-            };
-        }
-
-        /// <summary>
         /// Check path is valid path for Addressables entry
         /// </summary>
         /// <param name="path"> The path to check</param>
         /// <returns>Whether path is valid</returns>
-        protected bool IsValidPath(string path)
+        protected static bool IsValidPath(string path)
         {
             return AddressableAssetUtility.IsPathValidForEntry(path) &&
                    !path.Contains("/Resources/", StringComparison.OrdinalIgnoreCase);
@@ -214,28 +201,10 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// Generate input definitions and entries for AssetBundleBuild
         /// </summary>
         /// <param name="settings">The current Addressables settings object</param>
-        protected internal void CalculateInputDefinitions(AddressableAssetSettings settings)
+        protected void CalculateInputDefinitions(AddressableAssetSettings settings)
         {
             m_AllBundleInputDefs = BuildScriptPackedMode.GenerateBundleBuilds(
                 settings.groups, new Dictionary<BundleKey, AddressableAssetGroup>());
-        }
-
-        /// <summary>
-        /// Get bundle's object ids that have no dependency file
-        /// </summary>
-        /// <param name="fileName"> Name of bundle file </param>
-        /// <returns> List of GUIDS of objects in bundle with no dependency file</returns>
-        protected List<GUID> GetImplicitGuidsForBundle(string fileName)
-        {
-            if (m_ExtractData == null)
-            {
-                Debug.LogError("Build not run, RefreshBuild needed before GetImplicitGuidsForBundle");
-                return new List<GUID>();
-            }
-
-            return (from id in m_ExtractData.WriteData.FileToObjects[fileName]
-                where !m_ExtractData.WriteData.AssetToFiles.Keys.Contains(id.guid)
-                select id.guid).ToList();
         }
 
         /// <summary>
@@ -350,7 +319,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 "Calculating dependencies between Built-in resources and Addressables", 0.5f);
 
             ReturnCode exitCode = ReturnCode.Error;
-            var context = GetBuildContext(settings);
+            var context = new AddressableAssetsBuildContext(settings);
             exitCode = RefreshBuild(context);
             if (exitCode < ReturnCode.Success)
             {
@@ -386,12 +355,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             public string ResourcePath;
             public string AssetBundleName;
             public string AssetPath;
-        }
-
-        /// <inheritdoc />
-        public override bool CanFix
-        {
-            get { return false; }
         }
 
         private List<ResultData> m_ResultData = null;
@@ -463,7 +426,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             try
             {
                 // bulk of work and progress bars displayed in these methods
-                string[] resourcePaths = GetResourcePaths();
+                var resourcePaths = GetResourcePaths();
 
                 var buildSuccess = BuildAndGetResourceDependencies(settings, resourcePaths);
                 if (buildSuccess == ReturnCode.SuccessNotRun)
@@ -503,11 +466,5 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         /// <returns>Array of Resource paths to compare against</returns>
         internal protected virtual string[] GetResourcePaths() => Array.Empty<string>();
-
-        /// <inheritdoc />
-        public override void FixIssues(AddressableAssetSettings settings)
-        {
-            //Do nothing.  There's nothing to fix.
-        }
     }
 }

@@ -39,7 +39,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
-            var settings = AddressableAssetSettingsDefaultObject.GetSettings(false);
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null)
                 return;
 

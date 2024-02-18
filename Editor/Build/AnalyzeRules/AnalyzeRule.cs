@@ -28,11 +28,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             }
         }
 
-        /// <summary>
-        /// True if this rule can fix itself.  If child class sets this to true, class must override FixIssues
-        /// </summary>
-        public virtual bool CanFix { get; set; }
-
         [SerializeField]
         internal List<AnalyzeResult> m_Results = new List<AnalyzeResult>();
 
@@ -65,8 +60,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             /// </summary>
             public string resultName
             {
-                get { return m_ResultName; }
-                set { m_ResultName = value; }
+                get => m_ResultName;
+                set => m_ResultName = value;
             }
 
             [SerializeField]
@@ -77,18 +72,24 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             /// </summary>
             public MessageType severity
             {
-                get { return m_Severity; }
-                set { m_Severity = value; }
+                get => m_Severity;
+                set => m_Severity = value;
+            }
+
+            public AnalyzeResult()
+            {
+            }
+
+            public AnalyzeResult(string resultName)
+            {
+                m_ResultName = resultName;
             }
         }
 
         /// <summary>
         /// Display name for rule
         /// </summary>
-        public virtual string ruleName
-        {
-            get { return GetType().ToString(); }
-        }
+        public virtual string ruleName => GetType().ToString();
 
         /// <summary>
         /// This method runs the actual analysis for the rule.
@@ -98,16 +99,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         public virtual List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
         {
             return new List<AnalyzeResult>();
-        }
-
-        /// <summary>
-        /// Fixing method to be run on results of the RefreshAnalysis.  If CanFix returns true, this method must be
-        /// overriden.  It is recommended that RefreshAnalysis caches any data that will be needed to fix.  Fix should
-        /// not rerun RefreshAnalysis before fixing.
-        /// </summary>
-        /// <param name="settings">The settings object to analyze</param>
-        public virtual void FixIssues(AddressableAssetSettings settings)
-        {
         }
 
         /// <summary>

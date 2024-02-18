@@ -204,16 +204,6 @@ namespace UnityEditor.AddressableAssets.Build
             AnalyzeData.Data[rule.ruleName].Clear();
         }
 
-        internal static void FixIssues<TRule>() where TRule : AnalyzeRule
-        {
-            FixIssues(FindRule<TRule>());
-        }
-
-        internal static void FixIssues(AnalyzeRule rule)
-        {
-            rule?.FixIssues(Settings);
-        }
-
         private static AnalyzeRule FindRule<TRule>() where TRule : AnalyzeRule
         {
             var rule = Rules.FirstOrDefault(r => r.GetType().IsAssignableFrom(typeof(TRule)));

@@ -21,7 +21,6 @@ namespace UnityEditor.AddressableAssets.GUI
         private GUIContent m_ClearRulesGUIContent = new GUIContent("Clear", "Clear information collected for the Analyze Rules");
         private GUIContent m_ClearSelectedRulesGUIContent = new GUIContent("Selection", "Clear information collected for the selected Rules");
         private GUIContent m_ClearAllRulesGUIContent = new GUIContent("All", "Clear information collected for the all Rules");
-        private GUIContent m_FixSelectedRulesGUIContent = new GUIContent("Fix Selected Rules", "Make changes to Addressables Groups with errors found by the selected Fixable Rules");
 
         private GUIContent m_ExportJsonGUIContent = new GUIContent("Export Results", "Export a json file with the analyze results for all rules");
         private GUIContent m_ImportJsonGUIContent = new GUIContent("Import Results", "Import a json file with the analyze results for all rules, this will overwrite any existing results");
@@ -54,16 +53,6 @@ namespace UnityEditor.AddressableAssets.GUI
             if (UnityEngine.GUI.Button(runRect, m_AnalyzeSelectedRulesGUIContent, EditorStyles.toolbarButton))
             {
                 EditorApplication.delayCall += () => m_Tree.RunAllSelectedRules();
-            }
-
-            var fixRect = buttonRect;
-            activeWidth = 120;
-            fixRect.width = activeWidth;
-            buttonRect.x += activeWidth;
-            buttonRect.width -= activeWidth;
-            if (UnityEngine.GUI.Button(fixRect, m_FixSelectedRulesGUIContent, EditorStyles.toolbarButton))
-            {
-                EditorApplication.delayCall += () => m_Tree.FixAllSelectedRules();
             }
 
             EditorGUI.EndDisabledGroup();

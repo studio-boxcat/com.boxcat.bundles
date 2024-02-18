@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets;
@@ -45,40 +44,18 @@ namespace UnityEditor.AddressableAssets.Settings
 
             private bool IsValid()
             {
-                if (m_TargetInfoCache.Count > 0)
-                {
-                    if (!m_CurrentCacheVersion.isValid || m_CurrentCacheVersion.Equals(m_Settings.currentHash) == false)
-                    {
-                        m_TargetInfoCache.Clear();
-                        m_CurrentCacheVersion = default;
-                        return false;
-                    }
-
+                if (m_TargetInfoCache.Count == 0)
+                    return false;
+                if (m_CurrentCacheVersion.isValid && m_CurrentCacheVersion.Equals(m_Settings.currentHash))
                     return true;
-                }
 
+                m_TargetInfoCache.Clear();
+                m_CurrentCacheVersion = default;
                 return false;
             }
         }
 
         private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
-
-        [InitializeOnLoadMethod]
-        static void RegisterWithAssetPostProcessor()
-        {
-            //if the Library folder has been deleted, this will be null and it will have to be set on the first access of the settings object
-            if (AddressableAssetSettingsDefaultObject.Settings != null)
-                AddressablesAssetPostProcessor.OnPostProcess.Register(AddressableAssetSettingsDefaultObject.Settings.OnPostprocessAllAssets, 0);
-            else
-                EditorApplication.update += TryAddAssetPostprocessorOnNextUpdate;
-        }
-
-        private static void TryAddAssetPostprocessorOnNextUpdate()
-        {
-            if (AddressableAssetSettingsDefaultObject.Settings != null)
-                AddressablesAssetPostProcessor.OnPostProcess.Register(AddressableAssetSettingsDefaultObject.Settings.OnPostprocessAllAssets, 0);
-            EditorApplication.update -= TryAddAssetPostprocessorOnNextUpdate;
-        }
 
         /// <summary>
         /// Default name of a newly created group.
@@ -198,11 +175,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public string GroupFolder => ConfigFolder + "/AssetGroups";
 
         /// <summary>
-        /// The folder for the script assets.
-        /// </summary>
-        public string DataBuilderFolder => ConfigFolder + "/DataBuilders";
-
-        /// <summary>
         /// Event for handling settings changes.  The object passed depends on the event type.
         /// </summary>
         public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }
@@ -319,89 +291,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Adds a data builder.
-        /// </summary>
-        /// <param name="builder">The data builder to add.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the data builder was added.</returns>
-        public bool AddDataBuilder(IDataBuilder builder, bool postEvent = true)
-        {
-            if (builder == null)
-            {
-                Debug.LogWarning("Cannot add null IDataBuilder");
-                return false;
-            }
-
-            var so = builder as ScriptableObject;
-            if (so == null)
-            {
-                Debug.LogWarning("Data builders must inherit from ScriptableObject.");
-                return false;
-            }
-
-            m_DataBuilders.Add(so);
-            SetDirty(ModificationEvent.DataBuilderAdded, so, postEvent, true);
-            return true;
-        }
-
-        /// <summary>
-        /// Remove the data builder at the sprcified index.
-        /// </summary>
-        /// <param name="index">The index to remove.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the builder was removed.</returns>
-        public bool RemoveDataBuilder(int index, bool postEvent = true)
-        {
-            if (m_DataBuilders.Count <= index)
-                return false;
-            var so = m_DataBuilders[index];
-            m_DataBuilders.RemoveAt(index);
-            SetDirty(ModificationEvent.DataBuilderRemoved, so, postEvent, true);
-            return true;
-        }
-
-        /// <summary>
-        /// Sets the data builder at the specified index.
-        /// </summary>
-        /// <param name="index">The index to set the builder.</param>
-        /// <param name="builder">The builder to set.  This must be a valid scriptable object that implements the IDataBuilder interface.</param>
-        /// <param name="postEvent">Indicates if an even should be posted to the Addressables event system for this change.</param>
-        /// <returns>True if the builder was set, false otherwise.</returns>
-        public bool SetDataBuilderAtIndex(int index, IDataBuilder builder, bool postEvent = true)
-        {
-            if (m_DataBuilders.Count <= index)
-                return false;
-            if (builder == null)
-            {
-                Debug.LogWarning("Cannot add null IDataBuilder");
-                return false;
-            }
-
-            var so = builder as ScriptableObject;
-            if (so == null)
-            {
-                Debug.LogWarning("Data builders must inherit from ScriptableObject.");
-                return false;
-            }
-
-            m_DataBuilders[index] = so;
-            SetDirty(ModificationEvent.DataBuilderAdded, so, postEvent, true);
-            return true;
-        }
-
-        byte GetDataBuilderIndex(Type type)
-        {
-            for (byte i = 0; i < m_DataBuilders.Count; i++)
-            {
-                var builder = m_DataBuilders[i];
-                if (builder.GetType() == type)
-                    return i;
-            }
-
-            throw new Exception("Data builder not found: " + type);
-        }
-
-        /// <summary>
         /// Get the active data builder for player data.
         /// </summary>
         public IDataBuilder ActivePlayerDataBuilder => GetDataBuilder(m_ActivePlayerDataBuilderIndex);
@@ -464,35 +353,6 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
-        void Validate()
-        {
-            // End update of SchemaTemplate to GroupTemplates
-
-            if (m_DataBuilders == null || m_DataBuilders.Count == 0)
-            {
-                m_DataBuilders = new List<ScriptableObject>();
-                m_DataBuilders.Add(CreateScriptAsset<BuildScriptFastMode>());
-                m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedPlayMode>());
-                m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMode>());
-            }
-
-            if (ActivePlayerDataBuilder != null && !ActivePlayerDataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
-                ActivePlayerDataBuilderIndex = GetDataBuilderIndex(typeof(BuildScriptPackedMode));
-            if (ActivePlayModeDataBuilder != null && !ActivePlayModeDataBuilder.CanBuildData<AddressablesPlayModeBuildResult>())
-                ActivePlayModeDataBuilderIndex = GetDataBuilderIndex(typeof(BuildScriptFastMode));
-        }
-
-        internal T CreateScriptAsset<T>() where T : ScriptableObject
-        {
-            var script = CreateInstance<T>();
-            if (!Directory.Exists(DataBuilderFolder))
-                Directory.CreateDirectory(DataBuilderFolder);
-            var path = DataBuilderFolder + "/" + typeof(T).Name + ".asset";
-            if (!File.Exists(path))
-                AssetDatabase.CreateAsset(script, path);
-            return AssetDatabase.LoadAssetAtPath<T>(path);
-        }
-
         /// <summary>
         /// Create a new AddressableAssetSettings object.
         /// </summary>
@@ -513,7 +373,6 @@ namespace UnityEditor.AddressableAssets.Settings
             Directory.CreateDirectory(configFolder);
             AssetDatabase.CreateAsset(aa, path);
             aa = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(path);
-            aa.Validate();
             AssetDatabase.SaveAssets();
 
             return aa;
@@ -690,15 +549,14 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="guid">The asset guid.</param>
         /// <param name="targetParent">The group to add the entry to.</param>
-        /// <param name="readOnly">Is the new entry read only.</param>
         /// <param name="postEvent">Send modification event.</param>
         /// <returns></returns>
-        public AddressableAssetEntry CreateOrMoveEntry(AssetGUID guid, AddressableAssetGroup targetParent, bool readOnly = false, bool postEvent = true)
+        public AddressableAssetEntry CreateOrMoveEntry(AssetGUID guid, AddressableAssetGroup targetParent, bool postEvent = true)
         {
             if (targetParent == null || guid.IsInvalid())
                 return null;
 
-            AddressableAssetEntry entry = FindAssetEntry(guid);
+            var entry = FindAssetEntry(guid);
             if (entry != null) //move entry to where it should go...
             {
                 //no need to do anything if already done...
@@ -876,155 +734,6 @@ namespace UnityEditor.AddressableAssets.Settings
             var groupPath = AssetDatabase.GUIDToAssetPath(guidOfGroup);
             if (!string.IsNullOrEmpty(groupPath))
                 AssetDatabase.DeleteAsset(groupPath);
-        }
-
-        internal void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-        {
-            var aa = this;
-            bool relatedAssetChanged = false;
-            bool settingsChanged = false;
-
-            foreach (string str in importedAssets)
-            {
-                var assetType = AssetDatabase.GetMainAssetTypeAtPath(str);
-                if (typeof(AddressableAssetSettings).IsAssignableFrom(assetType))
-                {
-                    var settings = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(str);
-                    if (settings != null)
-                        settings.Validate();
-                }
-
-                if (typeof(AddressableAssetGroup).IsAssignableFrom(assetType))
-                {
-                    var group = aa.FindGroup(Path.GetFileNameWithoutExtension(str));
-                    if (group == null)
-                    {
-                        var foundGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(str);
-                        if (!aa.groups.Contains(foundGroup))
-                        {
-                            aa.groups.Add(foundGroup);
-                            group = aa.FindGroup(Path.GetFileNameWithoutExtension(str));
-                            relatedAssetChanged = true;
-                            settingsChanged = true;
-                        }
-                    }
-
-                    if (group != null)
-                        group.DedupeEnteries();
-                }
-
-                var guid = (AssetGUID) AssetDatabase.AssetPathToGUID(str);
-                if (aa.FindAssetEntry(guid) != null)
-                    relatedAssetChanged = true;
-
-                if (AddressableAssetUtility.IsInResources(str))
-                    relatedAssetChanged = true;
-            }
-
-            if (deletedAssets.Length > 0)
-            {
-                // if any directly referenced assets were deleted while Unity was closed, the path isn't useful, so Remove(null) is our only option
-                //  this can lead to orphaned schema files.
-                if (groups.Remove(null) ||
-                    DataBuilders.Remove(null))
-                {
-                    relatedAssetChanged = true;
-                }
-            }
-
-            foreach (string str in deletedAssets)
-            {
-                if (AddressableAssetUtility.IsInResources(str))
-                    relatedAssetChanged = true;
-                else
-                {
-                    if (CheckForGroupDataDeletion(str))
-                    {
-                        relatedAssetChanged = true;
-                        settingsChanged = true;
-                        continue;
-                    }
-
-                    var guidOfDeletedAsset = (AssetGUID) AssetDatabase.AssetPathToGUID(str);
-                    if (aa.RemoveAssetEntry(guidOfDeletedAsset))
-                    {
-                        relatedAssetChanged = true;
-                    }
-                }
-            }
-
-            for (int i = 0; i < movedAssets.Length; i++)
-            {
-                var str = movedAssets[i];
-                var assetType = AssetDatabase.GetMainAssetTypeAtPath(str);
-                if (typeof(AddressableAssetGroup).IsAssignableFrom(assetType))
-                {
-                    var oldGroupName = Path.GetFileNameWithoutExtension(movedFromAssetPaths[i]);
-                    var group = aa.FindGroup(oldGroupName);
-                    if (group != null)
-                    {
-                        var newGroupName = Path.GetFileNameWithoutExtension(str);
-                        group.Name = newGroupName;
-                        relatedAssetChanged = true;
-                    }
-                }
-                else
-                {
-                    var guid = (AssetGUID) AssetDatabase.AssetPathToGUID(str);
-                    var entry = aa.FindAssetEntry(guid);
-
-                    bool isAlreadyAddressable = entry != null;
-                    bool startedInResources = AddressableAssetUtility.IsInResources(movedFromAssetPaths[i]);
-                    bool endedInResources = AddressableAssetUtility.IsInResources(str);
-                    bool inEditorSceneList = BuiltinSceneCache.Contains(guid);
-
-                    //update entry cached path
-                    entry?.ClearCachedPath();
-
-                    //move to Resources
-                    if (isAlreadyAddressable && endedInResources)
-                    {
-                        var fileName = Path.GetFileNameWithoutExtension(str);
-                        L.I("You have moved addressable asset " + fileName +
-                            " into a Resources directory.  It has been unmarked as addressable, but can still be loaded via the Addressables API via its Resources path.");
-                        aa.RemoveAssetEntry(guid, false);
-                    }
-                    else if (inEditorSceneList)
-                        BuiltinSceneCache.ClearState();
-
-                    //any addressables move or resources move (even resources to within resources) needs to refresh the UI.
-                    relatedAssetChanged = isAlreadyAddressable || startedInResources || endedInResources || inEditorSceneList;
-                }
-            }
-
-            if (relatedAssetChanged || settingsChanged)
-                aa.SetDirty(ModificationEvent.BatchModification, null, true, settingsChanged);
-        }
-
-        internal bool CheckForGroupDataDeletion(string str)
-        {
-            if (string.IsNullOrEmpty(str))
-                return false;
-
-            var modified = false;
-            AddressableAssetGroup groupToDelete = null;
-            var deleteGroup = false;
-            foreach (var group in groups)
-            {
-                if (group == null) continue;
-                if (AssetDatabase.GUIDToAssetPath(group.Guid) != str) continue;
-                groupToDelete = group;
-                deleteGroup = true;
-                break;
-            }
-
-            if (deleteGroup)
-            {
-                RemoveGroupInternal(groupToDelete, false, true);
-                modified = true;
-            }
-
-            return modified;
         }
 
         /// <summary>

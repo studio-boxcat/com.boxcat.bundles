@@ -12,9 +12,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <inheritdoc />
         public override string ruleName => "Check Resources to Addressable Duplicate Dependencies";
 
-        /// <inheritdoc />
-        public override bool CanFix => false;
-
         /// <summary>
         /// Clear analysis and calculate built in resources and corresponding bundle dependencies
         /// </summary>
@@ -25,12 +22,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             ClearAnalysis();
             AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.RunCheckResourcesDupeDependenciesRule);
             return CalculateBuiltInResourceDependenciesToBundleDependecies(settings, GetResourcePaths());
-        }
-
-        /// <inheritdoc />
-        public override void FixIssues(AddressableAssetSettings settings)
-        {
-            //Do nothing.  There's nothing to fix.
         }
 
         /// <inheritdoc />

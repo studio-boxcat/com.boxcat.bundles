@@ -66,22 +66,8 @@ namespace UnityEditor.AddressableAssets.Settings
             parentGroup = parent;
         }
 
-        Hash128 m_CurrentHash;
-        internal Hash128 currentHash
-        {
-            get
-            {
-                if (m_CurrentHash.isValid)
-                    return m_CurrentHash;
-                m_CurrentHash.Append(m_GUID);
-                m_CurrentHash.Append(m_Address);
-                return m_CurrentHash;
-            }
-        }
-
         internal void SetDirty(AddressableAssetSettings.ModificationEvent e, object o, bool postEvent)
         {
-            m_CurrentHash = default;
             if (parentGroup != null)
                 parentGroup.SetDirty(e, o, postEvent, true);
         }

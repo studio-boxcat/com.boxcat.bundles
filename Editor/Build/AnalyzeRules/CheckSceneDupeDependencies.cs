@@ -10,22 +10,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     public class CheckSceneDupeDependencies : BundleRuleBase
     {
         /// <inheritdoc />
-        public override string ruleName
-        {
-            get { return "Check Scene to Addressable Duplicate Dependencies"; }
-        }
-
-        /// <inheritdoc />
-        public override bool CanFix
-        {
-            get { return false; }
-        }
-
-        /// <inheritdoc />
-        public override void FixIssues(AddressableAssetSettings settings)
-        {
-            //Do nothing, there's nothing to fix.
-        }
+        public override string ruleName => "Check Scene to Addressable Duplicate Dependencies";
 
         /// <summary>
         /// Clear analysis and calculate built in resources and corresponding bundle dependencies for scenes

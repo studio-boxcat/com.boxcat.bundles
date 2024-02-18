@@ -147,10 +147,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     m_CurrentHash.Append(m_GUID.GetHashCode());
                     m_CurrentHash.Append(entries.Count);
                     foreach (var e in entries)
-                    {
-                        var eh = e.currentHash;
-                        m_CurrentHash.Append(ref eh);
-                    }
+                        m_CurrentHash.Append(e.guid.Value);
                 }
                 return m_CurrentHash;
             }
@@ -193,25 +190,6 @@ namespace UnityEditor.AddressableAssets.Settings
                     Debug.LogException(ex);
                 }
             }
-        }
-
-        internal void DedupeEnteries()
-        {
-            if (m_Settings == null)
-                return;
-
-            var removeEntries = new List<AddressableAssetEntry>();
-            foreach (var e in m_EntryMap.Values)
-            {
-                var lookedUpEntry = m_Settings.FindAssetEntry(e.guid);
-                if (lookedUpEntry.parentGroup == this) continue;
-
-                Debug.LogWarning($"{e.address} is already a member of group {lookedUpEntry.parentGroup} but group {Name} contained a reference to it.  Removing referece.");
-                removeEntries.Add(e);
-            }
-
-            if (removeEntries.Count > 0)
-                RemoveAssetEntries(removeEntries);
         }
 
         internal void Initialize(AddressableAssetSettings settings, string groupName, string guid)

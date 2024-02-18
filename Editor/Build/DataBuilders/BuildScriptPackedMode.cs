@@ -64,16 +64,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         internal AddressableAssetsBuildContext InitializeBuildContext(AddressablesDataBuilderInput builderInput)
         {
-            var now = DateTime.Now;
-            var aaSettings = builderInput.AddressableSettings;
-
             m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
-
-            return new AddressableAssetsBuildContext
-            {
-                Settings = aaSettings,
-                buildStartTime = now
-            };
+            return new AddressableAssetsBuildContext(builderInput.AddressableSettings) {buildStartTime = DateTime.Now};
         }
 
         struct SBPSettingsOverwriterScope : IDisposable

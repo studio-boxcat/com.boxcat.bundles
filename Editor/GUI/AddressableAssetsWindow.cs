@@ -1,18 +1,11 @@
 using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    class AddressableAssetsWindow : EditorWindow, IHasCustomMenu
+    class AddressableAssetsWindow : EditorWindow
     {
-        private SearchRequest m_Request;
-        private string m_HelpUrl;
-
-        [FormerlySerializedAs("m_groupEditor")]
         [SerializeField]
         internal AddressableAssetsSettingsGroupEditor m_GroupEditor;
 
@@ -20,16 +13,9 @@ namespace UnityEditor.AddressableAssets.GUI
         internal static void ShowSettingsInspector()
         {
             var setting = AddressableAssetSettingsDefaultObject.Settings;
-            if (setting == null)
-            {
-                Debug.LogWarning("Attempting to inspect default Addressables Settings, but no settings file exists.  Open 'Window/Asset Management/Addressables/Groups' for more info.");
-            }
-            else
-            {
-                EditorApplication.ExecuteMenuItem("Window/General/Inspector");
-                EditorGUIUtility.PingObject(setting);
-                Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
-            }
+            EditorApplication.ExecuteMenuItem("Window/General/Inspector");
+            EditorGUIUtility.PingObject(setting);
+            Selection.activeObject = setting;
         }
 
         [MenuItem("Window/Asset Management/Addressables/Groups", priority = 2050)]
@@ -42,23 +28,15 @@ namespace UnityEditor.AddressableAssets.GUI
             window.Show();
         }
 
-        public static Vector2 GetWindowPosition()
-        {
-            var window = GetWindow<AddressableAssetsWindow>();
-            return new Vector2(window.position.x, window.position.y);
-        }
-
         internal void SelectAssetsInGroupEditor(IList<AddressableAssetEntry> entries)
         {
-            if (m_GroupEditor == null)
-                m_GroupEditor = new AddressableAssetsSettingsGroupEditor(this);
+            m_GroupEditor ??= new AddressableAssetsSettingsGroupEditor(this);
             m_GroupEditor.SelectEntries(entries);
         }
 
         internal void SelectGroupInGroupEditor(AddressableAssetGroup group, bool fireSelectionChanged)
         {
-            if (m_GroupEditor == null)
-                m_GroupEditor = new AddressableAssetsSettingsGroupEditor(this);
+            m_GroupEditor ??= new AddressableAssetsSettingsGroupEditor(this);
             m_GroupEditor.SelectGroup(group, fireSelectionChanged);
         }
 
@@ -66,10 +44,6 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow, true);
             m_GroupEditor?.OnEnable();
-            if (m_Request == null || m_Request.Status == StatusCode.Failure)
-            {
-                m_Request = PackageManager.Client.Search("com.unity.addressables");
-            }
         }
 
         public void OnDisable()
@@ -77,94 +51,11 @@ namespace UnityEditor.AddressableAssets.GUI
             m_GroupEditor?.OnDisable();
         }
 
-        internal static void OfferToConvert(AddressableAssetSettings settings)
-        {
-            var bundleList = AssetDatabase.GetAllAssetBundleNames();
-            if (settings == null || bundleList.Length <= 0) return;
-            EditorUtility.DisplayDialog(
-                "Legacy Bundles Detected",
-                $"We have detected the use of legacy bundles in this project.\n{string.Join("\n", bundleList)}",
-                "Ok");
-        }
-
         public void OnGUI()
         {
-            if (AddressableAssetSettingsDefaultObject.Settings == null)
-            {
-                GUILayout.Space(50);
-                if (GUILayout.Button("Create Addressables Settings"))
-                {
-                    m_GroupEditor = null;
-                    AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                        AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
-                    OfferToConvert(AddressableAssetSettingsDefaultObject.Settings);
-                }
-
-                GUILayout.Space(20);
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(50);
-                UnityEngine.GUI.skin.label.wordWrap = true;
-                GUILayout.Label(
-                    "Click the \"Create\" button above or simply drag an asset into this window to start using Addressables.  Once you begin, the Addressables system will save some assets to your project to keep up with its data");
-                GUILayout.Space(50);
-                GUILayout.EndHorizontal();
-                switch (Event.current.type)
-                {
-                    case EventType.DragPerform:
-                        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                        foreach (var path in DragAndDrop.paths)
-                        {
-                            if (!AddressableAssetUtility.IsPathValidForEntry(path)) continue;
-                            var guid = (AssetGUID) AssetDatabase.AssetPathToGUID(path);
-                            if (guid.IsInvalid()) continue;
-
-                            if (AddressableAssetSettingsDefaultObject.Settings == null)
-                                AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                                    AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
-                            Undo.RecordObject(AddressableAssetSettingsDefaultObject.Settings, "AddressableAssetSettings");
-                            AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(guid, AddressableAssetSettingsDefaultObject.Settings.DefaultGroup);
-                        }
-
-                        break;
-                    case EventType.DragUpdated:
-                    case EventType.DragExited:
-                        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                        break;
-                }
-            }
-            else
-            {
-                Rect contentRect = new Rect(0, 0, position.width, position.height);
-
-                if (m_GroupEditor == null)
-                    m_GroupEditor = new AddressableAssetsSettingsGroupEditor(this);
-
-                if (m_GroupEditor.OnGUI(contentRect))
-                    Repaint();
-            }
-        }
-
-        public void AddItemsToMenu(GenericMenu menu)
-        {
-            if (m_Request != null && m_Request.Status == StatusCode.Success && m_Request.Result != null && m_Request.Result.Length == 1)
-            {
-                string[] parts = m_Request.Result[0].version.Split('.');
-                if (parts.Length >= 2)
-                {
-                    // Major & minor
-                    string vUrl = $"{parts[0]}.{parts[1]}";
-                    m_HelpUrl = $"https://docs.unity3d.com/Packages/com.unity.addressables@{vUrl}";
-                    menu.AddItem(new GUIContent("Help"), false, OnHelp);
-                }
-            }
-        }
-
-        void OnHelp()
-        {
-            if (!string.IsNullOrEmpty(m_HelpUrl))
-            {
-                Application.OpenURL(m_HelpUrl);
-            }
+            m_GroupEditor ??= new AddressableAssetsSettingsGroupEditor(this);
+            if (m_GroupEditor.OnGUI(new Rect(0, 0, position.width, position.height)))
+                Repaint();
         }
     }
 }

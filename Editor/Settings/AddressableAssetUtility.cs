@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -26,7 +25,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 return false;
             }
 
-            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out guid, out long id))
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out guid, out long _))
             {
                 guid = string.Empty;
                 path = string.Empty;
@@ -169,50 +168,11 @@ namespace UnityEditor.AddressableAssets.Settings
             return m_Version;
         }
 
-        public static string GenerateDocsURL(string page)
-        {
-            return $"https://docs.unity3d.com/Packages/com.unity.addressables@{GetVersionFromPackageData()}/manual/{page}";
-        }
-
-        internal static bool IsUsingVCIntegration()
-        {
-            return Provider.isActive && Provider.enabled;
-        }
-
-        internal static bool IsVCAssetOpenForEdit(string path)
-        {
-            AssetList VCAssets = GetVCAssets(path);
-            foreach (Asset vcAsset in VCAssets)
-            {
-                if (vcAsset.path == path)
-                    return Provider.IsOpenForEdit(vcAsset);
-            }
-
-            return false;
-        }
-
-        internal static AssetList GetVCAssets(string path)
-        {
-            VersionControl.Task op = Provider.Status(path);
-            op.Wait();
-            return op.assetList;
-        }
-
         internal class SortedDelegate<T1, T2, T3, T4>
         {
-            struct QueuedValues
-            {
-                public T1 arg1;
-                public T2 arg2;
-                public T3 arg3;
-                public T4 arg4;
-            }
-
             public delegate void Delegate(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
             private readonly SortedList<int, Delegate> m_SortedInvocationList = new SortedList<int, Delegate>();
-
-            private readonly List<QueuedValues> m_InvokeQueue = new List<QueuedValues>();
             private readonly List<(int, Delegate)> m_RegisterQueue = new List<(int, Delegate)>();
             private bool m_IsInvoking;
 
@@ -261,7 +221,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 FlushRegistrationQueue();
                 RegisterToInvocationList(toRegister, order);
-                FlushInvokeQueue();
             }
 
             private void RegisterToInvocationList(Delegate toRegister, int order)
@@ -288,7 +247,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 FlushRegistrationQueue();
                 Invoke_Internal(arg1, arg2, arg3, arg4);
-                FlushInvokeQueue();
             }
 
             private void Invoke_Internal(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
@@ -308,42 +266,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     for (int i = m_RegisterQueue.Count - 1; i >= 0; --i)
                         RegisterToInvocationList(m_RegisterQueue[i].Item2, m_RegisterQueue[i].Item1);
-                }
-            }
-
-            private void FlushInvokeQueue()
-            {
-                if (m_InvokeQueue.Count > 0)
-                {
-                    // keep looping the invoke buffer in case new invokes get added during invoke
-                    while (m_InvokeQueue.Count > 0)
-                    {
-                        for (int i = m_InvokeQueue.Count - 1; i >= 0; --i)
-                        {
-                            Invoke_Internal(m_InvokeQueue[i].arg1, m_InvokeQueue[i].arg2, m_InvokeQueue[i].arg3, m_InvokeQueue[i].arg4);
-                            m_InvokeQueue.RemoveAt(i);
-                        }
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Will invoke with the given parameters if there is any delegates in the invocation list, and not currently invoking
-            /// else, will save the values and invoke when there is a delegate registered.
-            /// </summary>
-            /// <param name="arg1"></param>
-            /// <param name="arg2"></param>
-            /// <param name="arg3"></param>
-            /// <param name="arg4"></param>
-            public void TryInvokeOrDelayToReady(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
-            {
-                if (m_SortedInvocationList.Count == 0 || m_IsInvoking)
-                {
-                    m_InvokeQueue.Add(new QueuedValues {arg1 = arg1, arg2 = arg2, arg3 = arg3, arg4 = arg4});
-                }
-                else
-                {
-                    Invoke(arg1, arg2, arg3, arg4);
                 }
             }
 
@@ -402,12 +324,10 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal static void MoveEntriesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
         {
-            foreach (AddressableAssetEntry entry in entries)
+            foreach (var entry in entries)
             {
                 if (entry.parentGroup != group)
-                {
-                    settings.MoveEntry(entry, group, true);
-                }
+                    settings.MoveEntry(entry, group);
             }
         }
     }

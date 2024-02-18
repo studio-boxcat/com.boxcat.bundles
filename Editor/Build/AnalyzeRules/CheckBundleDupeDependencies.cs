@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline;
 using UnityEngine;
@@ -30,9 +31,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         {
             public bool ResultsInverted;
         }
-
-        /// <inheritdoc />
-        public override bool CanFix => false;
 
         /// <inheritdoc />
         public override string ruleName => "Check Duplicate Bundle Dependencies";
@@ -166,7 +164,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
             if (AllBundleInputDefs.Count > 0)
             {
-                var context = GetBuildContext(settings);
+                var context = new AddressableAssetsBuildContext(settings);
                 ReturnCode exitCode = RefreshBuild(context);
                 if (exitCode < ReturnCode.Success)
                 {
@@ -237,11 +235,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 groupData.Add(checkDupeResult.AssetPath);
                 m_ImplicitAssets.Add(checkDupeResult.DuplicatedGroupGuid);
             }
-        }
-
-        public override void FixIssues(AddressableAssetSettings settings)
-        {
-            // No fix for this rule
         }
 
         /// <inheritdoc />
