@@ -999,7 +999,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         {
                             var entriesMoved = new List<AddressableAssetEntry>();
                             var entriesCreated = new List<AddressableAssetEntry>();
-                            m_Editor.settings.CreateOrMoveEntries(nonResourceGuids, parent, entriesCreated, entriesMoved, false, false);
+                            m_Editor.settings.CreateOrMoveEntries(nonResourceGuids, parent, entriesCreated, entriesMoved, false);
 
                             if (entriesMoved.Count > 0)
                                 m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entriesMoved, true);

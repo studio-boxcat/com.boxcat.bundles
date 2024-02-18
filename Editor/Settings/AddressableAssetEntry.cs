@@ -44,7 +44,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public void SetAddress(string addr, bool postEvent = true)
         {
             if (m_Address == addr) return;
-            Assert.IsFalse(string.IsNullOrEmpty(m_Address), "Address cannot be set to an empty string.");
             m_Address = addr;
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, postEvent);
         }

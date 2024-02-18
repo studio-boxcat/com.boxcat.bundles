@@ -580,14 +580,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="targetParent">The group to add the entries to.</param>
         /// <param name="createdEntries">List to add new entries to. If null, the list will be ignored.</param>
         /// <param name="movedEntries">List to add moved entries to. If null, the list will be ignored.</param>
-        /// <param name="readOnly">Is the new entry read only.</param>
         /// <param name="postEvent">Send modification event.</param>
         /// <exception cref="ArgumentException"></exception>
         internal void CreateOrMoveEntries(IEnumerable<AssetGUID> guids,
             AddressableAssetGroup targetParent,
             List<AddressableAssetEntry> createdEntries = null,
             List<AddressableAssetEntry> movedEntries = null,
-            bool readOnly = false,
             bool postEvent = true)
         {
             if (targetParent == null)
@@ -608,26 +606,14 @@ namespace UnityEditor.AddressableAssets.Settings
                         createdEntries.Add(entry);
                 }
             }
+
             if (postEvent)
                 SetDirty(ModificationEvent.BatchModification, guids, true, true);
         }
 
         private AddressableAssetEntry CreateAndAddEntryToGroup(AssetGUID guid, AddressableAssetGroup targetParent, bool postEvent = true)
         {
-            AddressableAssetEntry entry = null;
-            var path = AssetDatabase.GUIDToAssetPath(guid.Value);
-
-            if (AddressableAssetUtility.IsPathValidForEntry(path))
-            {
-                entry = CreateEntry(guid, path, targetParent, postEvent);
-            }
-            else
-            {
-                if (AssetDatabase.GetMainAssetTypeAtPath(path) != null && BuildUtility.IsEditorType(AssetDatabase.GetMainAssetTypeAtPath(path)))
-                    return null;
-                entry = CreateEntry(guid, guid.Value, targetParent, postEvent);
-            }
-
+            var entry = CreateEntry(guid, "", targetParent, postEvent);
             targetParent.AddAssetEntry(entry, postEvent);
             return entry;
         }

@@ -58,7 +58,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var otherTargetGuids  = targetInfos.Except(resourceTargets).Select(info => info.Guid).ToList();
                 var entriesCreated = new List<AddressableAssetEntry>();
                 var entriesMoved = new List<AddressableAssetEntry>();
-                aaSettings.CreateOrMoveEntries(otherTargetGuids, parentGroup, entriesCreated, entriesMoved, false, false);
+                aaSettings.CreateOrMoveEntries(otherTargetGuids, parentGroup, entriesCreated, entriesMoved, false);
 
                 if (entriesMoved.Count > 0)
                     aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entriesMoved, true);
