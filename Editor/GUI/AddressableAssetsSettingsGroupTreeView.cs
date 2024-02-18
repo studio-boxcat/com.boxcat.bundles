@@ -640,11 +640,6 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
 
-                if (selectedNodes.Count == 1)
-                    menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
-                else if (selectedNodes.Count > 1)
-                    menu.AddItem(new GUIContent("Copy " + selectedNodes.Count + " Addresses to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
-
                 foreach (var i in AddressableAssetSettings.CustomAssetEntryCommands)
                     menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemEntries, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
             }
@@ -672,18 +667,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
             EditorGUIUtility.PingObject(group);
             Selection.activeObject = group;
-        }
-
-        internal static void CopyAddressesToClipboard(object context)
-        {
-            List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
-            string buffer = "";
-
-            foreach (AssetEntryTreeViewItem item in selectedNodes)
-                buffer += item.entry.address + ",";
-
-            buffer = buffer.TrimEnd(',');
-            GUIUtility.systemCopyBuffer = buffer;
         }
 
         internal void CreateNewGroup()
@@ -1071,7 +1054,8 @@ namespace UnityEditor.AddressableAssets.GUI
         public Texture2D assetIcon;
         public bool isRenaming;
 
-        public AssetEntryTreeViewItem(AddressableAssetEntry e, int d) : base(e == null ? 0 : (e.address + e.guid).GetHashCode(), d, e == null ? "[Missing Reference]" : e.address)
+        public AssetEntryTreeViewItem(AddressableAssetEntry e, int d)
+            : base(e == null ? 0 : (e.address + e.guid).GetHashCode(), d, e == null ? "[Missing Reference]" : e.address)
         {
             entry = e;
             group = null;

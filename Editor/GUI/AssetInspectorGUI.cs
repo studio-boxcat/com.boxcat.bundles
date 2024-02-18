@@ -152,15 +152,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     else
                     {
                         string newAddress = EditorGUILayout.DelayedTextField(entryInfo.Address, GUILayout.ExpandWidth(true));
-                        if (newAddress != entryInfo.Address)
-                        {
-                            if (newAddress.Contains('[') && newAddress.Contains(']'))
-                                Debug.LogErrorFormat("Rename of address '{0}' cannot contain '[ ]'.", entryInfo.Address);
-                            else
-                            {
-                                entryInfo.MainAssetEntry.address = newAddress;
-                            }
-                        }
+                        if (newAddress != entryInfo.Address) entryInfo.MainAssetEntry.address = newAddress;
                     }
                 }
                 else

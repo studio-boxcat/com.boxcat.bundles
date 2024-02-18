@@ -210,8 +210,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return assetGroup.BundleMode switch
             {
                 BundlePackingMode.PackTogether => GenerateBuildInputDefinitions(assetGroup, assetGroup.entries, "all"),
-                BundlePackingMode.PackSeparately => assetGroup.entries.SelectMany(
-                    e => GenerateBuildInputDefinitions(assetGroup, new List<AddressableAssetEntry> {e}, e.address)),
+                BundlePackingMode.PackSeparately => assetGroup.entries.SelectMany(e =>
+                {
+                    var suffix = string.IsNullOrEmpty(e.address) ? e.guid.Value : e.address;
+                    return GenerateBuildInputDefinitions(assetGroup, new List<AddressableAssetEntry> {e}, suffix);
+                }),
                 _ => throw new Exception("Unknown Packing Mode")
             };
 
