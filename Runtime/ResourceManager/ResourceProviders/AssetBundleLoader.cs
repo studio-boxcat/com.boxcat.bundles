@@ -234,16 +234,13 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
                 Assert.IsTrue(reqs.Count < count, "AssetBundleCreateRequest not removed");
             }
-            Assert.AreEqual(1, reqs.Count, "AssetBundle not fully loaded");
 
-            // If all requests are done, mark as fully resolved.
+            // All requests must be done.
+            Assert.AreEqual(1, reqs.Count, "AssetBundle not fully loaded");
+            Assert.IsNull(reqs[0], "Only the dummy request should be left");
             Assert.AreEqual(ctx, _contexts[bundleIndex], "AssetBundleResolveContext is recycled while resolving");
-            if (reqs.Count is 1)
-            {
-                Assert.IsNull(reqs[0], "Only the dummy request should be left");
-                reqs.Clear();
-                OnResolved(ctx);
-            }
+            reqs.Clear();
+            OnResolved(ctx);
 
             Assert.AreEqual(AssetBundleResolveContext.Done, _contexts[bundleIndex], "AssetBundle not fully resolved");
             Assert.IsFalse(_requests.Values.Any(x => x.Requesters.Contains(ctx)), "AssetBundleResolveContext still in the list");
