@@ -10,6 +10,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     {
         public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
         {
+            L.I("Building ResourceCatalog...");
+
             Assert.IsTrue(keyToId.Count < byte.MaxValue, "Too many asset bundles.");
 
             // Build AssetBundle dependency data.
@@ -34,6 +36,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 })
                 .OrderBy(x => x)
                 .ToList();
+            L.I("All addresses: " + string.Join(", ", addresses.Select(x => ((Address) (x & 0x00FFFFFF)).ReadableString())));
             Assert.AreEqual(addresses.Count, addresses.Distinct().Count(), "Duplicate address found.");
 
             // AssetBundleCount: ushort
@@ -46,12 +49,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             //     Address: 3 bytes
             // AssetBundleDepData: byte[]
             var bundleCount = bundleKeys.Count;
-            var locCount = addresses.Count;
+            var addressCount = addresses.Count;
             Assert.IsTrue(bundleCount <= byte.MaxValue, "Too many asset bundles.");
             var data = new byte[
                 2 + 2
                   + bundleCount * 4
-                  + locCount * 4
+                  + addressCount * 4
                   + depData.Length];
 
             fixed (byte* ptr = data)
@@ -59,11 +62,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 var p = ptr;
                 *(ushort*) p = (ushort) bundleCount;
                 p += 2;
-                *(ushort*) p = (ushort) locCount;
+                *(ushort*) p = (ushort) addressCount;
                 p += 2;
 
                 // Write AssetBundleDepSpans.
-                var depOffset = 4 + 4 * bundleCount + 4 * locCount;
+                var depOffset = 4 + 4 * bundleCount + 4 * addressCount;
                 for (var i = 0; i < bundleCount; i++)
                 {
                     var start = spanData[i].Start + depOffset;
@@ -89,6 +92,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
+            L.I($"ResourceCatalog built. {data.Length} bytes\n"
+                + $"  AssetBundleCount: {bundleCount}\n"
+                + $"  ResourceLocationCount: {addressCount}\n"
+                + $"  AssetBundleDepSpans: {bundleCount * 4} bytes\n"
+                + $"  ResourceLocations: {addressCount * 4} bytes\n"
+                + $"  AssetBundleDepData: {depData.Length} bytes");
             return data;
         }
 

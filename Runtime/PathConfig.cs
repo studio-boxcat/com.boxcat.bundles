@@ -40,7 +40,6 @@ namespace UnityEngine.AddressableAssets
 
         public static string BuildPath_BundleRoot => BuildPath + "/AssetBundles";
         public static string BuildPath_CatalogBin => BuildPath + "/AssetBundles/catalog.bin";
-        public static string BuildPath_LogsJson => BuildPath + "/buildLogs.json";
         public static string BuildPath_LinkXML => BuildPath + "/link.xml";
 #endif
     }
