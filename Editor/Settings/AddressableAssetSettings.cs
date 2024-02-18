@@ -55,8 +55,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
-
         /// <summary>
         /// Default name of a newly created group.
         /// </summary>
@@ -495,6 +493,8 @@ namespace UnityEditor.AddressableAssets.Settings
 
             return false;
         }
+
+        private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
 
         /// <summary>
         /// Find and asset entry by guid.
