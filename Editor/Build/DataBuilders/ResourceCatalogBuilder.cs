@@ -27,6 +27,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             // Get all addresses.
             var addresses = entries
                 .Where(x => x.Address.HasValue)
+                .OrderBy(x => x.Address.Value) // Sort by address.
                 .Select(x =>
                 {
                     var address = (uint) x.Address.Value;
@@ -34,7 +35,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     Assert.AreEqual(0, address & 0xFF000000, "MSB 1 byte is reserved for AssetBundleId.");
                     return (uint) ((byte) keyToId[bundle] << 24) | address;
                 })
-                .OrderBy(x => x)
                 .ToList();
             L.I("All addresses: " + string.Join(", ", addresses.Select(x => ((Address) (x & 0x00FFFFFF)).ReadableString())));
             Assert.AreEqual(addresses.Count, addresses.Distinct().Count(), "Duplicate address found.");
