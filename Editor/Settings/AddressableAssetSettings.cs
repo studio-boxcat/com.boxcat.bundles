@@ -513,15 +513,11 @@ namespace UnityEditor.AddressableAssets.Settings
 
             foreach (var group in m_GroupAssets)
             {
-                if (group == null)
-                    continue;
-
+                if (group == null) continue;
                 var foundEntry = group.GetAssetEntry(guid);
-                if (foundEntry != null)
-                {
-                    m_FindAssetEntryCache.Add(guid, foundEntry);
-                    return foundEntry;
-                }
+                if (foundEntry == null) continue;
+                m_FindAssetEntryCache.Add(guid, foundEntry);
+                return foundEntry;
             }
 
             return null;
