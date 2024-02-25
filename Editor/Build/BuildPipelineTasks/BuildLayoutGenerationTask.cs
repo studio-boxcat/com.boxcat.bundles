@@ -147,11 +147,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     objectTypes.Add(resultEntry.Key, resultEntry.Value);
             }
 
+            var bundleKeyToId = ResourceCatalogBuilder.AssignBundleId(aaContext.entries.Values);
             foreach (var bundleName in m_WriteData.FileToBundle.Values.Distinct())
             {
-                var bundle = new BuildLayout.Bundle();
                 var bundleKey = BundleKey.FromBuildName(bundleName);
-                bundle.Key = bundleKey;
+                var bundle = new BuildLayout.Bundle(bundleKey, bundleKeyToId[bundleKey]);
                 lookup.Bundles.Add(bundleKey, bundle);
             }
 
@@ -645,7 +645,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             {
                 L.I("Correlate Bundles to groups");
-                foreach (BuildLayout.Bundle b in lookup.Bundles.Values)
+                foreach (var b in lookup.Bundles.Values)
                     CorrelateBundleToAssetGroup(layout, b, lookup, aaContext);
             }
 
@@ -676,7 +676,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 layout.BuiltInBundles.Add(b);
             }
 
-            var filePath = Path.Combine(PathConfig.BuildPath_BundleRoot, b.Key.GetBuildName());
+            var filePath = PathConfig.GetAssetBundleLoadPath(b.Id);
             b.FileSize = GetFileSizeFromPath(filePath, out bool success);
             if (!success)
                 L.W($"AssetBundle {b.Key} from Addressable Group \"{b.Group.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");

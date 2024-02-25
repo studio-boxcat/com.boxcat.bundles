@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Content;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
@@ -486,10 +487,18 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         [Serializable]
         public class Bundle
         {
+            public Bundle(BundleKey key, AssetBundleId id)
+            {
+                Key = key;
+                Id = id;
+            }
+
             /// <summary>
             /// The name of the AssetBundle
             /// </summary>
             public BundleKey Key;
+
+            public AssetBundleId Id;
 
             public string Name => Key.ToString();
 
@@ -604,7 +613,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 }
             }
 
-            internal Dictionary<Bundle, BundleDependency> BundleDependencyMap = new Dictionary<Bundle, BundleDependency>();
+            internal Dictionary<Bundle, BundleDependency> BundleDependencyMap = new();
 
             /// <summary>
             /// A list of bundles that this bundle depends upon.
