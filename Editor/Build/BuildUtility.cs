@@ -14,9 +14,15 @@ namespace UnityEditor.AddressableAssets.Build
     {
         public const string BuiltInShaderBundle = "UnityBuiltInShaders";
 
-        static HashSet<string> _editorAssemblyNameCache = null;
-        static HashSet<string> _editorAssemblyName => _editorAssemblyNameCache ??= CompilationPipeline.GetAssemblies(AssembliesType.Editor)
-            .Select(a => a.name).ToHashSet();
+        static HashSet<string> _editorAssemblyNamesCache = null;
+        static HashSet<string> _editorAssemblyNames => _editorAssemblyNamesCache ??= CollectEditorAssemblyNames();
+        static HashSet<string> CollectEditorAssemblyNames()
+        {
+            return CompilationPipeline.GetAssemblies(AssembliesType.Editor)
+                .Where(a => (a.flags & AssemblyFlags.EditorAssembly) != 0)
+                .Select(a => a.name)
+                .ToHashSet();
+        }
 
         static Dictionary<System.Reflection.Assembly, bool> _editorAssemblyCache = new();
 
@@ -30,7 +36,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (_editorAssemblyCache.TryGetValue(assembly, out var isEditor))
                 return isEditor;
             var assemblyName = assembly.GetName().Name;
-            isEditor = _editorAssemblyName.Remove(assemblyName);
+            isEditor = _editorAssemblyNames.Remove(assemblyName);
             return _editorAssemblyCache[assembly] = isEditor;
         }
 
