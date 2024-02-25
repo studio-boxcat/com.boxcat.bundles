@@ -141,7 +141,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (!m_CurrentHash.isValid)
                 {
                     m_CurrentHash.Append(name);
-                    m_CurrentHash.Append(m_GUID.GetHashCode());
+                    m_CurrentHash.Append(Guid.GetHashCode());
                     m_CurrentHash.Append(entries.Count);
                     foreach (var e in entries)
                         m_CurrentHash.Append(e.guid.Value);
