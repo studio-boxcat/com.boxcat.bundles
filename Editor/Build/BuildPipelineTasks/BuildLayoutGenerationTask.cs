@@ -676,10 +676,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 layout.BuiltInBundles.Add(b);
             }
 
-            var filePath = Path.Combine(PathConfig.BuildPath, b.Key.GetBuildName());
+            var filePath = Path.Combine(PathConfig.BuildPath_BundleRoot, b.Key.GetBuildName());
             b.FileSize = GetFileSizeFromPath(filePath, out bool success);
             if (!success)
-                Debug.LogWarning($"AssetBundle {b.Key} from Addressable Group \"{b.Group.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
+                L.W($"AssetBundle {b.Key} from Addressable Group \"{b.Group.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
         }
 
         void PostProcessBundleData(LayoutLookupTables lookup)
