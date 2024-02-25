@@ -20,7 +20,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         public override List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
         {
             ClearAnalysis();
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.RunCheckResourcesDupeDependenciesRule);
             return CalculateBuiltInResourceDependenciesToBundleDependecies(settings, GetResourcePaths());
         }
 

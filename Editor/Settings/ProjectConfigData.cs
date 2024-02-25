@@ -16,9 +16,6 @@ namespace UnityEditor.AddressableAssets.Settings
         class ConfigSaveData
         {
             [SerializeField]
-            internal int activePlayModeIndex = 0;
-
-            [SerializeField]
             internal bool generateBuildLayout = false;
 
             [SerializeField]
@@ -27,8 +24,6 @@ namespace UnityEditor.AddressableAssets.Settings
 #if UNITY_2022_2_OR_NEWER
             [SerializeField]
             internal bool autoOpenAddressablesReport = true;
-            [SerializeField]
-            internal bool userHasBeenInformedAboutBuildReportSettingPreBuild = false;
 #endif
         }
 
@@ -69,24 +64,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (s_Data.autoOpenAddressablesReport != value)
                 {
                     s_Data.autoOpenAddressablesReport = value;
-                    SaveData();
-                }
-            }
-        }
-
-        internal static bool UserHasBeenInformedAboutBuildReportSettingPreBuild
-        {
-            get
-            {
-                ValidateData();
-                return s_Data.userHasBeenInformedAboutBuildReportSettingPreBuild;
-            }
-            set
-            {
-                ValidateData();
-                if (s_Data.userHasBeenInformedAboutBuildReportSettingPreBuild != value)
-                {
-                    s_Data.userHasBeenInformedAboutBuildReportSettingPreBuild = value;
                     SaveData();
                 }
             }
@@ -137,24 +114,6 @@ namespace UnityEditor.AddressableAssets.Settings
             SaveData();
         }
 
-
-        /// <summary>
-        /// The active play mode data builder index.
-        /// </summary>
-        public static byte ActivePlayModeIndex
-        {
-            get
-            {
-                ValidateData();
-                return (byte) s_Data.activePlayModeIndex;
-            }
-            set
-            {
-                ValidateData();
-                s_Data.activePlayModeIndex = value;
-                SaveData();
-            }
-        }
 
         static void ValidateData()
         {

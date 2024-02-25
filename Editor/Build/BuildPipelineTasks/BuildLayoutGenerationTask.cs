@@ -32,16 +32,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
-        IAddressableAssetsBuildContext m_AaBuildContext;
+        AddressableAssetsBuildContext m_AaBuildContext;
 
         [InjectContext(ContextUsage.In)]
         IBuildParameters m_Parameters;
 
         [InjectContext]
         IBundleWriteData m_WriteData;
-
-        [InjectContext(ContextUsage.In, true)]
-        IBuildLogger m_Log;
 
         [InjectContext]
         IBuildResults m_Results;
@@ -131,15 +128,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         private BuildLayout CreateBuildLayout()
         {
-            var aaContext = (AddressableAssetsBuildContext) m_AaBuildContext;
-
-            LayoutLookupTables lookup = null;
-            BuildLayout result = null;
-            using (m_Log.ScopedStep(LogLevel.Info, "Generate Lookup tables"))
-                lookup = GenerateLookupTables(aaContext);
-            using (m_Log.ScopedStep(LogLevel.Info, "Generate Build Layout"))
-                result = GenerateBuildLayout(aaContext, lookup);
-            return result;
+            var aaContext = m_AaBuildContext;
+            L.I("Generate Lookup tables");
+            var lookup = GenerateLookupTables(aaContext);
+            L.I("Generate Build Layout");
+            return GenerateBuildLayout(aaContext, lookup);
         }
 
         private LayoutLookupTables GenerateLookupTables(AddressableAssetsBuildContext aaContext)
@@ -188,7 +181,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     sf.Name = rf.fileAlias;
                     sf.Size = GetFileSizeFromPath(rf.fileName, out bool success);
                     if (!success)
-                        Debug.LogWarning($"Resource File {sf.Name} from file  \"{f.Name}\" was detected as part of the build, but the file could not be found. This may be because your build cache size is too small. Filesize of this Resource File will be 0 in BuildLayout.");
+                        L.W($"Resource File {sf.Name} from file  \"{f.Name}\" was detected as part of the build, but the file could not be found. This may be because your build cache size is too small. Filesize of this Resource File will be 0 in BuildLayout.");
 
                     f.SubFiles.Add(sf);
                 }
@@ -632,11 +625,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             AddressableAssetSettings aaSettings = aaContext.Settings;
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Generate Basic Information"))
-            {
-                SetLayoutMetaData(layout, aaSettings);
-                layout.AddressablesEditorSettings = GetAddressableEditorSettings(aaSettings);
-            }
+            L.I("Generate Basic Information");
+            SetLayoutMetaData(layout);
 
             // Map from GUID to AddrssableAssetEntry
             lookup.GuidToEntry = aaContext.entries.ToDictionary(
@@ -653,18 +643,18 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 layout.Groups.Add(grp);
             }
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Correlate Bundles to groups"))
             {
+                L.I("Correlate Bundles to groups");
                 foreach (BuildLayout.Bundle b in lookup.Bundles.Values)
                     CorrelateBundleToAssetGroup(layout, b, lookup, aaContext);
             }
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Apply Addressable info to layout data"))
-                ApplyAddressablesInformationToExplicitAssets(layout, lookup);
-            using (m_Log.ScopedStep(LogLevel.Info, "Process additional bundle data"))
-                PostProcessBundleData(lookup);
-            using (m_Log.ScopedStep(LogLevel.Info, "Generating implicit inclusion data"))
-                AddImplicitAssetsToLayout(lookup, layout);
+            L.I("Apply Addressable info to layout data");
+            ApplyAddressablesInformationToExplicitAssets(layout, lookup);
+            L.I("Process additional bundle data");
+            PostProcessBundleData(lookup);
+            L.I("Generating implicit inclusion data");
+            AddImplicitAssetsToLayout(lookup, layout);
 
             SetDuration(layout);
             return layout;
@@ -884,24 +874,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             layout.Duration = duration.TotalSeconds;
         }
 
-        static BuildLayout.AddressablesEditorData GetAddressableEditorSettings(AddressableAssetSettings aaSettings)
-        {
-            return new BuildLayout.AddressablesEditorData
-            {
-                SettingsHash = aaSettings.currentHash.ToString(),
-                NonRecursiveBuilding = aaSettings.NonRecursiveBuilding,
-                ContiguousBundles = aaSettings.ContiguousBundles,
-            };
-        }
-
-        private static void SetLayoutMetaData(BuildLayout layoutOut, AddressableAssetSettings aaSettings)
+        private static void SetLayoutMetaData(BuildLayout layoutOut)
         {
             layoutOut.UnityVersion = Application.unityVersion;
-            PackageManager.PackageInfo info = PackageManager.PackageInfo.FindForAssembly(typeof(BuildLayoutPrinter).Assembly);
-            if (info != null)
-                layoutOut.PackageVersion = $"{info.name}: {info.version}";
             layoutOut.BuildTarget = EditorUserBuildSettings.activeBuildTarget;
-            layoutOut.BuildScript = aaSettings.ActivePlayerDataBuilder.Name;
         }
 
         /// <summary>
@@ -910,18 +886,18 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <returns>The success or failure ReturnCode</returns>
         public ReturnCode Run()
         {
-            BuildLayout layout = CreateBuildLayout();
+            var layout = CreateBuildLayout();
 
-            string destinationPath = TimeStampedReportPath(layout.BuildStart);
-            using (m_Log.ScopedStep(LogLevel.Info, "Writing BuildReport File"))
-                layout.WriteToFile(destinationPath, k_PrettyPrint);
+            L.I("Writing BuildReport File");
+            var destinationPath = TimeStampedReportPath(layout.BuildStart);
+            layout.WriteToFile(destinationPath, k_PrettyPrint);
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Writing Layout Text File"))
             {
+                L.I("Writing Layout Text File");
                 var txtFilePath = GetLayoutFilePathForFormat();
                 using var s = File.Open(txtFilePath, FileMode.Create);
                 BuildLayoutPrinter.WriteBundleLayout(s, layout);
-                Debug.Log($"Text build layout written to {txtFilePath} and json build layout written to {destinationPath}");
+                L.I($"Text build layout written to {txtFilePath} and json build layout written to {destinationPath}");
             }
 
             ProjectConfigData.AddBuildReportFilePath(destinationPath);
@@ -936,17 +912,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <param name="aaContext">The current build context</param>
         public static void GenerateErrorReport(string error, AddressableAssetsBuildContext aaContext)
         {
-            if (aaContext == null)
-                return;
-            AddressableAssetSettings aaSettings = aaContext.Settings;
-            if (aaSettings == null)
-                return;
+            Assert.IsNotNull(aaContext);
+            Assert.IsNotNull(aaContext.Settings);
 
-            BuildLayout layout = new BuildLayout();
+            var layout = new BuildLayout();
             layout.BuildStart = aaContext.buildStartTime;
             layout.BuildError = error;
-            SetLayoutMetaData(layout, aaSettings);
-            layout.AddressablesEditorSettings = GetAddressableEditorSettings(aaSettings);
+            SetLayoutMetaData(layout);
 
             string destinationPath = TimeStampedReportPath(layout.BuildStart);
             layout.WriteToFile(destinationPath, k_PrettyPrint);

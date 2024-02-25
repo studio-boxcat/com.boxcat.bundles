@@ -58,8 +58,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
             if (m_Results.Count == 0)
                 m_Results.Add(noErrors);
-
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.RunBundleLayoutPreviewRule);
             return m_Results;
         }
 

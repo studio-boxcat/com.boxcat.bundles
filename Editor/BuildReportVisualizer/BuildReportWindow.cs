@@ -116,7 +116,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static void ShowWindow()
         {
             CreateWindow();
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenBuildReportManually);
         }
 
         private static void CreateWindow()
@@ -230,18 +229,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 m_ActiveContentViewType = (ContentViewType)newIndex;
                 m_ActiveContentView = GetContentView(m_ActiveContentViewType);
                 m_ActiveContentView.m_SearchField.Q<TextField>().value = prevSearchValue;
-                switch (newIndex)
-                {
-                    case (int) ContentViewType.BundleView:
-                        AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportViewByAssetBundle);
-                        break;
-                    case (int) ContentViewType.AssetsView:
-                        AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportViewByAssets);
-                        break;
-                    case (int) ContentViewType.GroupsView:
-                        AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportViewByGroup);
-                        break;
-                }
             }
             else if (m_CurrentTab == (int)RibbonTabType.PotentialIssues)
             {
@@ -249,17 +236,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 m_ActivePotentialIssuesViewType = (PotentialIssuesType)newIndex;
                 m_ActiveContentView = GetPotentialIssuesView(m_ActivePotentialIssuesViewType);
                 m_ActiveContentView.m_SearchField.Q<TextField>().value = prevSearchValue;
-                switch (newIndex)
-                {
-                    case (int) PotentialIssuesType.DuplicatedAssetsView:
-                        AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportViewByDuplicatedAssets);
-                        break;
-                }
             }
         }
 
-        Dictionary<ContentViewType, ContentView> m_CachedContentViews = new Dictionary<ContentViewType, ContentView>();
-        Dictionary<PotentialIssuesType, ContentView> m_CachedPotentialIssuesViews = new Dictionary<PotentialIssuesType, ContentView>();
+        Dictionary<ContentViewType, ContentView> m_CachedContentViews = new();
+        Dictionary<PotentialIssuesType, ContentView> m_CachedPotentialIssuesViews = new();
 
         ContentView GetContentView(ContentViewType type)
         {
@@ -329,19 +310,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 OnViewDropDownChanged(m_PreviousPotentialIssuesDropDownValue);
             else if ((RibbonTabType)index == RibbonTabType.ContentTab)
                 OnViewDropDownChanged(m_PreviousContentDropDownValue);
-
-            switch (index)
-            {
-                case (int) RibbonTabType.SummaryTab:
-                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportSelectedSummaryTab);
-                    break;
-                case (int) RibbonTabType.ContentTab:
-                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportSelectedExploreTab);
-                    break;
-                case (int) RibbonTabType.PotentialIssues:
-                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportSelectedPotentialIssuesTab);
-                    break;
-            }
         }
 
         public void NavigateToView(ContentViewType type)

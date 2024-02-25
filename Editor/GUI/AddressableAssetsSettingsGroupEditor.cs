@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Serialization;
 
 // ReSharper disable DelegateSubtraction
 
@@ -15,24 +15,8 @@ namespace UnityEditor.AddressableAssets.GUI
     [Serializable]
     internal class AddressableAssetsSettingsGroupEditor
     {
-        [System.AttributeUsage(AttributeTargets.Class)]
-        public class HideBuildMenuInUI : Attribute
-        {
-        }
-
-        internal struct BuildMenuContext
-        {
-            public byte buildScriptIndex;
-            public AddressableAssetSettings Settings { get; set; }
-        }
-
-        [FormerlySerializedAs("treeState")]
-        [SerializeField]
-        TreeViewState m_TreeState;
-
-        [FormerlySerializedAs("mchs")]
-        [SerializeField]
-        MultiColumnHeaderState m_Mchs;
+        [SerializeField] TreeViewState m_TreeState;
+        [SerializeField] MultiColumnHeaderState m_Mchs;
 
         internal AddressableAssetEntryTreeView m_EntryTree;
 
@@ -140,7 +124,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (item.IsGroup && item.group.Guid == group.Guid)
                 {
                     m_EntryTree.FrameItem(item.id);
-                    var selectedIds = new List<int>() {item.id};
+                    var selectedIds = new List<int>() { item.id };
                     if (fireSelectionChanged)
                         m_EntryTree.SetSelection(selectedIds, TreeViewSelectionOptions.FireSelectionChanged);
                     else
@@ -215,23 +199,21 @@ namespace UnityEditor.AddressableAssets.GUI
 
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             {
-                float spaceBetween = 4f;
+                var spaceBetween = 4f;
 
 
                 {
-                    var guiMode = new GUIContent("New", "Create a new group");
-                    Rect rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
-                    if (UnityEngine.GUI.Button(rMode, guiMode))
+                    if (GUILayout.Button("New Group", EditorStyles.toolbarButton))
                         m_EntryTree.CreateNewGroup();
                 }
 
                 {
                     var guiMode = new GUIContent("Tools", "Tools used to configure or analyze Addressable Assets");
-                    Rect rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
+                    var rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
                     if (EditorGUI.DropdownButton(rMode, guiMode, FocusType.Passive, EditorStyles.toolbarDropDown))
                     {
                         var menu = new GenericMenu();
-                        menu.AddItem(new GUIContent("Inspect System Settings"), false, () =>
+                        menu.AddItem(new GUIContent("Settings"), false, () =>
                         {
                             EditorApplication.ExecuteMenuItem("Window/General/Inspector");
                             EditorGUIUtility.PingObject(AddressableAssetSettingsDefaultObject.Settings);
@@ -239,9 +221,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         });
 
                         menu.AddItem(new GUIContent("Analyze"), false, AnalyzeWindow.ShowWindow);
-
-                        menu.AddItem(new GUIContent("Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
-
+                        menu.AddItem(new GUIContent("Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
                         menu.DropDown(rMode);
                     }
                 }
@@ -250,65 +230,22 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (toolbarPos.width > 300)
                     GUILayout.Space(spaceBetween * 2f + 8);
 
-                {
-                    string playmodeButtonName = toolbarPos.width < 300 ? "Play Mode" : "Play Mode Script";
-                    var guiMode = new GUIContent(playmodeButtonName, "Determines how the Addressables system loads assets in Play Mode");
-                    Rect rMode = GUILayoutUtility.GetRect(guiMode, EditorStyles.toolbarDropDown);
-                    if (EditorGUI.DropdownButton(rMode, guiMode, FocusType.Passive, EditorStyles.toolbarDropDown))
-                    {
-                        var menu = new GenericMenu();
-                        for (byte i = 0; i < settings.DataBuilders.Count; i++)
-                        {
-                            var m = settings.GetDataBuilder(i);
-                            if (m.CanBuildData<AddressablesPlayModeBuildResult>())
-                            {
-                                string text = m is Build.DataBuilders.BuildScriptPackedPlayMode
-                                    ? $"{m.Name} ({EditorUserBuildSettings.activeBuildTarget})"
-                                    : m.Name;
-                                menu.AddItem(new GUIContent(text), i == settings.ActivePlayModeDataBuilderIndex, OnSetActivePlayModeScript, i);
-                            }
-                        }
+                var useAssetDatabase = DataBuilderList.Editor is BuildScriptFastMode;
+                if (GUILayout.Toggle(useAssetDatabase, "Asset Database") != useAssetDatabase)
+                    DataBuilderList.UseAssetDatabaseForEditor(!useAssetDatabase);
+                GUILayout.Space(10);
 
-                        menu.DropDown(rMode);
-                    }
+                if (GUILayout.Button("Build", EditorStyles.toolbarButton))
+                {
+                    var rst = AddressableAssetSettings.BuildPlayerContent();
+                    if (string.IsNullOrEmpty(rst.Error) is false)
+                        L.E("Addressable content post-build failure.");
                 }
 
-                var guiBuild = new GUIContent("Build", "Options for building Addressable Assets");
-                Rect rBuild = GUILayoutUtility.GetRect(guiBuild, EditorStyles.toolbarDropDown);
-                if (EditorGUI.DropdownButton(rBuild, guiBuild, FocusType.Passive, EditorStyles.toolbarDropDown))
+                if (GUILayout.Button("Clean", EditorStyles.toolbarButton))
                 {
-                    var genericDropdownMenu = new GenericMenu();
-                    var addressablesPlayerBuildResultBuilderExists = false;
-                    for (byte i = 0; i < settings.DataBuilders.Count; i++)
-                    {
-                        var dataBuilder = settings.GetDataBuilder(i);
-                        if (dataBuilder.CanBuildData<AddressablesPlayerBuildResult>() is false)
-                            continue;
-
-                        addressablesPlayerBuildResultBuilderExists = true;
-                        BuildMenuContext context = new BuildMenuContext()
-                        {
-                            buildScriptIndex = i,
-                            Settings = settings
-                        };
-
-                        genericDropdownMenu.AddItem(new GUIContent(dataBuilder.Name), false, OnBuildAddressables, context);
-                    }
-
-                    if (!addressablesPlayerBuildResultBuilderExists)
-                        genericDropdownMenu.AddDisabledItem(new GUIContent("/No Build Script Available"));
-
-                    genericDropdownMenu.AddSeparator("");
-                    genericDropdownMenu.AddItem(new GUIContent("Clear Build Cache/All"), false, OnCleanAll);
-                    genericDropdownMenu.AddItem(new GUIContent("Clear Build Cache/Content Builders/All"), false, OnCleanAddressables, null);
-                    for (byte i = 0; i < settings.DataBuilders.Count; i++)
-                    {
-                        var m = settings.GetDataBuilder(i);
-                        genericDropdownMenu.AddItem(new GUIContent("Clear Build Cache/Content Builders/" + m.Name), false, OnCleanAddressables, m);
-                    }
-
-                    genericDropdownMenu.AddItem(new GUIContent("Clear Build Cache/Build Pipeline Cache"), false, OnCleanSBP);
-                    genericDropdownMenu.DropDown(rBuild);
+                    AddressableAssetSettings.CleanPlayerContent();
+                    BuildCache.PurgeCache(true);
                 }
 
                 GUILayout.Space(4);
@@ -320,68 +257,6 @@ namespace UnityEditor.AddressableAssets.GUI
             }
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
-        }
-
-        private static void OnBuildAddressables(object ctx)
-        {
-            BuildMenuContext buildAddressablesContext = (BuildMenuContext) ctx;
-            OnBuildAddressables(buildAddressablesContext);
-        }
-
-        internal static void OnBuildAddressables(BuildMenuContext context)
-        {
-            context.Settings.ActivePlayerDataBuilderIndex = context.buildScriptIndex;
-
-            var builderInput = new AddressablesDataBuilderInput(context.Settings);
-
-            AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult rst, builderInput);
-
-            if (string.IsNullOrEmpty(rst.Error) is false)
-                L.E("Addressable content post-build failure.");
-        }
-
-        void OnCleanAll()
-        {
-            OnCleanAddressables(null);
-            OnCleanSBP();
-        }
-
-        void OnCleanAddressables(object builder)
-        {
-            AddressableAssetSettings.CleanPlayerContent(builder as IDataBuilder);
-        }
-
-        void OnCleanSBP()
-        {
-            BuildCache.PurgeCache(true);
-        }
-
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
-        async void OnBuildAndRelease()
-        {
-            await AddressableAssetSettings.BuildAndReleasePlayerContent();
-        }
-#endif
-
-        void OnBuildScript(object context)
-        {
-            OnSetActiveBuildScript(context);
-            OnBuildPlayerData();
-        }
-
-        void OnBuildPlayerData()
-        {
-            AddressableAssetSettings.BuildPlayerContent();
-        }
-
-        void OnSetActiveBuildScript(object context)
-        {
-            AddressableAssetSettingsDefaultObject.Settings.ActivePlayerDataBuilderIndex = (byte) context;
-        }
-
-        void OnSetActivePlayModeScript(object context)
-        {
-            AddressableAssetSettingsDefaultObject.Settings.ActivePlayModeDataBuilderIndex = (byte) context;
         }
 
         bool m_ModificationRegistered;

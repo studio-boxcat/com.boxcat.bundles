@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
+using UnityEditor.AddressableAssets.BuildReportVisualizer;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -10,7 +11,7 @@ using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEditor.AddressableAssets.BuildReportVisualizer;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -18,32 +19,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
-    [CreateAssetMenu(fileName = "BuildScriptPacked.asset", menuName = "Addressables/Content Builders/Default Build Script")]
     public class BuildScriptPackedMode : BuildScriptBase
     {
-        UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator m_Linker;
+        LinkXmlGenerator m_Linker;
 
         /// <inheritdoc />
-        public override bool CanBuildData<T>() => typeof(T).IsAssignableFrom(typeof(AddressablesPlayerBuildResult));
-
-        /// <inheritdoc />
-        protected override TResult BuildDataImplementation<TResult>(AddressablesDataBuilderInput builderInput)
+        protected override DataBuildResult BuildDataImplementation(AddressableAssetSettings settings, BuildTarget target)
         {
-            bool buildReportSettingCheck = ProjectConfigData.UserHasBeenInformedAboutBuildReportSettingPreBuild;
-            if (!buildReportSettingCheck && !Application.isBatchMode && !ProjectConfigData.GenerateBuildLayout)
-            {
-                bool turnOnBuildLayout = EditorUtility.DisplayDialog("Addressables Build Report", "There's a new Addressables Build Report you can check out after your content build.  " +
-                                                                                                  "However, this requires that 'Debug Build Layout' is turned on.  The setting can be found in Edit > Preferences > Addressables.  Would you like to turn it on?", "Yes", "No");
-                if (turnOnBuildLayout)
-                    ProjectConfigData.GenerateBuildLayout = true;
-                ProjectConfigData.UserHasBeenInformedAboutBuildReportSettingPreBuild = true;
-            }
+            m_Linker = LinkXmlGenerator.CreateDefault();
 
-            TResult result = default(TResult);
-
-            var aaContext = InitializeBuildContext(builderInput);
-
-            result ??= DoBuild<TResult>(builderInput, aaContext);
+            var aaContext = new AddressableAssetsBuildContext(settings) { buildStartTime = DateTime.Now };
+            var result = DoBuild(aaContext, target);
 
             if (result != null)
             {
@@ -56,16 +42,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return result;
         }
 
-        private static TResult CreateErrorResult<TResult>(string errorString, AddressableAssetsBuildContext aaContext) where TResult : IDataBuilderResult
+        private static DataBuildResult CreateErrorResult(string errorString, AddressableAssetsBuildContext aaContext)
         {
             BuildLayoutGenerationTask.GenerateErrorReport(errorString, aaContext);
-            return AddressableAssetBuildResult.CreateResult<TResult>(0, errorString);
-        }
-
-        internal AddressableAssetsBuildContext InitializeBuildContext(AddressablesDataBuilderInput builderInput)
-        {
-            m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
-            return new AddressableAssetsBuildContext(builderInput.AddressableSettings) {buildStartTime = DateTime.Now};
+            return new DataBuildResult { Error = errorString };
         }
 
         struct SBPSettingsOverwriterScope : IDisposable
@@ -88,63 +68,50 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <summary>
         /// The method that does the actual building after all the groups have been processed.
         /// </summary>
-        /// <param name="builderInput">The generic builderInput of the</param>
-        /// <param name="aaContext"></param>
-        /// <typeparam name="TResult"></typeparam>
-        /// <returns></returns>
-        protected virtual TResult DoBuild<TResult>(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext) where TResult : IDataBuilderResult
+        protected DataBuildResult DoBuild(AddressableAssetsBuildContext aaContext, BuildTarget buildTarget)
         {
-            var genericResult = AddressableAssetBuildResult.CreateResult<TResult>();
-            var addrResult = genericResult as AddressablesPlayerBuildResult;
+            var result = new DataBuildResult();
             var extractData = new ExtractDataTask();
 
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
-                return CreateErrorResult<TResult>("Unsaved scenes", aaContext);
+                return CreateErrorResult("Unsaved scenes", aaContext);
 
-            var buildTarget = builderInput.Target;
-            var buildTargetGroup = builderInput.TargetGroup;
+            var settings = aaContext.Settings;
+            var buildParams = settings.GetBuildParams(buildTarget);
 
-            var buildParams = new AddressableAssetsBundleBuildParameters(
-                aaContext.Settings,
-                buildTarget,
-                buildTargetGroup);
-
+            L.I("ContentPipeline.BuildAssetBundles");
             IBundleBuildResults results;
-            using (m_Log.ScopedStep(LogLevel.Info, "ContentPipeline.BuildAssetBundles"))
             using (new SBPSettingsOverwriterScope(ProjectConfigData.GenerateBuildLayout)) // build layout generation requires full SBP write results
             {
                 aaContext.bundleToAssetGroup = new Dictionary<BundleKey, AddressableAssetGroup>();
-                var bundleBuilds = GenerateBundleBuilds(
-                    builderInput.AddressableSettings.groups, aaContext.bundleToAssetGroup);
+                var bundleBuilds = GenerateBundleBuilds(settings.groups, aaContext.bundleToAssetGroup);
                 var buildContent = new BundleBuildContent(bundleBuilds);
                 var buildTasks = RuntimeDataBuildTasks();
                 buildTasks.Add(extractData);
 
-                var exitCode = ContentPipeline.BuildAssetBundles(buildParams, buildContent, out results, buildTasks, aaContext, m_Log);
+                var exitCode = ContentPipeline.BuildAssetBundles(buildParams, buildContent, out results, buildTasks, aaContext);
                 if (exitCode < ReturnCode.Success)
-                    return CreateErrorResult<TResult>("SBP Error" + exitCode, aaContext);
+                    return CreateErrorResult("SBP Error" + exitCode, aaContext);
             }
 
             var bundleIds = ResourceCatalogBuilder.AssignBundleId(aaContext.entries.Values);
 
-            using (m_Log.ScopedStep(LogLevel.Info, "PostProcessBundles"))
+            L.I("PostProcessBundles");
             using (var progressTracker = new ProgressTracker())
             {
                 progressTracker.UpdateTask("Post Processing AssetBundles");
 
                 foreach (var bundleKey in bundleIds.Keys)
                 {
-                    using (m_Log.ScopedStep(LogLevel.Info, bundleKey.ToString()))
-                    {
-                        var targetPath = CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].Name());
-                        addrResult?.AssetBundleBuildResults.Add(
-                            new AddressablesPlayerBuildResult.BundleBuildResult(bundleKey, targetPath));
-                    }
+                    // L.I(bundleKey.ToString());
+                    var targetPath = CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].Name());
+                    result.AssetBundleBuildResults.Add(
+                        new DataBuildResult.BundleBuildResult(bundleKey, targetPath));
                 }
             }
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Process Catalog Entries"))
             {
+                L.I("Process Catalog Entries");
                 foreach (var r in results.WriteResults)
                 {
                     var resultValue = r.Value;
@@ -153,31 +120,27 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Generate Binary Catalog"))
             {
+                L.I("Generate Binary Catalog");
                 var bytes = ResourceCatalogBuilder.Build(aaContext.entries.Values, bundleIds);
                 WriteFile(PathConfig.BuildPath_CatalogBin, bytes);
             }
 
-            using (m_Log.ScopedStep(LogLevel.Info, "Generate link"))
+            {
+                L.I("Generate link");
                 m_Linker.Save(PathConfig.BuildPath_LinkXML);
-
-            genericResult.LocationCount = aaContext.entries.Count;
+            }
 
             if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)
             {
-                using (var progressTracker = new ProgressTracker())
-                {
-                    progressTracker.UpdateTask("Generating Build Layout");
-                    using (m_Log.ScopedStep(LogLevel.Info, "Generate Build Layout"))
-                    {
-                        var tasks = new List<IBuildTask> {new BuildLayoutGenerationTask()};
-                        BuildTasksRunner.Run(tasks, extractData.m_BuildContext);
-                    }
-                }
+                L.I("Generate Build Layout");
+                using var progressTracker = new ProgressTracker();
+                progressTracker.UpdateTask("Generating Build Layout");
+                var tasks = new List<IBuildTask> { new BuildLayoutGenerationTask() };
+                BuildTasksRunner.Run(tasks, extractData.m_BuildContext);
             }
 
-            return genericResult;
+            return result;
         }
 
         /// <summary>
@@ -213,7 +176,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 BundlePackingMode.PackSeparately => assetGroup.entries.SelectMany(e =>
                 {
                     var suffix = string.IsNullOrEmpty(e.address) ? e.guid.Value : e.address;
-                    return GenerateBuildInputDefinitions(assetGroup, new List<AddressableAssetEntry> {e}, suffix);
+                    return GenerateBuildInputDefinitions(assetGroup, new List<AddressableAssetEntry> { e }, suffix);
                 }),
                 _ => throw new Exception("Unknown Packing Mode")
             };
@@ -285,12 +248,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return buildTasks;
         }
 
-        string CopyBundleToOutputPath(string srcFileName, string dstFileName)
+        static string CopyBundleToOutputPath(string srcFileName, string dstFileName)
         {
             var srcPath = Path.Combine(PathConfig.TempPath_BundleRoot, srcFileName);
             var dstPath = Path.Combine(PathConfig.BuildPath_BundleRoot, dstFileName);
 
-            using var _ = m_Log.ScopedStep(LogLevel.Verbose, "Move File", $"{srcPath} -> {dstPath}");
+            // L.I($"Move File: {srcPath} -> {dstPath}");
 
             var directory = Path.GetDirectoryName(dstPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))

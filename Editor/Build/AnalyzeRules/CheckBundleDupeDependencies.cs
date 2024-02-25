@@ -184,7 +184,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 m_ImplicitAssets = new HashSet<GUID>();
             }
 
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.RunCheckBundleDupeDependenciesRule);
             RefreshDisplay();
             return m_Results;
         }

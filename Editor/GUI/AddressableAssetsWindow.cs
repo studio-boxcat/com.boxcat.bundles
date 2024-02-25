@@ -21,7 +21,6 @@ namespace UnityEditor.AddressableAssets.GUI
         [MenuItem("Window/Asset Management/Addressables/Groups", priority = 2050)]
         internal static void Init()
         {
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow);
             var window = GetWindow<AddressableAssetsWindow>();
             window.titleContent = new GUIContent("Addressables Groups");
             window.minSize = new Vector2(430, 250);
@@ -42,7 +41,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         public void OnEnable()
         {
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow, true);
             m_GroupEditor?.OnEnable();
         }
 

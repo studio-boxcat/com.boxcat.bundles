@@ -12,6 +12,7 @@ namespace UnityEditor.AddressableAssets.Build
 
         static void OnEditorPlayModeChanged(PlayModeStateChange state)
         {
+            // Build data only when exiting edit mode.
             if (state != PlayModeStateChange.ExitingEditMode)
                 return;
 
@@ -19,21 +20,10 @@ namespace UnityEditor.AddressableAssets.Build
             if (settings == null)
                 return;
 
-            var builder = settings.ActivePlayModeDataBuilder;
-            if (builder == null)
-            {
-                L.E("Active play mode build script is null.");
-                return;
-            }
+            var builder = DataBuilderList.Editor;
+            L.I("[Addressables] BuildScriptHooks: " + builder.Name);
 
-            if (!builder.CanBuildData<AddressablesPlayModeBuildResult>())
-            {
-                L.E($"Active build script {builder} cannot build AddressablesPlayModeBuildResult.");
-                return;
-            }
-
-            L.I("[Addressables] BuildScriptHooks: " + settings.ActivePlayModeDataBuilder.Name);
-            var res = settings.ActivePlayModeDataBuilder.BuildData<AddressablesPlayModeBuildResult>(new AddressablesDataBuilderInput(settings));
+            var res = builder.BuildData(settings, BuildTarget.NoTarget);
             if (!string.IsNullOrEmpty(res.Error))
             {
                 L.E(res.Error);

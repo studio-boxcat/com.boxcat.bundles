@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -110,9 +109,8 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     if (selectedObjects[i] != null && selectedObjects[i].name == m_FirstSelectedGroup)
                     {
-                        var temp = selectedObjects[i];
-                        selectedObjects[i] = selectedObjects[selectedIds.Count - 1];
-                        selectedObjects[selectedIds.Count - 1] = temp;
+                        (selectedObjects[i], selectedObjects[selectedIds.Count - 1])
+                            = (selectedObjects[selectedIds.Count - 1], selectedObjects[i]);
                     }
                 }
             }
@@ -576,18 +574,6 @@ namespace UnityEditor.AddressableAssets.GUI
             menu.ShowAsContext();
         }
 
-        void HandleCustomContextMenuItemGroups(object context)
-        {
-            var d = context as Tuple<string, List<AssetEntryTreeViewItem>>;
-            AddressableAssetSettings.InvokeAssetGroupCommand(d.Item1, d.Item2.Select(s => s.group));
-        }
-
-        void HandleCustomContextMenuItemEntries(object context)
-        {
-            var d = context as Tuple<string, List<AssetEntryTreeViewItem>>;
-            AddressableAssetSettings.InvokeAssetEntryCommand(d.Item1, d.Item2.Select(s => s.entry));
-        }
-
         protected override void ContextClickedItem(int id)
         {
             List<AssetEntryTreeViewItem> selectedNodes = new List<AssetEntryTreeViewItem>();
@@ -632,16 +618,10 @@ namespace UnityEditor.AddressableAssets.GUI
                         menu.AddItem(new GUIContent("Set as Default"), false, SetGroupAsDefault, selectedNodes);
                     menu.AddItem(new GUIContent("Inspect Group Settings"), false, GoToGroupAsset, selectedNodes);
                 }
-
-                foreach (var i in AddressableAssetSettings.CustomAssetGroupCommands)
-                    menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemGroups, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
             }
             else if (isEntry)
             {
                 menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
-
-                foreach (var i in AddressableAssetSettings.CustomAssetEntryCommands)
-                    menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemEntries, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
             }
             else
                 menu.AddItem(new GUIContent("Clear missing references."), false, RemoveMissingReferences);

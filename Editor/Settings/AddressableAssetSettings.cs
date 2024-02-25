@@ -108,26 +108,6 @@ namespace UnityEditor.AddressableAssets.Settings
             EntryModified,
 
             /// <summary>
-            /// Use to indicate that a new build script is being used as the active build script.
-            /// </summary>
-            ActiveBuildScriptChanged,
-
-            /// <summary>
-            /// Use to indicate that a new data builder script was added to the settings object.
-            /// </summary>
-            DataBuilderAdded,
-
-            /// <summary>
-            /// Use to indicate that a data builder script was removed from the settings object.
-            /// </summary>
-            DataBuilderRemoved,
-
-            /// <summary>
-            /// Use to indicate that a new script is being used as the active playmode data builder.
-            /// </summary>
-            ActivePlayModeScriptChanged,
-
-            /// <summary>
             /// Use to indicate that a batch of asset entries was modified. Note that the posted object will be null.
             /// </summary>
             BatchModification,
@@ -244,7 +224,7 @@ namespace UnityEditor.AddressableAssets.Settings
             get
             {
                 if (m_currentHash.isValid) return m_currentHash;
-                var subHashes = new[] {groupsHash};
+                var subHashes = new[] { groupsHash };
                 m_currentHash.Append(subHashes);
                 return m_currentHash;
             }
@@ -257,75 +237,6 @@ namespace UnityEditor.AddressableAssets.Settings
         /// List of asset groups.
         /// </summary>
         public List<AddressableAssetGroup> groups => m_GroupAssets;
-
-        [SerializeField]
-        byte m_ActivePlayerDataBuilderIndex = 3;
-
-        [SerializeField]
-        List<ScriptableObject> m_DataBuilders = new();
-
-        /// <summary>
-        /// List of ScriptableObjects that implement the IDataBuilder interface.  These are used to create data for editor play mode and for player builds.
-        /// </summary>
-        public List<ScriptableObject> DataBuilders => m_DataBuilders;
-
-        /// <summary>
-        /// Get The data builder at a specifc index.
-        /// </summary>
-        /// <param name="index">The index of the builder.</param>
-        /// <returns>The data builder at the specified index.</returns>
-        public IDataBuilder GetDataBuilder(byte index)
-        {
-            if (m_DataBuilders.Count == 0)
-                return null;
-
-            if (index >= m_DataBuilders.Count)
-            {
-                Debug.LogWarningFormat("Invalid index for data builder: {0}.", index);
-                return null;
-            }
-
-            return m_DataBuilders[index] as IDataBuilder;
-        }
-
-        /// <summary>
-        /// Get the active data builder for player data.
-        /// </summary>
-        public IDataBuilder ActivePlayerDataBuilder => GetDataBuilder(m_ActivePlayerDataBuilderIndex);
-
-        /// <summary>
-        /// Get the active data builder for editor play mode data.
-        /// </summary>
-        public IDataBuilder ActivePlayModeDataBuilder => GetDataBuilder(ProjectConfigData.ActivePlayModeIndex);
-
-        /// <summary>
-        /// Get the index of the active player data builder.
-        /// </summary>
-        public byte ActivePlayerDataBuilderIndex
-        {
-            get => m_ActivePlayerDataBuilderIndex;
-            set
-            {
-                if (m_ActivePlayerDataBuilderIndex != value)
-                {
-                    m_ActivePlayerDataBuilderIndex = value;
-                    SetDirty(ModificationEvent.ActiveBuildScriptChanged, ActivePlayerDataBuilder, true, true);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Get the index of the active play mode data builder.
-        /// </summary>
-        public byte ActivePlayModeDataBuilderIndex
-        {
-            get => ProjectConfigData.ActivePlayModeIndex;
-            set
-            {
-                ProjectConfigData.ActivePlayModeIndex = value;
-                SetDirty(ModificationEvent.ActivePlayModeScriptChanged, ActivePlayModeDataBuilder, true, false);
-            }
-        }
 
         /// <summary>
         /// Remove an asset entry.
@@ -439,13 +350,11 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 if (postEvent)
                 {
-                    if (OnModificationGlobal != null)
-                        OnModificationGlobal(this, modificationEvent, eventData);
-                    if (OnModification != null)
-                        OnModification(this, modificationEvent, eventData);
+                    OnModificationGlobal?.Invoke(this, modificationEvent, eventData);
+                    OnModification?.Invoke(this, modificationEvent, eventData);
                 }
 
-                if (settingsModified && true)
+                if (settingsModified)
                     EditorUtility.SetDirty(this);
             }
             if (EventAffectsGroups(modificationEvent))
@@ -722,44 +631,11 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Runs the active player data build script to create runtime data.
         /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
         /// </summary>
-        public static void BuildPlayerContent()
+        public static DataBuildResult BuildPlayerContent(AddressableAssetSettings settings, IDataBuilder builder, BuildTarget target)
         {
-            BuildPlayerContent(out _);
-        }
+            Assert.IsNotNull(settings, "AddressableAssetSettings must not be null");
+            Assert.IsNotNull(builder, "IDataBuilder must not be null");
 
-        /// <summary>
-        /// Runs the active player data build script to create runtime data.
-        /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
-        /// </summary>
-        /// <param name="result">Results from running the active player data build script.</param>
-        public static void BuildPlayerContent(out AddressablesPlayerBuildResult result)
-        {
-            BuildPlayerContent(out result, null);
-        }
-
-        internal static void BuildPlayerContent(out AddressablesPlayerBuildResult result, AddressablesDataBuilderInput input)
-        {
-            var settings = input != null ? input.AddressableSettings : AddressableAssetSettingsDefaultObject.Settings;
-            if (settings == null)
-            {
-                string error;
-                if (EditorApplication.isUpdating)
-                    error = "Addressable Asset Settings does not exist.  EditorApplication.isUpdating was true.";
-                else if (EditorApplication.isCompiling)
-                    error = "Addressable Asset Settings does not exist.  EditorApplication.isCompiling was true.";
-                else
-                    error = "Addressable Asset Settings does not exist.  Failed to create.";
-                Debug.LogError(error);
-                result = new AddressablesPlayerBuildResult();
-                result.Error = error;
-                return;
-            }
-
-            result = settings.BuildPlayerContentImpl(input);
-        }
-
-        internal AddressablesPlayerBuildResult BuildPlayerContentImpl(AddressablesDataBuilderInput buildContext = null, bool buildAndRelease = false)
-        {
             if (Directory.Exists(PathConfig.BuildPath))
             {
                 try
@@ -772,28 +648,28 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
 
-            if (buildContext == null)
-                buildContext = new AddressablesDataBuilderInput(this);
-
-            buildContext.IsBuildAndRelease = buildAndRelease;
-            var result = ActivePlayerDataBuilder.BuildData<AddressablesPlayerBuildResult>(buildContext);
+            var result = builder.BuildData(settings, target);
             if (!string.IsNullOrEmpty(result.Error))
             {
                 Debug.LogError(result.Error);
-                Debug.LogError($"Addressable content build failure (duration : {TimeSpan.FromSeconds(result.Duration).ToString("g")})");
+                Debug.LogError($"Addressable content build failure (duration : {TimeSpan.FromSeconds(result.Duration):g})");
             }
             else
-                Debug.Log($"Addressable content successfully built (duration : {TimeSpan.FromSeconds(result.Duration).ToString("g")})");
+                Debug.Log($"Addressable content successfully built (duration : {TimeSpan.FromSeconds(result.Duration):g})");
 
             AssetDatabase.Refresh();
             return result;
         }
 
+        public static DataBuildResult BuildPlayerContent()
+        {
+            return BuildPlayerContent(AddressableAssetSettingsDefaultObject.Settings, DataBuilderList.Builder, EditorUserBuildSettings.activeBuildTarget);
+        }
+
         /// <summary>
         /// Deletes all created runtime data for the active player data builder.
         /// </summary>
-        /// <param name="builder">The builder to call ClearCachedData on.  If null, all builders will be cleaned</param>
-        public static void CleanPlayerContent(IDataBuilder builder = null)
+        public static void CleanPlayerContent()
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null)
@@ -807,195 +683,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 return;
             }
 
-            settings.CleanPlayerContentImpl(builder);
-        }
-
-        internal void CleanPlayerContentImpl(IDataBuilder builder = null)
-        {
-            if (builder != null)
-            {
-                builder.ClearCachedData();
-            }
-            else
-            {
-                for (byte i = 0; i < DataBuilders.Count; i++)
-                {
-                    var m = GetDataBuilder(i);
-                    m.ClearCachedData();
-                }
-            }
-
+            DataBuilderList.Clear();
             AssetDatabase.Refresh();
         }
-
-        static Dictionary<string, Action<IEnumerable<AddressableAssetEntry>>> s_CustomAssetEntryCommands = new Dictionary<string, Action<IEnumerable<AddressableAssetEntry>>>();
-
-        /// <summary>
-        /// Register a custom command to process asset entries.  These commands will be shown in the context menu of the groups window.
-        /// </summary>
-        /// <param name="cmdId">The id of the command.  This will be used for the display name of the context menu item.</param>
-        /// <param name="cmdFunc">The command handler function.</param>
-        /// <returns>Returns true if the command was registered.</returns>
-        public static bool RegisterCustomAssetEntryCommand(string cmdId, Action<IEnumerable<AddressableAssetEntry>> cmdFunc)
-        {
-            if (string.IsNullOrEmpty(cmdId))
-            {
-                Debug.LogError("RegisterCustomAssetEntryCommand - invalid command id.");
-                return false;
-            }
-
-            if (cmdFunc == null)
-            {
-                Debug.LogError($"RegisterCustomAssetEntryCommand - command functor for id '{cmdId}'.");
-                return false;
-            }
-
-            s_CustomAssetEntryCommands[cmdId] = cmdFunc;
-            return true;
-        }
-
-        /// <summary>
-        /// Removes a registered custom entry command.
-        /// </summary>
-        /// <param name="cmdId">The command id.</param>
-        /// <returns>Returns true if the command was removed.</returns>
-        public static bool UnregisterCustomAssetEntryCommand(string cmdId)
-        {
-            if (string.IsNullOrEmpty(cmdId))
-            {
-                Debug.LogError("UnregisterCustomAssetEntryCommand - invalid command id.");
-                return false;
-            }
-
-            if (!s_CustomAssetEntryCommands.Remove(cmdId))
-            {
-                Debug.LogError($"UnregisterCustomAssetEntryCommand - command id '{cmdId}' is not registered.");
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Invoke a registered command for a set of entries.
-        /// </summary>
-        /// <param name="cmdId">The id of the command.</param>
-        /// <param name="entries">The entries to run the command on.</param>
-        /// <returns>Returns true if the command was executed without exceptions.</returns>
-        public static bool InvokeAssetEntryCommand(string cmdId, IEnumerable<AddressableAssetEntry> entries)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(cmdId) || !s_CustomAssetEntryCommands.ContainsKey(cmdId))
-                {
-                    Debug.LogError($"Asset Entry Command '{cmdId}' not found.  Ensure that it is registered by calling RegisterCustomAssetEntryCommand.");
-                    return false;
-                }
-
-                if (entries == null)
-                {
-                    Debug.LogError($"Asset Entry Command '{cmdId}' called with null entry collection.");
-                    return false;
-                }
-
-                s_CustomAssetEntryCommands[cmdId](entries);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Encountered exception when running Asset Entry Command '{cmdId}': {e.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// The ids of the registered commands.
-        /// </summary>
-        public static IEnumerable<string> CustomAssetEntryCommands => s_CustomAssetEntryCommands.Keys;
-
-        static Dictionary<string, Action<IEnumerable<AddressableAssetGroup>>> s_CustomAssetGroupCommands = new Dictionary<string, Action<IEnumerable<AddressableAssetGroup>>>();
-
-        /// <summary>
-        /// Register a custom command to process asset groups.  These commands will be shown in the context menu of the groups window.
-        /// </summary>
-        /// <param name="cmdId">The id of the command.  This will be used for the display name of the context menu item.</param>
-        /// <param name="cmdFunc">The command handler function.</param>
-        /// <returns>Returns true if the command was registered.</returns>
-        public static bool RegisterCustomAssetGroupCommand(string cmdId, Action<IEnumerable<AddressableAssetGroup>> cmdFunc)
-        {
-            if (string.IsNullOrEmpty(cmdId))
-            {
-                Debug.LogError("RegisterCustomAssetGroupCommand - invalid command id.");
-                return false;
-            }
-
-            if (cmdFunc == null)
-            {
-                Debug.LogError($"RegisterCustomAssetGroupCommand - command functor for id '{cmdId}'.");
-                return false;
-            }
-
-            s_CustomAssetGroupCommands[cmdId] = cmdFunc;
-            return true;
-        }
-
-        /// <summary>
-        /// Removes a registered custom group command.
-        /// </summary>
-        /// <param name="cmdId">The command id.</param>
-        /// <returns>Returns true if the command was removed.</returns>
-        public static bool UnregisterCustomAssetGroupCommand(string cmdId)
-        {
-            if (string.IsNullOrEmpty(cmdId))
-            {
-                Debug.LogError("UnregisterCustomAssetGroupCommand - invalid command id.");
-                return false;
-            }
-
-            if (!s_CustomAssetGroupCommands.Remove(cmdId))
-            {
-                Debug.LogError($"UnregisterCustomAssetGroupCommand - command id '{cmdId}' is not registered.");
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Invoke a registered command for a set of groups.
-        /// </summary>
-        /// <param name="cmdId">The id of the command.</param>
-        /// <param name="groups">The groups to run the command on.</param>
-        /// <returns>Returns true if the command was invoked successfully.</returns>
-        public static bool InvokeAssetGroupCommand(string cmdId, IEnumerable<AddressableAssetGroup> groups)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(cmdId) || !s_CustomAssetGroupCommands.ContainsKey(cmdId))
-                {
-                    Debug.LogError($"Asset Group Command '{cmdId}' not found.  Ensure that it is registered by calling RegisterCustomAssetGroupCommand.");
-                    return false;
-                }
-
-                if (groups == null)
-                {
-                    Debug.LogError($"Asset Group Command '{cmdId}' called with null group collection.");
-                    return false;
-                }
-
-                s_CustomAssetGroupCommands[cmdId](groups);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Encountered exception when running Asset Group Command '{cmdId}': {e.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// The ids of the registered commands.
-        /// </summary>
-        public static IEnumerable<string> CustomAssetGroupCommands => s_CustomAssetGroupCommands.Keys;
     }
 }

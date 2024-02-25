@@ -172,16 +172,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public string PackageVersion;
 
         /// <summary>
-        /// Settings used by the Addressables settings at the time of building
-        /// </summary>
-        public AddressablesEditorData AddressablesEditorSettings;
-
-        /// <summary>
-        /// Name of the build script to build
-        /// </summary>
-        public string BuildScript;
-
-        /// <summary>
         /// The Addressable Groups that reference this data
         /// </summary>
         [SerializeReference]

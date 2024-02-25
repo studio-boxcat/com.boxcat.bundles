@@ -24,7 +24,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             string[] scenePaths = (from editorScene in EditorBuildSettings.scenes
                 where editorScene.enabled
                 select editorScene.path).ToArray();
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.RunCheckSceneDupeDependenciesRule);
             return CalculateBuiltInResourceDependenciesToBundleDependecies(settings, scenePaths);
         }
 

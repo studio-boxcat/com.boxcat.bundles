@@ -44,15 +44,12 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
             }
 
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenAnalyzeWindow);
-
             instance.titleContent = new GUIContent("Addressables Analyze");
             instance.Show();
         }
 
         void OnEnable()
         {
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenAnalyzeWindow, true);
             if (m_AnalyzeEditor == null)
                 m_AnalyzeEditor = new AnalyzeRuleGUI();
         }
