@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -17,26 +15,11 @@ namespace UnityEditor.AddressableAssets.Settings
         [Serializable]
         class ConfigSaveData
         {
-            // XXX: Unused but keeping for ConfigSaveData compatibility.
-            [SerializeField]
-            internal long localLoadSpeedInternal = 1024 * 1024 * 10;
-
-            // XXX: Unused but keeping for ConfigSaveData compatibility.
-            [SerializeField]
-            internal bool hierarchicalSearchInternal = false;
-
             [SerializeField]
             internal int activePlayModeIndex = 0;
 
-            // XXX: Unused but keeping for ConfigSaveData compatibility.
-            [SerializeField]
-            internal bool showGroupsAsHierarchy = false;
-
             [SerializeField]
             internal bool generateBuildLayout = false;
-
-            [SerializeField]
-            internal ReportFileFormat buildLayoutReportFileFormat = ReportFileFormat.JSON;
 
             [SerializeField]
             internal List<string> buildReports = new();
@@ -109,43 +92,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 #endif
-
-        /// <summary>
-        /// File formats supported for the bundle build layout report.
-        /// </summary>
-        public enum ReportFileFormat
-        {
-            /// <summary>
-            /// When selected, a human readable .txt build layout will be generated alongside the .json file format
-            /// </summary>
-            TXT,
-
-            /// <summary>
-            /// The .json file format.
-            /// </summary>
-            JSON
-        };
-
-        /// <summary>
-        /// File format of the bundle build layout report.
-        /// </summary>
-        public static ReportFileFormat BuildLayoutReportFileFormat
-        {
-            get
-            {
-                ValidateData();
-                return s_Data.buildLayoutReportFileFormat;
-            }
-            set
-            {
-                ValidateData();
-                if (s_Data.buildLayoutReportFileFormat != value)
-                {
-                    s_Data.buildLayoutReportFileFormat = value;
-                    SaveData();
-                }
-            }
-        }
 
         /// <summary>
         /// Returns the file paths of build reports used by the Build Reports window.

@@ -9,7 +9,7 @@ using UnityEngine.Assertions;
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
     [Serializable]
-    public struct AssetId : IEquatable<AssetId>
+    public struct AssetId : IEquatable<AssetId>, IComparable<AssetId>
     {
         public string Value;
         public bool IsPath;
@@ -26,20 +26,21 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             IsPath = false;
         }
 
-        public AssetId(string path)
+        AssetId(string path)
         {
             Value = path;
             IsPath = true;
         }
 
+        public static AssetId FromPath(string path) => new AssetId(path);
+
         public override string ToString() => Value;
 
         public static implicit operator AssetId(AssetGUID guid) => new(guid);
         public static implicit operator AssetId(GUID guid) => new(guid);
-        public static implicit operator AssetId(string path) => new(path);
         public static explicit operator GUID(AssetId id)
         {
-            Assert.IsTrue(id.IsPath);
+            Assert.IsFalse(id.IsPath, "Cannot convert AssetId to GUID when IsPath is true");
             return new GUID(id.Value);
         }
 
@@ -49,6 +50,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         public static bool operator ==(AssetId x, AssetId y) => x.Equals(y);
         public static bool operator !=(AssetId x, AssetId y) => !x.Equals(y);
+
+        public int CompareTo(AssetId other)
+        {
+            var valueComparison = string.Compare(Value, other.Value, StringComparison.Ordinal);
+            return valueComparison != 0 ? valueComparison : IsPath.CompareTo(other.IsPath);
+        }
     }
 
     /// <summary>
@@ -102,7 +109,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             get
             {
                 if (m_Header == null)
-                    m_Header = new LayoutHeader() {m_BuildLayout = this};
+                    m_Header = new LayoutHeader() { m_BuildLayout = this };
                 return m_Header;
             }
         }
@@ -917,6 +924,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// </summary>
             [SerializeReference]
             internal List<ExplicitAsset> ReferencingAssets = new List<ExplicitAsset>();
+
+            public string GetName() => $"{AddressableName} ({AssetPath})";
         }
 
         /// <summary>

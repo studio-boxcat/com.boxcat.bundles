@@ -72,7 +72,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// <returns>An AssetType or <see cref="AssetType.Other" /> if null or unknown.</returns>
         public static AssetType GetAssetType(Type ofType)
         {
-            Assert.IsNotNull(ofType);
+            // For Resources/unity_builtin_extra, we don't have a type, so we return Other.
+            if (ofType is null)
+                return AssetType.Other;
 
             if (ofType == typeof(SceneAsset))
                 return AssetType.Scene;

@@ -11,6 +11,7 @@ using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
@@ -55,26 +56,21 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         IBundleBuildResults m_BuildBundleResults;
 #pragma warning restore 649
 
-        internal const string m_LayoutFileName = "buildlayout";
-        internal const string m_LayoutFilePath = PathConfig.LibraryPath + m_LayoutFileName;
-        internal const string m_ReportsFilePath = PathConfig.BuildReportPath + m_LayoutFileName;
-
-        internal static string GetLayoutFilePathForFormat(ProjectConfigData.ReportFileFormat fileFormat)
+        static string GetLayoutFilePathForFormat()
         {
-            string ext = (fileFormat == ProjectConfigData.ReportFileFormat.JSON) ? "json" : "txt";
-            return $"{m_LayoutFilePath}.{ext}";
+            return $"{PathConfig.LibraryPath}buildlayout.txt";
         }
 
-        internal static string TimeStampedReportPath(DateTime now)
+        static string TimeStampedReportPath(DateTime now)
         {
-            string stringNow = string.Format("{0:D4}.{1:D2}.{2:D2}.{3:D2}.{4:D2}.{5:D2}", now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-            return $"{m_ReportsFilePath}_{stringNow}.json";
+            var timestamp = $"{now.Year:D4}.{now.Month:D2}.{now.Day:D2}.{now.Hour:D2}.{now.Minute:D2}.{now.Second:D2}";
+            return $"{PathConfig.BuildReportPath}buildlayout_{timestamp}.json";
         }
 
         static AssetBucket GetOrCreate(Dictionary<AssetId, AssetBucket> buckets, AssetId asset)
         {
             return buckets.TryGetValue(asset, out var bucket) ? bucket
-                : buckets[asset] = new AssetBucket {guid = asset};
+                : buckets[asset] = new AssetBucket(asset);
         }
 
         class AssetBucket
@@ -82,8 +78,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             public AssetId guid;
             public bool isFilePathBucket => guid.IsPath;
             public List<ObjectSerializedInfo> objs = new();
-            public BuildLayout.ExplicitAsset ExplictAsset;
+            public BuildLayout.ExplicitAsset ExplicitAsset;
 
+
+            public AssetBucket(AssetId guid)
+            {
+                this.guid = guid;
+            }
 
             public string ResolveAssetPath()
             {
@@ -229,23 +230,21 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             file.BundleObjectInfo.Size = info.header.size;
                             continue;
                         }
-                        else if (info.serializedObject.filePath.StartsWith("temp:/preloaddata",
-                                     StringComparison.OrdinalIgnoreCase))
+                        if (info.serializedObject.filePath.StartsWith("temp:/preloaddata", StringComparison.OrdinalIgnoreCase))
                         {
                             file.PreloadInfoSize = (int) info.header.size;
                             continue;
                         }
-                        else if (info.serializedObject.filePath.StartsWith("temp:/", StringComparison.OrdinalIgnoreCase))
+                        if (info.serializedObject.filePath.StartsWith("temp:/", StringComparison.OrdinalIgnoreCase))
                         {
                             sceneObjects.Add(info);
                             continue;
                         }
-                        else if (!string.IsNullOrEmpty(info.serializedObject.filePath))
-                        {
-                            AssetBucket pathBucket = GetOrCreate(buckets, info.serializedObject.filePath);
-                            pathBucket.objs.Add(info);
-                            continue;
-                        }
+
+                        Assert.IsFalse(!string.IsNullOrEmpty(info.serializedObject.filePath), "Empty file path for object");
+                        var pathBucket = GetOrCreate(buckets, AssetId.FromPath(info.serializedObject.filePath));
+                        pathBucket.objs.Add(info);
+                        continue;
                     }
 
                     var bucket = GetOrCreate(buckets, info.serializedObject.guid);
@@ -262,9 +261,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 // Update buckets with a reference to their explicit asset
                 file.Assets.ForEach(eAsset =>
                 {
-                    if (!buckets.TryGetValue(eAsset.Guid.Value, out AssetBucket b))
+                    if (!buckets.TryGetValue(eAsset.Guid, out AssetBucket b))
                         b = GetOrCreate(buckets, eAsset.Guid); // some assets might not pull in any objects
-                    b.ExplictAsset = eAsset;
+                    b.ExplicitAsset = eAsset;
                 });
 
                 // Create entries for buckets that are implicitly pulled in
@@ -272,7 +271,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 int assetInFileId = 0;
                 var MonoScriptAssets = new HashSet<AssetId>();
 
-                foreach (var bucket in buckets.Values.Where(x => x.ExplictAsset == null))
+                foreach (var bucket in buckets.Values.Where(x => x.ExplicitAsset == null))
                 {
                     string assetPath = bucket.ResolveAssetPath();
                     if (assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
@@ -297,12 +296,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     if (lookup.UsedImplicits.TryGetValue(implicitAsset.AssetGuid, out var dataList))
                         dataList.Add(implicitAsset);
                     else
-                        lookup.UsedImplicits.Add(implicitAsset.AssetGuid, new List<BuildLayout.DataFromOtherAsset>() {implicitAsset});
+                        lookup.UsedImplicits.Add(implicitAsset.AssetGuid, new List<BuildLayout.DataFromOtherAsset>() { implicitAsset });
 
                     guidToOtherData[implicitAsset.AssetGuid] = implicitAsset;
 
-                    if (lookup.AssetPathToTypeMap.ContainsKey(implicitAsset.AssetPath))
-                        implicitAsset.MainAssetType = lookup.AssetPathToTypeMap[implicitAsset.AssetPath];
+                    if (lookup.AssetPathToTypeMap.TryGetValue(implicitAsset.AssetPath, out var assetType))
+                        implicitAsset.MainAssetType = assetType;
                     else
                     {
                         implicitAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(AssetDatabase.GetMainAssetTypeAtPath(implicitAsset.AssetPath));
@@ -317,7 +316,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         if (objectTypes.TryGetValue(bucketObj.serializedObject, out Type[] types) && types.Length > 0)
                             objType = types[0];
 
-                        AssetType eType = objType == null ? AssetType.Other : BuildLayoutHelpers.GetAssetType(objType);
+                        var eType = objType == null ? AssetType.Other : BuildLayoutHelpers.GetAssetType(objType);
                         if (implicitAsset.IsScene)
                         {
                             if (eType == AssetType.Other)
@@ -327,7 +326,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         string name = "";
                         if (localIdentifierToObjectName.TryGetValue(bucketObj.serializedObject.localIdentifierInFile, out string value))
                             name = value;
-                        BuildLayout.ObjectData layoutObject = new BuildLayout.ObjectData()
+                        var layoutObject = new BuildLayout.ObjectData()
                         {
                             ObjectName = name,
                             LocalIdentifierInFile = bucketObj.serializedObject.localIdentifierInFile,
@@ -348,10 +347,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 }
 
                 assetInFileId = file.OtherAssets.Count - 1;
-                foreach (BuildLayout.ExplicitAsset asset in file.Assets)
+                foreach (var asset in file.Assets)
                 {
                     assetInFileId++;
-                    AssetBucket bucket = buckets[asset.Guid.Value];
+                    var bucket = buckets[asset.Guid];
 
                     // size info
                     asset.SerializedSize = bucket.CalcObjectSize();
@@ -397,7 +396,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     else
                         refs = m_DependencyData.SceneInfo[(GUID) asset.Guid].referencedObjects;
 
-                    foreach (var refGUID in refs.Select(x => x.guid.Empty() ? (AssetId) x.filePath : x.guid).Distinct())
+                    foreach (var refGUID in refs.Select(x => x.guid.Empty() ? AssetId.FromPath(x.filePath) : x.guid).Distinct())
                     {
                         if (MonoScriptAssets.Contains(refGUID))
                             continue;
@@ -406,10 +405,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             dfoa.ReferencingAssets.Add(asset);
                             asset.InternalReferencedOtherAssets.Add(dfoa);
                         }
-                        else if (buckets.TryGetValue(refGUID, out AssetBucket refBucket) && refBucket.ExplictAsset != null)
+                        else if (buckets.TryGetValue(refGUID, out AssetBucket refBucket) && refBucket.ExplicitAsset != null)
                         {
-                            refBucket.ExplictAsset.ReferencingAssets.Add(asset);
-                            asset.InternalReferencedExplicitAssets.Add(refBucket.ExplictAsset);
+                            refBucket.ExplicitAsset.ReferencingAssets.Add(asset);
+                            asset.InternalReferencedExplicitAssets.Add(refBucket.ExplicitAsset);
                         }
                         else if (lookup.GuidToExplicitAsset.TryGetValue(refGUID, out BuildLayout.ExplicitAsset refAsset))
                         {
@@ -469,7 +468,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return localIdentifierToObjectName;
         }
 
-        private void CollectObjectsForAsset(in AssetBucket bucket, in Dictionary<ObjectIdentifier, Type[]> objectTypes, BuildLayout.ExplicitAsset asset,
+        private static void CollectObjectsForAsset(in AssetBucket bucket, in Dictionary<ObjectIdentifier, Type[]> objectTypes, BuildLayout.ExplicitAsset asset,
             in Dictionary<long, string> localIdentifierToObjectName, FileObjectData fileObjectData, int assetInFileId)
         {
             foreach (ObjectSerializedInfo bucketObj in bucket.objs)
@@ -478,21 +477,20 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 if (objectTypes.TryGetValue(bucketObj.serializedObject, out Type[] types) && types.Length > 0)
                     objType = types[0];
 
-                AssetType eType = objType == null ? AssetType.Other : BuildLayoutHelpers.GetAssetType(objType);
-                if (IsComponentType(eType))
-                    eType = AssetType.Component;
-                string componentName = "";
+                var eType = objType == null ? AssetType.Other : BuildLayoutHelpers.GetAssetType(objType);
+                if (IsComponentType(eType)) eType = AssetType.Component;
+                var componentName = "";
 
-                if (asset.IsScene && (eType == AssetType.Other || eType == AssetType.Component))
+                if (asset.IsScene && eType is AssetType.Other or AssetType.Component)
                     eType = GetSceneObjectType(bucketObj.serializedObject.filePath.Remove(0, 6));
                 if (eType == AssetType.Component)
                     componentName = objType.Name;
 
-                string name = "";
-                if (localIdentifierToObjectName.TryGetValue(bucketObj.serializedObject.localIdentifierInFile, out string value))
+                var name = "";
+                if (localIdentifierToObjectName.TryGetValue(bucketObj.serializedObject.localIdentifierInFile, out var value))
                     name = value;
 
-                BuildLayout.ObjectData layoutObject = new BuildLayout.ObjectData()
+                var layoutObject = new BuildLayout.ObjectData()
                 {
                     ObjectName = name,
                     ComponentName = componentName,
@@ -589,11 +587,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         if (assetIndices.TryGetValue(val.Item1, out indices))
                             indices.Add(val.Item2);
                         else
-                            assetIndices[val.Item1] = new HashSet<int>() {val.Item2};
+                            assetIndices[val.Item1] = new HashSet<int>() { val.Item2 };
                     }
                     else // if not in fileObjectLookup, not a dependency on this file, need to find in another file
                     {
-                        if (lookup.GuidToExplicitAsset.TryGetValue(dependency.guid.ToString(), out BuildLayout.ExplicitAsset referencedAsset))
+                        if (lookup.GuidToExplicitAsset.TryGetValue(dependency.guid, out BuildLayout.ExplicitAsset referencedAsset))
                         {
                             var otherFData = lookup.FileToFileObjectData[referencedAsset.File];
                             if (otherFData.TryGetObjectReferenceData(dependency, out val))
@@ -613,7 +611,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                                     if (assetIndices.TryGetValue(val.Item1, out indices))
                                         indices.Add(val.Item2);
                                     else
-                                        assetIndices[val.Item1] = new HashSet<int>() {val.Item2};
+                                        assetIndices[val.Item1] = new HashSet<int>() { val.Item2 };
                                 }
                             }
                         } // can be false for built in shared bundles
@@ -622,7 +620,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 foreach (KeyValuePair<int, HashSet<int>> assetRefData in assetIndices)
                 {
-                    objectData.References.Add(new BuildLayout.ObjectReference() {AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value)});
+                    objectData.References.Add(new BuildLayout.ObjectReference() { AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value) });
                 }
             }
         }
@@ -858,7 +856,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             assetDuplication.DuplicatedObjects.Add(
                                 new BuildLayout.ObjectDuplicationData()
                                 {
-                                    IncludedInBundleFiles = new List<BuildLayout.File> {implicitData.File},
+                                    IncludedInBundleFiles = new List<BuildLayout.File> { implicitData.File },
                                     LocalIdentifierInFile = objectData.LocalIdentifierInFile
                                 });
                             hasDuplicatedObjects = true;
@@ -918,24 +916,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             using (m_Log.ScopedStep(LogLevel.Info, "Writing BuildReport File"))
                 layout.WriteToFile(destinationPath, k_PrettyPrint);
 
-            if (ProjectConfigData.BuildLayoutReportFileFormat == ProjectConfigData.ReportFileFormat.TXT)
+            using (m_Log.ScopedStep(LogLevel.Info, "Writing Layout Text File"))
             {
-                using (m_Log.ScopedStep(LogLevel.Info, "Writing Layout Text File"))
-                {
-                    string txtFilePath = GetLayoutFilePathForFormat(ProjectConfigData.ReportFileFormat.TXT);
-                    using (FileStream s = File.Open(txtFilePath, FileMode.Create))
-                        BuildLayoutPrinter.WriteBundleLayout(s, layout);
-                    Debug.Log($"Text build layout written to {txtFilePath} and json build layout written to {destinationPath}");
-                }
-            }
-            else
-            {
-                string legacyJsonFilePath = GetLayoutFilePathForFormat(ProjectConfigData.ReportFileFormat.JSON);
-                Directory.CreateDirectory(Path.GetDirectoryName(legacyJsonFilePath));
-                if (File.Exists(legacyJsonFilePath))
-                    File.Delete(legacyJsonFilePath);
-                File.Copy(destinationPath, legacyJsonFilePath);
-                Debug.Log($"Json build layout written to {legacyJsonFilePath}");
+                var txtFilePath = GetLayoutFilePathForFormat();
+                using var s = File.Open(txtFilePath, FileMode.Create);
+                BuildLayoutPrinter.WriteBundleLayout(s, layout);
+                Debug.Log($"Text build layout written to {txtFilePath} and json build layout written to {destinationPath}");
             }
 
             ProjectConfigData.AddBuildReportFilePath(destinationPath);

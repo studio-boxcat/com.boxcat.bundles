@@ -231,7 +231,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 case DetailsViewTab.ReferencesTo:
                     foreach (var file in bundle.Files)
                     {
-                        Dictionary<string, int> addressToIndexMap = new Dictionary<string, int>();
+                        var idToIndexMap = new Dictionary<AssetId, int>();
                         int index = 0;
                         foreach (var asset in file.Assets)
                         {
@@ -239,8 +239,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                             if (asset.ExternallyReferencedAssets.Count > 0)
                                 drillDownEvent = () => ShowReferencesToForAsset(value, asset, true);
 
-                            DetailsListItem drillableItem = new DetailsListItem(asset.AddressableName, asset.AssetPath, drillDownEvent, drillDownEvent == null ? null : BuildReportUtility.GetForwardIconPath());
-                            addressToIndexMap.Add(asset.AddressableName, index++);
+                            var drillableItem = new DetailsListItem(asset.GetName(), asset.AssetPath, drillDownEvent, drillDownEvent == null ? null : BuildReportUtility.GetForwardIconPath());
+                            idToIndexMap.Add(asset.Guid, index++);
                             value.DrillableItems.Add(drillableItem);
                         }
 
@@ -251,7 +251,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                                 {
                                     List<int> referencingItems = new List<int>();
                                     foreach(var refAsset in implicitAsset.ReferencingAssets)
-                                        referencingItems.Add(addressToIndexMap[refAsset.AddressableName]);
+                                        referencingItems.Add(idToIndexMap[refAsset.Guid]);
 
                                     m_ContentItemsListView.SetSelection(referencingItems);
                                 },BuildReportUtility.GetHelpIconPath(), FontStyle.Italic));
@@ -269,7 +269,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             foreach (var refAsset in asset.ReferencingAssets)
             {
                 if (refAsset.Bundle == asset.Bundle)
-                    value.DrillableItems.Add(new DetailsListItem(refAsset.AddressableName, refAsset.AssetPath, null, null));
+                    value.DrillableItems.Add(new DetailsListItem(refAsset.GetName(), refAsset.AssetPath, null, null));
                 else
                 {
                     value.DrillableItems.Add(new DetailsListItem(refAsset.Bundle.Name, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(DetailsViewTab.ReferencedBy,
@@ -288,9 +288,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         void ShowReferencesToForAsset(DetailsContents value, BuildLayout.ExplicitAsset asset, bool shouldCallDisplayContents)
         {
             if (shouldCallDisplayContents)
-                value = new DetailsContents(asset.AddressableName, asset.AssetPath);
+                value = new DetailsContents(asset.GetName(), asset.AssetPath);
             foreach (var internalAsset in asset.InternalReferencedExplicitAssets)
-                value.DrillableItems.Add(new DetailsListItem(internalAsset.AddressableName, internalAsset.AssetPath, null, null));
+                value.DrillableItems.Add(new DetailsListItem(internalAsset.GetName(), internalAsset.AssetPath, null, null));
 
             foreach (var externalAsset in asset.ExternallyReferencedAssets)
                 value.DrillableItems.Add(new DetailsListItem(externalAsset.Bundle.Name, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(
@@ -363,7 +363,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                     onDrillDown = () => ShowReferencesToForAsset(dc, asset, true);
                 if (tab == DetailsViewTab.ReferencedBy && asset.ReferencingAssets.Count > 0)
                     onDrillDown = () => ShowReferencesByForAsset(dc, asset, true);
-                dc.DrillableItems.Add(new DetailsListItem(asset.AddressableName, asset.AssetPath, onDrillDown, onDrillDown == null ? null : BuildReportUtility.GetForwardIconPath()));
+                dc.DrillableItems.Add(new DetailsListItem(asset.GetName(), asset.AssetPath, onDrillDown, onDrillDown == null ? null : BuildReportUtility.GetForwardIconPath()));
             }
 
             if (bundle.AssetCount - linkedAssets.Count > 0)
@@ -399,7 +399,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             {
                 case DetailsViewTab.ReferencedBy:
                     foreach (var refAsset in asset.ReferencingAssets)
-                        value.DrillableItems.Add(new DetailsListItem(refAsset.AddressableName, refAsset.AssetPath, null, null));
+                        value.DrillableItems.Add(new DetailsListItem(refAsset.GetName(), refAsset.AssetPath, null, null));
                     break;
 
                 case DetailsViewTab.ReferencesTo:
