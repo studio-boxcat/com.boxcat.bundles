@@ -252,13 +252,19 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             Assert.IsTrue(op.isDone, "Operation is not done");
             var req = (AssetBundleCreateRequest) op;
-            Assert.IsTrue(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not found");
-            var bundle = req.assetBundle;
-            Assert.IsNotNull(bundle, "AssetBundle not loaded");
-
             // First, set the asset bundle to the array to prevent reentrancy.
             var found = _reqToBundle.Remove(req, out var bundleId);
             Assert.IsTrue(found, "AssetBundleCreateRequest not found");
+
+            var bundle = req.assetBundle;
+            if (bundle is null)
+            {
+                L.E($"[AssetBundleLoader] OnLoaded: {bundleId.Name()} failed");
+                bundle = AssetBundle.GetAllLoadedAssetBundles().FirstOrDefault(x => x.name == bundleId.Name());
+                if (bundle is null)
+                    throw new Exception($"AssetBundleCreateRequest failed: {bundleId.Name()}");
+            }
+
             _bundles[bundleId.Index()] = bundle;
             L.I($"[AssetBundleLoader] OnLoaded: {bundleId.Name()} ({bundle.name} assets)");
 
@@ -340,8 +346,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             Assert.IsNotNull(op, "AssetBundleCreateRequest not found");
             L.I($"[AssetBundleLoader] ReadAssetBundleAsync: {bundleId.Name()}");
 #if DEBUG
+            _debug_AllRequests.Add(op);
             op.completed += op =>
             {
+                _debug_AllRequests.Remove((AssetBundleCreateRequest) op);
+
                 var bundle = ((AssetBundleCreateRequest) op).assetBundle;
                 if (bundle is null)
                 {
@@ -355,6 +364,25 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 #endif
             return op;
         }
+
+#if DEBUG
+        static readonly List<AssetBundleCreateRequest> _debug_AllRequests = new();
+
+        public static void Debug_UnloadAllAssetBundles()
+        {
+            // Before unload all asset bundles, wait for all async operations to complete.
+            // (AssetBundle.Unload was called while the asset bundle had an async load operation in progress. The main thread will wait for the async load operation to complete.)
+            var reqs = _debug_AllRequests;
+            while (reqs.Count > 0)
+            {
+                var req = reqs[0];
+                reqs.RemoveAt(0);
+                req.WaitForComplete();
+            }
+
+            AssetBundle.UnloadAllAssetBundles(true);
+        }
+#endif
 
         AssetBundleResolveContext RentResolveContext(AssetBundleId bundleId)
         {

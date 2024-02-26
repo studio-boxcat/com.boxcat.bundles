@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
 using UnityEngine.AddressableAssets.AsyncOperations;
+using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;
 
@@ -85,9 +86,7 @@ namespace UnityEngine.AddressableAssets
                 if (change is UnityEditor.PlayModeStateChange.EnteredEditMode
                     or UnityEditor.PlayModeStateChange.ExitingEditMode)
                 {
-                    L.I("[Addressables] Purge");
-                    _implCache = null;
-                    AssetBundle.UnloadAllAssetBundles(true);
+                    Purge();
                 }
             };
         }
@@ -99,6 +98,8 @@ namespace UnityEngine.AddressableAssets
 
             L.I("[Addressables] Purge");
             _implCache = null;
+
+            AssetBundleLoader.Debug_UnloadAllAssetBundles();
         }
 #endif
     }
