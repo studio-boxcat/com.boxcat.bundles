@@ -81,7 +81,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             {
                 Assert.IsNull(_op, "Operation should be null when result is set");
                 Assert.AreNotEqual(default, _result, "Result should not be null when result is set");
-                result = default;
+                result = _result;
                 return true;
             }
 
