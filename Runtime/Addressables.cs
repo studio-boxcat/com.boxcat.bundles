@@ -54,15 +54,27 @@ namespace UnityEngine.AddressableAssets
 
         static ResourceCatalog LoadCatalog()
         {
+#if DEBUG
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+#endif
+
             // On Android and WebGL platforms, it’s not possible to access the streaming asset files directly
             // via file system APIs and streamingAssets path because these platforms return a URL.
             // Use the UnityWebRequest class to access the content instead.
             var url = "file://" + PathConfig.RuntimePath_CatalogBin;
-            L.I("[Addressables] PreloadCatalog: " + url);
+            L.I("[Addressables] LoadCatalog: " + url);
             var req = UnityWebRequest.Get(url).SendWebRequest();
             req.WaitForComplete();
             Assert.AreEqual(req.webRequest.result, UnityWebRequest.Result.Success, "Failed to load catalog.");
-            return new ResourceCatalog(req.webRequest.downloadHandler.data);
+            var catalog = new ResourceCatalog(req.webRequest.downloadHandler.data);
+
+#if DEBUG
+            sw.Stop();
+            L.I("[Addressables] LoadCatalog: " + sw.ElapsedMilliseconds + "ms");
+#endif
+
+            return catalog;
         }
 
 #if UNITY_EDITOR
