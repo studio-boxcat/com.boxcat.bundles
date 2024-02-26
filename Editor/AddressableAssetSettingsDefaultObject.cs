@@ -1,6 +1,5 @@
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets
 {
@@ -9,17 +8,6 @@ namespace UnityEditor.AddressableAssets
     /// </summary>
     public class AddressableAssetSettingsDefaultObject : ScriptableObject
     {
-        /// <summary>
-        /// The default folder for the serialized version of this class.
-        /// </summary>
-        public const string kDefaultConfigFolder = "Assets/AddressableAssetsData";
-
-        /// <summary>
-        /// The name of the default config object
-        /// </summary>
-        public const string kDefaultConfigObjectName = "com.unity.addressableassets";
-
-        [FormerlySerializedAs("m_addressableAssetSettingsGuid")]
         [SerializeField]
         internal string m_AddressableAssetSettingsGuid;
 
@@ -34,7 +22,7 @@ namespace UnityEditor.AddressableAssets
             {
                 if (_settings is not null)
                     return _settings;
-                if (EditorBuildSettings.TryGetConfigObject(kDefaultConfigObjectName, out AddressableAssetSettingsDefaultObject so))
+                if (EditorBuildSettings.TryGetConfigObject("com.unity.addressableassets", out AddressableAssetSettingsDefaultObject so))
                     return _settings = LoadSettingsObject(so.m_AddressableAssetSettingsGuid);
                 return null;
             }

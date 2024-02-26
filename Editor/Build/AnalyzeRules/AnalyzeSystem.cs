@@ -49,19 +49,6 @@ namespace UnityEditor.AddressableAssets.Build
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
         internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
-        internal static string AnalyzeRuleDataAssetsFolderPath
-        {
-            get
-            {
-                var settings = AddressableAssetSettingsDefaultObject.Settings;
-                var path = AddressableAssetSettingsDefaultObject.kDefaultConfigFolder;
-                if (settings != null)
-                    path = settings.ConfigFolder;
-
-                return path + "/AnalyzeData/";
-            }
-        }
-
         internal static AddressableAssetSettings Settings => AddressableAssetSettingsDefaultObject.Settings;
 
         internal static List<AnalyzeRule> Rules { get; } = new List<AnalyzeRule>();
@@ -118,10 +105,6 @@ namespace UnityEditor.AddressableAssets.Build
         {
             if (!File.Exists(path))
                 File.WriteAllText(path, JsonUtility.ToJson(new AddressablesAnalyzeResultData()));
-
-            //Cleans up the previous result data
-            if (Directory.Exists(AnalyzeRuleDataAssetsFolderPath))
-                Directory.Delete(AnalyzeRuleDataAssetsFolderPath, true);
 
             m_AnalyzeData = JsonUtility.FromJson<AddressablesAnalyzeResultData>(File.ReadAllText(path));
             if (m_AnalyzeData == null)
