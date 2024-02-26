@@ -148,7 +148,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 if (_requests.TryGetValue(bundleId, out var data))
                 {
                     var (req, _) = data;
-                    var bundle = req.assetBundle; // accessing asset before isDone is true will stall the loading process.
+                    var bundle = req.WaitForComplete();
                     Assert.IsNotNull(_bundles[bundleId.Index()], "AssetBundle not found");
                     Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
                     return bundle;
@@ -228,7 +228,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                 var req = reqs[count - 2]; // Last request is the dummy request.
                 Assert.IsTrue(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not found");
-                _ = req.assetBundle; // accessing asset before isDone is true will stall the loading process.
+                _ = req.WaitForComplete();
 
                 Assert.AreEqual(bundleId, ctx.BundleId, "AssetBundleResolveContext is recycled while resolving");
                 Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
