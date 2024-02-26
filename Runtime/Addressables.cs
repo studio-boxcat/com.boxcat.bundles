@@ -54,10 +54,6 @@ namespace UnityEngine.AddressableAssets
 
         static ResourceCatalog LoadCatalog()
         {
-#if DEBUG
-            AssetBundle.UnloadAllAssetBundles(true);
-#endif
-
             // On Android and WebGL platforms, it’s not possible to access the streaming asset files directly
             // via file system APIs and streamingAssets path because these platforms return a URL.
             // Use the UnityWebRequest class to access the content instead.
@@ -74,9 +70,13 @@ namespace UnityEngine.AddressableAssets
         {
             UnityEditor.EditorApplication.playModeStateChanged += change =>
             {
-                if (change is not UnityEditor.PlayModeStateChange.EnteredEditMode) return;
-                L.I("[Addressables] Purge");
-                _implCache = null;
+                if (change is UnityEditor.PlayModeStateChange.EnteredEditMode
+                    or UnityEditor.PlayModeStateChange.ExitingEditMode)
+                {
+                    L.I("[Addressables] Purge");
+                    _implCache = null;
+                    AssetBundle.UnloadAllAssetBundles(true);
+                }
             };
         }
 
