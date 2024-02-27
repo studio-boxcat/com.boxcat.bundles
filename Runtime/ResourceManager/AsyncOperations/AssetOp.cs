@@ -132,7 +132,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             Assert.IsNull(_op, "Operation should be null before execution");
             Assert.IsNotNull(_b, "Block should not be null before execution");
 
-            _op = _b.Provider.LoadAsync(bundle, _b.Address);
+            _op = _b.Provider.LoadAsync<TResult>(bundle, _b.Address);
 
             if (_op.isDone)
             {

@@ -4,13 +4,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 {
     public class BundledAssetProvider : IResourceProvider
     {
-        public AsyncOperation LoadAsync(AssetBundle bundle, Address address)
+        public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
         {
             var name = address.Name();
             Assert.IsTrue(bundle.Contains(name), $"Bundle does not contain asset: {name}");
-            var req = bundle.LoadAssetAsync(name);
-            req.allowSceneActivation = true;
-            return req;
+            return bundle.LoadAssetAsync(name, typeof(T));
         }
 
         public object GetResult(AsyncOperation op)
