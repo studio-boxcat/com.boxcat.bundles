@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #if NONRECURSIVE_DEPENDENCY_DATA
                 NonRecursiveDependencies = settings.NonRecursiveBuilding,
 #endif
-                DisableVisibleSubAssetRepresentations = true,
+                DisableVisibleSubAssetRepresentations = false, // To include main sprite in Texture.
                 BundleCompression = target == BuildTarget.WebGL ? BuildCompression.LZ4Runtime : BuildCompression.LZMA,
             };
 
