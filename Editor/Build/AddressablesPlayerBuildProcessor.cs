@@ -19,7 +19,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     [InitializeOnLoadMethod]
     static void CleanTemporaryPlayerBuildData()
     {
-        var linkPath = GetAssetsLinkPath(AddressableAssetSettingsDefaultObject.Settings, false);
+        var linkPath = GetAssetsLinkPath(AddressableDefaultSettings.Settings, false);
         var guid = AssetDatabase.AssetPathToGUID(linkPath);
         if (!string.IsNullOrEmpty(guid)) AssetDatabase.DeleteAsset(linkPath);
         else if (File.Exists(linkPath)) File.Delete(linkPath);
@@ -31,7 +31,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     /// <param name="buildPlayerContext"></param>
     public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
     {
-        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        var settings = AddressableDefaultSettings.Settings;
         Assert.IsNotNull(settings, "AddressableAssetSettings object is null");
         Assert.IsNotNull(buildPlayerContext, "BuildPlayerContext object is null");
 

@@ -58,7 +58,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 return false;
 
             // assets in config folder are not valid entries
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            var settings = AddressableDefaultSettings.Settings;
             return settings == null || !path.StartsWith(settings.ConfigFolder, StringComparison.Ordinal);
 
             static bool IsExcludedExtension(string path)

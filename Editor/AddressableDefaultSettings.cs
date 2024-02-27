@@ -6,7 +6,7 @@ namespace UnityEditor.AddressableAssets
     /// <summary>
     /// Class used to get and set the default Addressable Asset settings object.
     /// </summary>
-    public class AddressableAssetSettingsDefaultObject : ScriptableObject
+    public class AddressableDefaultSettings : ScriptableObject
     {
         [SerializeField]
         internal string m_AddressableAssetSettingsGuid;
@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets
             {
                 if (_settings is not null)
                     return _settings;
-                if (EditorBuildSettings.TryGetConfigObject("com.unity.addressableassets", out AddressableAssetSettingsDefaultObject so))
+                if (EditorBuildSettings.TryGetConfigObject("com.unity.addressableassets", out AddressableDefaultSettings so))
                     return _settings = LoadSettingsObject(so.m_AddressableAssetSettingsGuid);
                 return null;
             }

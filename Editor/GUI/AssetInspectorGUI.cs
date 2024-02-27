@@ -79,7 +79,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (targets[0] is GameObject)
                 return;
 
-            var aaSettings = AddressableAssetSettingsDefaultObject.Settings;
+            var aaSettings = AddressableDefaultSettings.Settings;
 
             var targetInfos = GatherTargetInfos(targets, aaSettings);
             if (targetInfos.Count == 0)
@@ -117,7 +117,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (totalAddressableCount == 0) // nothing is addressable
             {
                 if (GUILayout.Toggle(false, s_AddressableAssetToggleText, GUILayout.ExpandWidth(false)))
-                    SetAaEntry(AddressableAssetSettingsDefaultObject.Settings, targetInfos, true);
+                    SetAaEntry(AddressableDefaultSettings.Settings, targetInfos, true);
             }
             else if (totalAddressableCount == editor.targets.Length) // everything is addressable
             {
@@ -174,7 +174,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (s_ToggleMixed == null)
                     s_ToggleMixed = new GUIStyle("ToggleMixed");
                 if (GUILayout.Toggle(false, s_AddressableAssetToggleText, s_ToggleMixed, GUILayout.ExpandWidth(false)))
-                    SetAaEntry(AddressableAssetSettingsDefaultObject.Settings, targetInfos, true);
+                    SetAaEntry(AddressableDefaultSettings.Settings, targetInfos, true);
                 FindUniqueAssetGuids(targetInfos, out var uniqueAssetGuids, out var uniqueAddressableAssetGuids);
                 EditorGUILayout.LabelField(uniqueAddressableAssetGuids.Count + " out of " + uniqueAssetGuids.Count + " assets are addressable.");
                 DrawSelectEntriesButton(targetInfos);

@@ -31,7 +31,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             get
             {
-                if (m_Settings == null) m_Settings = AddressableAssetSettingsDefaultObject.Settings;
+                if (m_Settings == null) m_Settings = AddressableDefaultSettings.Settings;
                 return m_Settings;
             }
             set => m_Settings = value;
@@ -216,8 +216,8 @@ namespace UnityEditor.AddressableAssets.GUI
                         menu.AddItem(new GUIContent("Settings"), false, () =>
                         {
                             EditorApplication.ExecuteMenuItem("Window/General/Inspector");
-                            EditorGUIUtility.PingObject(AddressableAssetSettingsDefaultObject.Settings);
-                            Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
+                            EditorGUIUtility.PingObject(AddressableDefaultSettings.Settings);
+                            Selection.activeObject = AddressableDefaultSettings.Settings;
                         });
 
                         menu.AddItem(new GUIContent("Analyze"), false, AnalyzeWindow.ShowWindow);
@@ -237,14 +237,14 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 if (GUILayout.Button("Build", EditorStyles.toolbarButton))
                 {
-                    var rst = AddressableAssetSettings.BuildPlayerContent();
+                    var rst = AddressableBuilder.BuildPlayerContent();
                     if (string.IsNullOrEmpty(rst.Error) is false)
                         L.E("Addressable content post-build failure.");
                 }
 
                 if (GUILayout.Button("Clean", EditorStyles.toolbarButton))
                 {
-                    AddressableAssetSettings.CleanPlayerContent();
+                    AddressableBuilder.CleanPlayerContent();
                     BuildCache.PurgeCache(true);
                 }
 
@@ -263,22 +263,22 @@ namespace UnityEditor.AddressableAssets.GUI
 
         public void OnEnable()
         {
-            if (AddressableAssetSettingsDefaultObject.Settings == null)
+            if (AddressableDefaultSettings.Settings == null)
                 return;
             if (!m_ModificationRegistered)
             {
-                AddressableAssetSettingsDefaultObject.Settings.OnModification += OnSettingsModification;
+                AddressableDefaultSettings.Settings.OnModification += OnSettingsModification;
                 m_ModificationRegistered = true;
             }
         }
 
         public void OnDisable()
         {
-            if (AddressableAssetSettingsDefaultObject.Settings == null)
+            if (AddressableDefaultSettings.Settings == null)
                 return;
             if (m_ModificationRegistered)
             {
-                AddressableAssetSettingsDefaultObject.Settings.OnModification -= OnSettingsModification;
+                AddressableDefaultSettings.Settings.OnModification -= OnSettingsModification;
                 m_ModificationRegistered = false;
             }
         }

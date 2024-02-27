@@ -97,7 +97,7 @@ namespace UnityEditor.AddressableAssets.Settings
             get
             {
                 if (m_Settings == null)
-                    m_Settings = AddressableAssetSettingsDefaultObject.Settings;
+                    m_Settings = AddressableDefaultSettings.Settings;
 
                 return m_Settings;
             }

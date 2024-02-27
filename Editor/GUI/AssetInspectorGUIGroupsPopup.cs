@@ -200,7 +200,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 var root = new TreeViewItem(-1, -1);
 
-                var aaSettings = AddressableAssetSettingsDefaultObject.Settings;
+                var aaSettings = AddressableDefaultSettings.Settings;
                 if (aaSettings == null)
                 {
                     var message = "Use 'Window->Addressables' to initialize.";

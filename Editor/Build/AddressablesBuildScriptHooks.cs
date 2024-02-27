@@ -16,7 +16,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (state != PlayModeStateChange.ExitingEditMode)
                 return;
 
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            var settings = AddressableDefaultSettings.Settings;
             if (settings == null)
                 return;
 

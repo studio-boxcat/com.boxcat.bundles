@@ -18,7 +18,7 @@ namespace UnityEditor.AddressableAssets.Settings
         static EditorAddressablesImpl CreateImpl([CanBeNull] AddressableAssetSettings settings)
         {
             // Use default settings if none provided.
-            settings ??= AddressableAssetSettingsDefaultObject.Settings;
+            settings ??= AddressableDefaultSettings.Settings;
 
             // Reuse existing instance if settings are the same.
             var impl = _cache.Find(i => i._settings == settings);

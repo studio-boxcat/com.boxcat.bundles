@@ -12,7 +12,7 @@ namespace UnityEditor.AddressableAssets.GUI
         [MenuItem("Window/Asset Management/Addressables/Settings", priority = 2051)]
         internal static void ShowSettingsInspector()
         {
-            var setting = AddressableAssetSettingsDefaultObject.Settings;
+            var setting = AddressableDefaultSettings.Settings;
             EditorApplication.ExecuteMenuItem("Window/General/Inspector");
             EditorGUIUtility.PingObject(setting);
             Selection.activeObject = setting;

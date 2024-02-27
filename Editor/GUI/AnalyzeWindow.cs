@@ -36,7 +36,7 @@ namespace UnityEditor.AddressableAssets.GUI
         [MenuItem("Window/Asset Management/Addressables/Analyze", priority = 2052)]
         internal static void ShowWindow()
         {
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetSettings settings = AddressableDefaultSettings.Settings;
             if (settings == null)
             {
                 EditorUtility.DisplayDialog("Error",
@@ -56,7 +56,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnGUI()
         {
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetSettings settings = AddressableDefaultSettings.Settings;
             if (settings == null)
                 return;
 

@@ -49,7 +49,7 @@ namespace UnityEditor.AddressableAssets.Build
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
         internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
-        internal static AddressableAssetSettings Settings => AddressableAssetSettingsDefaultObject.Settings;
+        internal static AddressableAssetSettings Settings => AddressableDefaultSettings.Settings;
 
         internal static List<AnalyzeRule> Rules { get; } = new List<AnalyzeRule>();
 
