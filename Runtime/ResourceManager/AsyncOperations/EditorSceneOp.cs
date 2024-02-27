@@ -19,7 +19,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             if (path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase) == -1)
                 path += ".unity";
 
-            _op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Single));
+            _op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
             _op.completed += OnComplete;
             var scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             AsyncOpPayloads.SetScene(_op, scene);
