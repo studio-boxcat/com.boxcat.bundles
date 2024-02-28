@@ -60,10 +60,7 @@ namespace UnityEngine.AddressableAssets
             sw.Start();
 #endif
 
-            // On Android and WebGL platforms, it’s not possible to access the streaming asset files directly
-            // via file system APIs and streamingAssets path because these platforms return a URL.
-            // Use the UnityWebRequest class to access the content instead.
-            var url = "file://" + PathConfig.RuntimePath_CatalogBin;
+            var url = PathConfig.RuntimePath_CatalogBin;
             L.I("[Addressables] LoadCatalog: " + url);
             var req = UnityWebRequest.Get(url).SendWebRequest();
             req.WaitForComplete();
