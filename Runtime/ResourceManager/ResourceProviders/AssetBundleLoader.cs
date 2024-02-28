@@ -144,11 +144,19 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
             AssetBundle LoadBundle(AssetBundleId bundleId)
             {
+                var bundleIndex = bundleId.Index();
+                var bundle = _bundles[bundleIndex];
+
+                // No need to load at all.
+                if (bundle is not null)
+                {
+                    return bundle;
+                }
                 // If the dependent asset bundle is currently loading, complete it immediately.
-                if (_requests.TryGetValue(bundleId, out var data))
+                else if (_requests.TryGetValue(bundleId, out var data))
                 {
                     var (req, _) = data;
-                    var bundle = req.WaitForComplete();
+                    bundle = req.WaitForComplete();
                     Assert.IsNotNull(_bundles[bundleId.Index()], "AssetBundle not found");
                     Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
                     return bundle;
@@ -157,7 +165,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 else
                 {
                     // No need to deal with the context as it will be fully resolved immediately.
-                    var bundle = ReadAssetBundle(bundleId);
+                    bundle = ReadAssetBundle(bundleId);
                     _bundles[bundleId.Index()] = bundle;
                     return bundle;
                 }
