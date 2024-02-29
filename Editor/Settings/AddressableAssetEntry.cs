@@ -102,6 +102,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (m_MainAsset != null)
                     return m_MainAsset;
                 m_MainAsset = AssetDatabase.LoadAssetAtPath<Object>(AssetPath);
+                Assert.IsNotNull(m_MainAsset, $"Failed to load asset at path {AssetPath} ({guid})");
                 return m_MainAsset;
             }
         }
