@@ -61,6 +61,9 @@ namespace UnityEngine.AddressableAssets
 #endif
 
             var url = PathConfig.RuntimePath_CatalogBin;
+#if UNITY_EDITOR || !UNITY_ANDROID
+            url = "file://" + url;
+#endif
             L.I("[Addressables] LoadCatalog: " + url);
             var req = UnityWebRequest.Get(url).SendWebRequest();
             req.WaitForComplete();
