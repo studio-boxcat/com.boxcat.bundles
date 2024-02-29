@@ -1063,8 +1063,14 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (isRenaming)
                     return baseName;
 
-                if (group != null)
+                if (group is not null)
                 {
+                    if (group == null)
+                    {
+                        L.E("Group is destroyed");
+                        return "NA (Group)";
+                    }
+
                     if (group.Default)
                         return baseName + " (Default)";
                 }
