@@ -52,7 +52,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             buildTasks.Add(new CalculateSceneDependencyData());
             buildTasks.Add(new CalculateAssetDependencyData());
             buildTasks.Add(new StripUnusedSpriteSources());
-            buildTasks.Add(new CreateBuiltInShadersBundle(BuildUtility.BuiltInShaderBundle));
+            buildTasks.Add(new CreateBuiltInShadersBundle(BundleNames.BuiltInShaders));
 
             // Packing
             buildTasks.Add(new GenerateBundlePacking());
@@ -246,7 +246,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
-                results.Add(new AnalyzeResult {resultName = ruleName + "Cannot run Analyze with unsaved scenes"});
+                results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });
                 return results;
             }
 
@@ -259,11 +259,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 {
                     if (buildSuccess == ReturnCode.SuccessNotRun)
                     {
-                        results.Add(new AnalyzeResult {resultName = ruleName + " - No issues found."});
+                        results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
                         return results;
                     }
 
-                    results.Add(new AnalyzeResult {resultName = ruleName + "Analyze build failed. " + buildSuccess});
+                    results.Add(new AnalyzeResult { resultName = ruleName + "Analyze build failed. " + buildSuccess });
                     return results;
                 }
             }
@@ -290,7 +290,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 }).ToList();
 
             if (results.Count == 0)
-                results.Add(new AnalyzeResult {resultName = ruleName + " - No issues found."});
+                results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
 
             return results;
         }
@@ -414,7 +414,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
-                results.Add(new AnalyzeResult {resultName = ruleName + "Cannot run Analyze with unsaved scenes"});
+                results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });
                 return results;
             }
 
@@ -427,13 +427,13 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 var buildSuccess = BuildAndGetResourceDependencies(settings, resourcePaths);
                 if (buildSuccess == ReturnCode.SuccessNotRun)
                 {
-                    results.Add(new AnalyzeResult {resultName = ruleName + " - No issues found."});
+                    results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
                     return results;
                 }
 
                 if (buildSuccess != ReturnCode.Success)
                 {
-                    results.Add(new AnalyzeResult {resultName = ruleName + "Analyze build failed. " + buildSuccess});
+                    results.Add(new AnalyzeResult { resultName = ruleName + "Analyze build failed. " + buildSuccess });
                     return results;
                 }
             }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.AsyncOperations;
@@ -7,7 +8,7 @@ using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
     [UsedImplicitly]
     class EditorAddressablesImpl : IAddressablesImpl

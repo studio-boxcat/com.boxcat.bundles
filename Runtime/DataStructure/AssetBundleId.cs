@@ -6,6 +6,7 @@ namespace UnityEngine.AddressableAssets
 {
     public enum AssetBundleId : byte
     {
+        MonoScript = 0, // reserved for MonoScript.
     }
 
     public static class AssetBundleIdUtils

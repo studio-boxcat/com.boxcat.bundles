@@ -12,8 +12,6 @@ namespace UnityEditor.AddressableAssets.Build
     /// </summary>
     public static class BuildUtility
     {
-        public const string BuiltInShaderBundle = "UnityBuiltInShaders";
-
         static HashSet<string> _editorAssemblyNamesCache = null;
         static HashSet<string> _editorAssemblyNames => _editorAssemblyNamesCache ??= CollectEditorAssemblyNames();
         static HashSet<string> CollectEditorAssemblyNames()

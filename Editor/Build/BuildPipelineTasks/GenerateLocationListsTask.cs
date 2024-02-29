@@ -73,16 +73,15 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Build bundle deps.
             bundleToImmediateBundleDependencies = entries.Values
                 // Construct depender to dependee mapping
-                .SelectMany(x => x.Dependencies.Select(y => new {x.Bundle, y}))
+                .SelectMany(x => x.Dependencies.Select(y => new { x.Bundle, y }))
                 // Group by depender
                 .GroupBy(x => x.Bundle)
                 // Convert to HashSet
                 .ToDictionary(g => g.Key, g => g.Select(x => x.y).ToHashSet());
 
             // Add builtin bundles.
-            bundleToImmediateBundleDependencies.Add(
-                BundleKey.FromBuildName(BuildUtility.BuiltInShaderBundle),
-                new HashSet<BundleKey> {BundleKey.FromBuildName(BuildUtility.BuiltInShaderBundle)});
+            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.BuiltInShaders);
+            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.MonoScript);
 
             // Expand bundle deps.
             bundleToExpandedBundleDependencies = new Dictionary<BundleKey, HashSet<BundleKey>>();
@@ -99,6 +98,15 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         stack.Push(dep);
                 }
                 bundleToExpandedBundleDependencies.Add(bundle, visited);
+            }
+
+            return;
+
+
+            static void AddBuiltInBundles(Dictionary<BundleKey, HashSet<BundleKey>> dict, string bundleName)
+            {
+                dict.Add(BundleKey.FromBuildName(bundleName),
+                    new HashSet<BundleKey> { BundleKey.FromBuildName(bundleName) });
             }
         }
     }

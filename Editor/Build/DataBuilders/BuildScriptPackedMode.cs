@@ -227,8 +227,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             buildTasks.Add(new CalculateSceneDependencyData());
             buildTasks.Add(new CalculateAssetDependencyData());
             buildTasks.Add(new StripUnusedSpriteSources());
-            buildTasks.Add(new CreateBuiltInShadersBundle(BuildUtility.BuiltInShaderBundle));
-            // buildTasks.Add(new CreateMonoScriptBundle("_monoscripts.bundle"));
+            buildTasks.Add(new CreateBuiltInShadersBundle(BundleNames.BuiltInShaders));
+            buildTasks.Add(new CreateMonoScriptBundle(BundleNames.MonoScript));
             buildTasks.Add(new PostDependencyCallback());
 
             // Packing

@@ -103,6 +103,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         public static Dictionary<BundleKey, AssetBundleId> AssignBundleId(ICollection<EntryDef> entries)
         {
+            var idToKey = new Dictionary<AssetBundleId, BundleKey>();
+            var keyToId = new Dictionary<BundleKey, AssetBundleId>();
+
+
             // Collect all asset bundles.
             var bundleKeys = entries
                 .Select(x => x.Bundle)
@@ -114,14 +118,21 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var bundleCount = bundleKeys.Count;
             Assert.IsTrue(bundleCount <= byte.MaxValue, "Too many asset bundles.");
 
+
+            // Manually add MonoScriptBundle.
+            var removed = bundleKeys.Remove(BundleKey.FromBuildName(BundleNames.MonoScript));
+            Assert.IsTrue(removed, "MonoScriptBundle not found.");
+            idToKey.Add(AssetBundleId.MonoScript, BundleKey.FromBuildName(BundleNames.MonoScript));
+            keyToId.Add(BundleKey.FromBuildName(BundleNames.MonoScript), AssetBundleId.MonoScript);
+
+
             // Calculate hashes.
             var bundleHashes = bundleKeys
                 .Select(x => Hasher.Hash(x.Value))
                 .ToList();
 
+
             // Assign AssetBundleId to each asset bundle.
-            var idToKey = new Dictionary<AssetBundleId, BundleKey>();
-            var keyToId = new Dictionary<BundleKey, AssetBundleId>();
             while (true)
             {
                 var count = bundleHashes.Count;
@@ -163,6 +174,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             // Remove the bundle itself from the dependencies.
             deps.Remove(bundle);
+
+            // Remove MonoScript bundle from deps as it will be loaded manually. See AssetBundleLoader.cs.
+            deps.Remove(BundleKey.FromBuildName(BundleNames.MonoScript));
 
             // Build final dependency data.
             return deps.Select(x => keyToId[x]).ToHashSet();

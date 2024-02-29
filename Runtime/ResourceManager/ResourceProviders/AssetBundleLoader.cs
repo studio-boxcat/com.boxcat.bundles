@@ -31,6 +31,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             _bundles = new AssetBundle[bundleCount];
             _contexts = new AssetBundleResolveContext[bundleCount];
             _onLoaded = OnLoaded;
+
+            // Load the MonoScript asset bundle immediately.
+            _bundles[AssetBundleId.MonoScript.Index()]
+                = ReadAssetBundle(AssetBundleId.MonoScript);
         }
 
         public AssetBundle GetResolvedBundle(AssetBundleId id)
