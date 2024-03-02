@@ -4,8 +4,8 @@ using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Assertions;
 using UnityEngine.Serialization;
+using Assert = UnityEngine.Assertions.Assert;
 
 namespace UnityEditor.AddressableAssets.Settings
 {

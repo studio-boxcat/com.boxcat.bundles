@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.Util;
@@ -11,7 +13,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// <summary>
     /// Contains editor data for the addressables system.
     /// </summary>
-    public class AddressableAssetSettings : ScriptableObject
+    public class AddressableAssetSettings : ScriptableObject, ISelfValidator
     {
         internal class Cache<T1, T2>
         {
@@ -100,49 +102,10 @@ namespace UnityEditor.AddressableAssets.Settings
             BatchModification,
         }
 
-        private string m_CachedAssetPath;
-
-        /// <summary>
-        /// The path of the settings asset.
-        /// </summary>
-        public string AssetPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_CachedAssetPath) is false)
-                    return m_CachedAssetPath;
-
-                m_CachedAssetPath = AssetDatabase.GetAssetPath(this);
-                Assert.IsFalse(string.IsNullOrEmpty(m_CachedAssetPath),
-                    "AddressableAssetSettings must be an asset.  It must be saved to a location in the project.");
-                return m_CachedAssetPath;
-            }
-        }
-
-        private string m_CachedConfigFolder;
-
-        /// <summary>
-        /// The folder of the settings asset.
-        /// </summary>
-        public string ConfigFolder
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_CachedConfigFolder))
-                    m_CachedConfigFolder = Path.GetDirectoryName(AssetPath);
-                return m_CachedConfigFolder;
-            }
-        }
-
         /// <summary>
         /// Event for handling settings changes.  The object passed depends on the event type.
         /// </summary>
         public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }
-
-        /// <summary>
-        /// Event for handling settings changes on all instances of AddressableAssetSettings.  The object passed depends on the event type.
-        /// </summary>
-        public static event Action<AddressableAssetSettings, ModificationEvent, object> OnModificationGlobal;
 
         [FormerlySerializedAs("m_defaultGroup")]
         [SerializeField]
@@ -286,29 +249,6 @@ namespace UnityEditor.AddressableAssets.Settings
             return entry;
         }
 
-        /// <summary>
-        /// Marks the object as modified.
-        /// </summary>
-        /// <param name="modificationEvent">The event type that is changed.</param>
-        /// <param name="eventData">The object data that corresponds to the event.</param>
-        /// <param name="postEvent">If true, the event is propagated to callbacks.</param>
-        /// <param name="settingsModified">If true, the settings asset will be marked as dirty.</param>
-        public void SetDirty(ModificationEvent modificationEvent, object eventData, bool postEvent, bool settingsModified = false)
-        {
-            Assert.IsNotNull(this, "Object is destroyed.");
-
-            if (postEvent)
-            {
-                OnModificationGlobal?.Invoke(this, modificationEvent, eventData);
-                OnModification?.Invoke(this, modificationEvent, eventData);
-            }
-
-            if (settingsModified)
-                EditorUtility.SetDirty(this);
-
-            m_Version++;
-        }
-
         private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
 
         /// <summary>
@@ -408,7 +348,7 @@ namespace UnityEditor.AddressableAssets.Settings
         public AddressableAssetGroup CreateGroup(bool postEvent)
         {
             // Prepare the AssetGroups folder & path to save the new group.
-            var root = ConfigFolder + "/AssetGroups";
+            var root = ResolveConfigFolder() + "/AssetGroups";
             if (!Directory.Exists(root)) Directory.CreateDirectory(root);
             var path = AssetDatabase.GenerateUniqueAssetPath(root + "/New Group.asset");
             var groupName = Path.GetFileNameWithoutExtension(path);
@@ -449,6 +389,72 @@ namespace UnityEditor.AddressableAssets.Settings
             var groupPath = AssetDatabase.GUIDToAssetPath(guidOfGroup);
             if (!string.IsNullOrEmpty(groupPath))
                 AssetDatabase.DeleteAsset(groupPath);
+        }
+
+        /// <summary>
+        /// The folder of the settings asset.
+        /// </summary>
+        public string ResolveConfigFolder()
+        {
+            var path = AssetDatabase.GetAssetPath(this);
+            return Path.GetDirectoryName(path);
+        }
+
+        /// <summary>
+        /// Marks the object as modified.
+        /// </summary>
+        /// <param name="modificationEvent">The event type that is changed.</param>
+        /// <param name="eventData">The object data that corresponds to the event.</param>
+        /// <param name="postEvent">If true, the event is propagated to callbacks.</param>
+        /// <param name="settingsModified">If true, the settings asset will be marked as dirty.</param>
+        public void SetDirty(ModificationEvent modificationEvent, object eventData, bool postEvent, bool settingsModified = false)
+        {
+            Assert.IsNotNull(this, "Object is destroyed.");
+
+            if (postEvent)
+                OnModification?.Invoke(this, modificationEvent, eventData);
+
+            if (settingsModified)
+                EditorUtility.SetDirty(this);
+
+            m_Version++;
+        }
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            // Check for duplicate addresses.
+            {
+                var addresses = new Dictionary<string, AddressableAssetEntry>();
+                foreach (var g in groups)
+                {
+                    var entries = g.entries;
+                    foreach (var e in entries)
+                    {
+                        // An empty address only marks the group for inclusion.
+                        if (string.IsNullOrEmpty(e.address))
+                            continue;
+
+                        // If the address is unique, add it to the dictionary.
+                        if (addresses.TryAdd(e.address, e))
+                            continue;
+
+                        var existingEntry = addresses[e.address];
+                        result.AddError("Address " + e.address + " is not unique.  It is used by " + e.parentGroup.Name + " and " + existingEntry.parentGroup.Name);
+                    }
+                }
+            }
+
+            // Check for scene registered as EditorBuildSettings.scenes.
+            {
+                var scenes = BuiltinSceneCache.scenes;
+                var sceneGuids = new HashSet<GUID>(scenes.Where(s => s.enabled).Select(s => s.guid));
+
+                foreach (var e in groups.SelectMany(g => g.entries))
+                {
+                    if (sceneGuids.Contains((GUID) e.guid))
+                        result.AddError("A scene from the EditorBuildScenes list has been marked as addressable: " + e.address);
+                }
+            }
         }
     }
 }

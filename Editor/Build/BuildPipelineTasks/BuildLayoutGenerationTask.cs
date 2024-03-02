@@ -786,7 +786,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             if (rootAsset.Bundle == null)
             {
-                Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.AssetPath}");
+                Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.guid}");
                 return;
             }
 
@@ -794,7 +794,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 if (referencedAsset.Bundle == null)
                 {
-                    Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.AssetPath}");
+                    Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.guid}");
                     continue;
                 }
 

@@ -1,6 +1,7 @@
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
@@ -71,7 +72,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 parentGroup.SetDirty(e, o, postEvent, true);
         }
 
-        internal string m_cachedAssetPath = null;
+        [NonSerialized]
+        string m_cachedAssetPath;
 
         /// <summary>
         /// The path of the asset.
@@ -80,12 +82,15 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get
             {
-                if (string.IsNullOrEmpty(m_cachedAssetPath) is false)
+                if (m_cachedAssetPath is not null)
                     return m_cachedAssetPath;
-                m_cachedAssetPath = AssetDatabase.GUIDToAssetPath(m_GUID);
+                AddressableAssetEntryTracker.Track(this);
+                Assert.IsNotNull(m_cachedAssetPath, "Failed to track asset path: " + guid);
                 return m_cachedAssetPath;
             }
         }
+
+        internal void ResetAssetPath(string path) => m_cachedAssetPath = path;
 
         private Object m_MainAsset;
 
@@ -100,7 +105,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (m_MainAsset != null)
                     return m_MainAsset;
                 m_MainAsset = AssetDatabase.LoadAssetAtPath<Object>(AssetPath);
-                Assert.IsNotNull(m_MainAsset, $"Failed to load asset at path {AssetPath} ({guid})");
+                if (m_MainAsset is null)
+                    L.E("Failed to load asset: " + guid);
                 return m_MainAsset;
             }
         }

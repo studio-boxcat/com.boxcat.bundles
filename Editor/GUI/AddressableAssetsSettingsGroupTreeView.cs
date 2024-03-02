@@ -190,8 +190,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (string.IsNullOrEmpty(search))
                 return true;
 
-            var aeItem = item as AssetEntryTreeViewItem;
-            if (aeItem == null)
+            if (item is not AssetEntryTreeViewItem aeItem)
                 return false;
 
             //check if item matches.
@@ -279,10 +278,8 @@ namespace UnityEditor.AddressableAssets.GUI
             switch ((ColumnId) column)
             {
                 case ColumnId.Id:
-                {
                     args.rowRect = cellRect;
                     base.RowGUI(args);
-                }
                     break;
                 case ColumnId.Path:
                     if (item.entry != null && Event.current.type == EventType.Repaint)
@@ -658,15 +655,8 @@ namespace UnityEditor.AddressableAssets.GUI
             foreach (var id in args.draggedItemIDs)
             {
                 var item = FindItemInVisibleRows(id);
-                if (item != null)
-                {
-                    if (item.entry != null)
-                    {
-                        //if it's missing a path, it can't be moved.  most likely this is a sub-asset.
-                        if (string.IsNullOrEmpty(item.entry.AssetPath))
-                            return false;
-                    }
-                }
+                if (item is { entry: not null }) // Only group can be dragged.
+                    return false;
             }
 
             return true;
@@ -854,20 +844,16 @@ namespace UnityEditor.AddressableAssets.GUI
             }
             else
             {
-                bool modified = false;
+                var modified = false;
                 foreach (var p in DragAndDrop.paths)
                 {
-                    if (PathPointsToAssetGroup(p))
+                    if (PathPointsToAssetGroup(p) is false) continue;
+                    var loadedGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(p);
+                    if (loadedGroup is null) continue;
+                    if (m_Editor.settings.FindGroup(g => g == loadedGroup) == null)
                     {
-                        AddressableAssetGroup loadedGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(p);
-                        if (loadedGroup != null)
-                        {
-                            if (m_Editor.settings.FindGroup(g => g == loadedGroup) == null)
-                            {
-                                m_Editor.settings.groups.Add(loadedGroup);
-                                modified = true;
-                            }
-                        }
+                        m_Editor.settings.groups.Add(loadedGroup);
+                        modified = true;
                     }
                 }
 

@@ -128,7 +128,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             {
                 L.I("Generate link");
-                m_Linker.Save(PathConfig.BuildPath_LinkXML);
+                m_Linker.Save(Path.Combine(settings.ResolveConfigFolder(), "link.xml"));
             }
 
             if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)
