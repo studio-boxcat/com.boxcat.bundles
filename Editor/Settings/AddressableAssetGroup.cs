@@ -32,6 +32,7 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         [SerializeField, ReadOnly, PropertyOrder(0)]
         AddressableAssetSettings m_Settings;
+        public AddressableAssetSettings Settings => m_Settings;
 
         [SerializeField, HideInInspector]
         BundlePackingMode m_BundleMode;
@@ -75,20 +76,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// The AddressableAssetSettings that this group belongs to.
-        /// </summary>
-        public AddressableAssetSettings Settings
-        {
-            get
-            {
-                if (m_Settings == null)
-                    m_Settings = AddressableDefaultSettings.Settings;
-
-                return m_Settings;
-            }
-        }
-
-        /// <summary>
         /// The collection of asset entries.
         /// </summary>
         public virtual ICollection<AddressableAssetEntry> entries => EntryMap.Values;
@@ -123,38 +110,10 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public bool Default => this == Settings.DefaultGroup;
 
-        /// <summary>
-        /// Compares two asset entries based on their guids.
-        /// </summary>
-        /// <param name="x">The first entry to compare.</param>
-        /// <param name="y">The second entry to compare.</param>
-        /// <returns>Returns 0 if both entries are null or equivalent.
-        /// Returns -1 if the first entry is null or the first entry precedes the second entry in the sort order.
-        /// Returns 1 if the second entry is null or the first entry follows the second entry in the sort order.</returns>
-        public int Compare(AddressableAssetEntry x, AddressableAssetEntry y)
-        {
-            return x switch
-            {
-                null when y is null => 0,
-                null => -1,
-                _ => y is null ? 1 : x.guid.CompareTo(y.guid)
-            };
-        }
-
         internal void Initialize(AddressableAssetSettings settings, string groupName)
         {
             m_Settings = settings;
             name = groupName;
-        }
-
-        internal void AddAssetEntry(AddressableAssetEntry e, bool postEvent = true)
-        {
-            e.parentGroup = this;
-            EntryMap[e.guid] = e;
-            if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
-                throw new NotSupportedException(e.AssetPath);
-            m_SerializeEntries = null;
-            SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
         }
 
         /// <summary>
@@ -165,6 +124,28 @@ namespace UnityEditor.AddressableAssets.Settings
         public AddressableAssetEntry GetAssetEntry(AssetGUID guid)
         {
             return EntryMap.GetValueOrDefault(guid);
+        }
+
+        internal void AddAssetEntry(AddressableAssetEntry e, bool postEvent = true)
+        {
+            Assert.AreNotEqual(typeof(DefaultAsset), e.MainAssetType, "Entry is a Folder.");
+            e.parentGroup = this;
+            m_EntryMap?.Add(e.guid, e);
+            m_SerializeEntries.Add(e);
+            SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
+        }
+
+        /// <summary>
+        /// Remove an entry.
+        /// </summary>
+        /// <param name="entry">The entry to remove.</param>
+        /// <param name="postEvent">If true, post the event to callbacks.</param>
+        public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
+        {
+            entry.parentGroup = null;
+            m_EntryMap?.Remove(entry.guid);
+            m_SerializeEntries.Remove(entry);
+            SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
         }
 
         /// <summary>
@@ -183,16 +164,21 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Remove an entry.
+        /// Compares two asset entries based on their guids.
         /// </summary>
-        /// <param name="entry">The entry to remove.</param>
-        /// <param name="postEvent">If true, post the event to callbacks.</param>
-        public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
+        /// <param name="x">The first entry to compare.</param>
+        /// <param name="y">The second entry to compare.</param>
+        /// <returns>Returns 0 if both entries are null or equivalent.
+        /// Returns -1 if the first entry is null or the first entry precedes the second entry in the sort order.
+        /// Returns 1 if the second entry is null or the first entry follows the second entry in the sort order.</returns>
+        int IComparer<AddressableAssetEntry>.Compare(AddressableAssetEntry x, AddressableAssetEntry y)
         {
-            EntryMap.Remove(entry.guid);
-            entry.parentGroup = null;
-            m_SerializeEntries = null;
-            SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
+            return x switch
+            {
+                null when y is null => 0,
+                null => -1,
+                _ => y is null ? 1 : x.guid.CompareTo(y.guid)
+            };
         }
     }
 }
