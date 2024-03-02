@@ -416,7 +416,7 @@ namespace UnityEditor.AddressableAssets.Settings
             // Create the new group and add it to the settings.
             var group = CreateInstance<AddressableAssetGroup>();
             AssetDatabase.CreateAsset(group, path);
-            group.Initialize(this, groupName);
+            group.SetUp(this, groupName);
             groups.Add(group);
 
             // Mark the settings as dirty and post the event.

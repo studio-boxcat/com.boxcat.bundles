@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Contains data for an addressable asset entry.
     /// </summary>
     [Serializable]
-    public class AddressableAssetEntry
+    public class AddressableAssetEntry : ISelfValidator
     {
         [SerializeField, HideInInspector]
         string m_GUID;
@@ -110,5 +110,11 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <returns>The address of the AddressableAssetEntry</returns>
         public override string ToString() => m_Address;
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (string.IsNullOrEmpty(AssetDatabase.GUIDToAssetPath(m_GUID)))
+                result.AddError("Asset not found for entry: " + guid);
+        }
     }
 }

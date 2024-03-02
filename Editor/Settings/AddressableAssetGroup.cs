@@ -5,6 +5,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -28,7 +29,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Contains the collection of asset entries associated with this group.
     /// </summary>
     [Serializable]
-    public class AddressableAssetGroup : ScriptableObject, IComparer<AddressableAssetEntry>
+    public class AddressableAssetGroup : ScriptableObject
     {
         [SerializeField, ReadOnly, PropertyOrder(0)]
         AddressableAssetSettings m_Settings;
@@ -48,8 +49,23 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
+        [FormerlySerializedAs("m_SerializeEntries")]
         [SerializeField, LabelText("Entries"), TableList(IsReadOnly = true), PropertyOrder(2)]
-        List<AddressableAssetEntry> m_SerializeEntries = new();
+        List<AddressableAssetEntry> m_Entries = new();
+
+        bool m_EntriesInitialized;
+
+        public List<AddressableAssetEntry> entries
+        {
+            get
+            {
+                if (m_EntriesInitialized) return m_Entries;
+                m_EntriesInitialized = true;
+                foreach (var e in m_Entries)
+                    e.parentGroup = this;
+                return m_Entries;
+            }
+        }
 
         [CanBeNull]
         Dictionary<AssetGUID, AddressableAssetEntry> m_EntryMap;
@@ -75,11 +91,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        /// <summary>
-        /// The collection of asset entries.
-        /// </summary>
-        public virtual ICollection<AddressableAssetEntry> entries => EntryMap.Values;
-
         internal Dictionary<AssetGUID, AddressableAssetEntry> EntryMap
         {
             get
@@ -88,7 +99,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     return m_EntryMap;
 
                 m_EntryMap = new Dictionary<AssetGUID, AddressableAssetEntry>();
-                foreach (var e in m_SerializeEntries)
+                foreach (var e in entries)
                 {
                     try
                     {
@@ -110,7 +121,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public bool Default => this == Settings.DefaultGroup;
 
-        internal void Initialize(AddressableAssetSettings settings, string groupName)
+        internal void SetUp(AddressableAssetSettings settings, string groupName)
         {
             m_Settings = settings;
             name = groupName;
@@ -131,7 +142,7 @@ namespace UnityEditor.AddressableAssets.Settings
             Assert.AreNotEqual(typeof(DefaultAsset), e.MainAssetType, "Entry is a Folder.");
             e.parentGroup = this;
             m_EntryMap?.Add(e.guid, e);
-            m_SerializeEntries.Add(e);
+            m_Entries.Add(e);
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
         }
 
@@ -144,7 +155,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             entry.parentGroup = null;
             m_EntryMap?.Remove(entry.guid);
-            m_SerializeEntries.Remove(entry);
+            m_Entries.Remove(entry);
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
         }
 
@@ -161,24 +172,6 @@ namespace UnityEditor.AddressableAssets.Settings
             if (Settings == null) return;
             if (groupModified) EditorUtility.SetDirty(this);
             Settings.SetDirty(modificationEvent, eventData, postEvent, false);
-        }
-
-        /// <summary>
-        /// Compares two asset entries based on their guids.
-        /// </summary>
-        /// <param name="x">The first entry to compare.</param>
-        /// <param name="y">The second entry to compare.</param>
-        /// <returns>Returns 0 if both entries are null or equivalent.
-        /// Returns -1 if the first entry is null or the first entry precedes the second entry in the sort order.
-        /// Returns 1 if the second entry is null or the first entry follows the second entry in the sort order.</returns>
-        int IComparer<AddressableAssetEntry>.Compare(AddressableAssetEntry x, AddressableAssetEntry y)
-        {
-            return x switch
-            {
-                null when y is null => 0,
-                null => -1,
-                _ => y is null ? 1 : x.guid.CompareTo(y.guid)
-            };
         }
     }
 }
