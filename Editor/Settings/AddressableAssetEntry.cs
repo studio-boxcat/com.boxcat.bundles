@@ -87,8 +87,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        internal void ClearCachedPath() => m_cachedAssetPath = null;
-
         private Object m_MainAsset;
 
         /// <summary>

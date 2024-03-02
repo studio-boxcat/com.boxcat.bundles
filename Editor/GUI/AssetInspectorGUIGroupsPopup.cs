@@ -210,7 +210,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     foreach (AddressableAssetGroup group in aaSettings.groups)
                     {
-                        var child = new GroupsPopupTreeItem(group.Guid.GetHashCode(), 0, group.name, group, m_Popup.m_FolderTexture);
+                        var child = new GroupsPopupTreeItem(group.GetInstanceID(), 0, group.name, group, m_Popup.m_FolderTexture);
                         root.AddChild(child);
                     }
                 }

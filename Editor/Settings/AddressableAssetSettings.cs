@@ -15,9 +15,9 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         internal class Cache<T1, T2>
         {
-            private AddressableAssetSettings m_Settings;
-            private Hash128 m_CurrentCacheVersion;
-            private Dictionary<T1, T2> m_TargetInfoCache = new();
+            private readonly AddressableAssetSettings m_Settings;
+            private readonly Dictionary<T1, T2> m_Data = new();
+            private int m_Version;
 
             public Cache(AddressableAssetSettings settings)
             {
@@ -26,37 +26,26 @@ namespace UnityEditor.AddressableAssets.Settings
 
             public bool TryGetCached(T1 key, out T2 result)
             {
-                if (IsValid() && m_TargetInfoCache.TryGetValue(key, out result))
-                    return true;
+                if (m_Version != m_Settings.version)
+                {
+                    result = default;
+                    return false;
+                }
 
-                result = default;
-                return false;
+                return m_Data.TryGetValue(key, out result);
             }
 
             public void Add(T1 key, T2 value)
             {
-                if (!IsValid())
-                    m_CurrentCacheVersion = m_Settings.currentHash;
-                m_TargetInfoCache.Add(key, value);
-            }
+                if (m_Version != m_Settings.version)
+                {
+                    m_Data.Clear();
+                    m_Version = m_Settings.version;
+                }
 
-            private bool IsValid()
-            {
-                if (m_TargetInfoCache.Count == 0)
-                    return false;
-                if (m_CurrentCacheVersion.isValid && m_CurrentCacheVersion.Equals(m_Settings.currentHash))
-                    return true;
-
-                m_TargetInfoCache.Clear();
-                m_CurrentCacheVersion = default;
-                return false;
+                m_Data.Add(key, value);
             }
         }
-
-        /// <summary>
-        /// Default name of a newly created group.
-        /// </summary>
-        public const string kNewGroupName = "New Group";
 
         /// <summary>
         /// Options for labeling all the different generated events.
@@ -146,11 +135,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// The folder for the group assets.
-        /// </summary>
-        public string GroupFolder => ConfigFolder + "/AssetGroups";
-
-        /// <summary>
         /// Event for handling settings changes.  The object passed depends on the event type.
         /// </summary>
         public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }
@@ -163,10 +147,6 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_defaultGroup")]
         [SerializeField]
         AddressableAssetGroup m_DefaultGroup;
-
-        [FormerlySerializedAs("m_cachedHash")]
-        [SerializeField, HideInInspector]
-        Hash128 m_currentHash;
 
         [SerializeField]
 #if UNITY_2021_1_OR_NEWER
@@ -192,41 +172,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public bool NonRecursiveBuilding => m_NonRecursiveBuilding;
 
-        Hash128 m_GroupsHash;
-        Hash128 groupsHash
-        {
-            get
-            {
-                if (m_GroupsHash.isValid)
-                    return m_GroupsHash;
-
-                var count = 0;
-                foreach (var g in m_GroupAssets)
-                {
-                    // this ignores both null values and deleted managed objects
-                    if (g == null) continue;
-                    count += 1;
-                    var gah = g.currentHash;
-                    m_GroupsHash.Append(ref gah);
-                }
-                m_GroupsHash.Append(ref count);
-                return m_GroupsHash;
-            }
-        }
+        int m_Version;
 
         /// <summary>
         /// Hash of the current settings.  This value is recomputed if anything changes.
         /// </summary>
-        public Hash128 currentHash
-        {
-            get
-            {
-                if (m_currentHash.isValid) return m_currentHash;
-                var subHashes = new[] { groupsHash };
-                m_currentHash.Append(subHashes);
-                return m_currentHash;
-            }
-        }
+        public int version => m_Version;
 
         [SerializeField]
         List<AddressableAssetGroup> m_GroupAssets = new();
@@ -344,61 +295,18 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="settingsModified">If true, the settings asset will be marked as dirty.</param>
         public void SetDirty(ModificationEvent modificationEvent, object eventData, bool postEvent, bool settingsModified = false)
         {
-            if (this != null)
-            {
-                if (postEvent)
-                {
-                    OnModificationGlobal?.Invoke(this, modificationEvent, eventData);
-                    OnModification?.Invoke(this, modificationEvent, eventData);
-                }
+            Assert.IsNotNull(this, "Object is destroyed.");
 
-                if (settingsModified)
-                    EditorUtility.SetDirty(this);
-            }
-            if (EventAffectsGroups(modificationEvent))
-                m_GroupsHash = default;
-            m_currentHash = default;
-        }
-
-        private bool EventAffectsGroups(ModificationEvent modificationEvent)
-        {
-            switch (modificationEvent)
+            if (postEvent)
             {
-                case ModificationEvent.BatchModification:
-                case ModificationEvent.EntryAdded:
-                case ModificationEvent.EntryCreated:
-                case ModificationEvent.EntryModified:
-                case ModificationEvent.EntryMoved:
-                case ModificationEvent.EntryRemoved:
-                case ModificationEvent.GroupAdded:
-                case ModificationEvent.GroupRemoved:
-                case ModificationEvent.GroupRenamed:
-                case ModificationEvent.GroupModified:
-                    return true;
-            }
-            return false;
-        }
-
-        internal bool RemoveMissingGroupReferences()
-        {
-            List<int> missingGroupsIndices = new List<int>();
-            for (int i = 0; i < groups.Count; i++)
-            {
-                var g = groups[i];
-                if (g == null)
-                    missingGroupsIndices.Add(i);
+                OnModificationGlobal?.Invoke(this, modificationEvent, eventData);
+                OnModification?.Invoke(this, modificationEvent, eventData);
             }
 
-            if (missingGroupsIndices.Count > 0)
-            {
-                Debug.Log("Addressable settings contains " + missingGroupsIndices.Count + " group reference(s) that are no longer there. Removing reference(s).");
-                for (int i = missingGroupsIndices.Count - 1; i >= 0; i--)
-                    groups.RemoveAt(missingGroupsIndices[i]);
+            if (settingsModified)
+                EditorUtility.SetDirty(this);
 
-                return true;
-            }
-
-            return false;
+            m_Version++;
         }
 
         private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
@@ -436,7 +344,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="entry">The entry to move.</param>
         /// <param name="targetParent">The group to add the entry to.</param>
         /// <param name="postEvent">Send modification event.</param>
-        public void MoveEntry(AddressableAssetEntry entry, AddressableAssetGroup targetParent, bool postEvent = true)
+        public static void MoveEntry(AddressableAssetEntry entry, AddressableAssetGroup targetParent, bool postEvent = true)
         {
             if (targetParent == null || entry == null)
                 return;
@@ -445,35 +353,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 entry.parentGroup.RemoveAssetEntry(entry, postEvent);
 
             targetParent.AddAssetEntry(entry, postEvent);
-        }
-
-        /// <summary>
-        /// Create a new entry, or if one exists in a different group, move it into the new group.
-        /// </summary>
-        /// <param name="guid">The asset guid.</param>
-        /// <param name="targetParent">The group to add the entry to.</param>
-        /// <param name="postEvent">Send modification event.</param>
-        /// <returns></returns>
-        public AddressableAssetEntry CreateOrMoveEntry(AssetGUID guid, AddressableAssetGroup targetParent, bool postEvent = true)
-        {
-            if (targetParent == null || guid.IsInvalid())
-                return null;
-
-            var entry = FindAssetEntry(guid);
-            if (entry != null) //move entry to where it should go...
-            {
-                //no need to do anything if already done...
-                if (entry.parentGroup == targetParent && !postEvent)
-                    return entry;
-
-                MoveEntry(entry, targetParent, postEvent);
-            }
-            else //create entry
-            {
-                entry = CreateAndAddEntryToGroup(guid, targetParent, postEvent);
-            }
-
-            return entry;
         }
 
         /// <summary>
@@ -524,61 +403,25 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Create a new asset group.
         /// </summary>
-        /// <param name="groupName">The group name.</param>
-        /// <param name="setAsDefaultGroup">Set the new group as the default group.</param>
         /// <param name="postEvent">Post modification event.</param>
         /// <returns>The newly created group.</returns>
-        public AddressableAssetGroup CreateGroup(string groupName, bool setAsDefaultGroup, bool postEvent)
+        public AddressableAssetGroup CreateGroup(bool postEvent)
         {
-            if (string.IsNullOrEmpty(groupName))
-                groupName = kNewGroupName;
-            var validName = FindUniqueGroupName(groupName);
+            // Prepare the AssetGroups folder & path to save the new group.
+            var root = ConfigFolder + "/AssetGroups";
+            if (!Directory.Exists(root)) Directory.CreateDirectory(root);
+            var path = AssetDatabase.GenerateUniqueAssetPath(root + "/New Group.asset");
+            var groupName = Path.GetFileNameWithoutExtension(path);
 
+            // Create the new group and add it to the settings.
             var group = CreateInstance<AddressableAssetGroup>();
-            group.Initialize(this, validName, GUID.Generate().ToString());
+            AssetDatabase.CreateAsset(group, path);
+            group.Initialize(this, groupName);
+            groups.Add(group);
 
-            if (true)
-            {
-                if (!Directory.Exists(GroupFolder))
-                    Directory.CreateDirectory(GroupFolder);
-                AssetDatabase.CreateAsset(group, GroupFolder + "/" + group.Name + ".asset");
-            }
-
-            if (!m_GroupAssets.Contains(group))
-                groups.Add(group);
-
-            if (setAsDefaultGroup)
-                DefaultGroup = group;
+            // Mark the settings as dirty and post the event.
             SetDirty(ModificationEvent.GroupAdded, group, postEvent, true);
             return group;
-        }
-
-        internal string FindUniqueGroupName(string potentialName)
-        {
-            var cleanedName = potentialName.Replace('/', '-');
-            cleanedName = cleanedName.Replace('\\', '-');
-            if (cleanedName != potentialName)
-                L.I("Group names cannot include '\\' or '/'.  Replacing with '-'. " + cleanedName);
-            var validName = cleanedName;
-            int index = 1;
-            bool foundExisting = true;
-            while (foundExisting)
-            {
-                if (index > 1000)
-                {
-                    L.E("Unable to create valid name for new Addressable Assets group.");
-                    return cleanedName;
-                }
-
-                foundExisting = IsNotUniqueGroupName(validName);
-                if (foundExisting)
-                {
-                    validName = cleanedName + index;
-                    index++;
-                }
-            }
-
-            return validName;
         }
 
         internal bool IsNotUniqueGroupName(string groupName)
@@ -594,23 +437,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return foundExisting;
-        }
-
-        /// <summary>
-        /// Remove an asset group.
-        /// </summary>
-        /// <param name="g"></param>
-        public void RemoveGroup(AddressableAssetGroup g)
-        {
-            AssetDatabase.StartAssetEditing();
-            try
-            {
-                RemoveGroupInternal(g, true, true);
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-            }
         }
 
         internal void RemoveGroupInternal(AddressableAssetGroup g, bool deleteAsset, bool postEvent)

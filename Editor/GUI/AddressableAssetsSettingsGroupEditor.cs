@@ -121,7 +121,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 AssetEntryTreeViewItem item = items.Pop();
 
-                if (item.IsGroup && item.group.Guid == group.Guid)
+                if (item.IsGroup && item.group == group)
                 {
                     m_EntryTree.FrameItem(item.id);
                     var selectedIds = new List<int>() { item.id };

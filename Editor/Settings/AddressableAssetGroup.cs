@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
@@ -28,7 +28,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Contains the collection of asset entries associated with this group.
     /// </summary>
     [Serializable]
-    public class AddressableAssetGroup : ScriptableObject, IComparer<AddressableAssetEntry>, ISerializationCallbackReceiver
+    public class AddressableAssetGroup : ScriptableObject, IComparer<AddressableAssetEntry>
     {
         [SerializeField, ReadOnly, PropertyOrder(0)]
         AddressableAssetSettings m_Settings;
@@ -50,7 +50,8 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField, LabelText("Entries"), TableList(IsReadOnly = true), PropertyOrder(2)]
         List<AddressableAssetEntry> m_SerializeEntries = new();
 
-        Dictionary<AssetGUID, AddressableAssetEntry> m_EntryMap = new();
+        [CanBeNull]
+        Dictionary<AssetGUID, AddressableAssetEntry> m_EntryMap;
 
         /// <summary>
         /// The group name.
@@ -73,22 +74,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        string m_GUID;
-
-        /// <summary>
-        /// The group GUID.
-        /// </summary>
-        public string Guid
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(m_GUID)) return m_GUID;
-                var isAsset = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out m_GUID, out long _);
-                Assert.IsTrue(isAsset, "AddressableAssetGroup is not an asset.");
-                return m_GUID;
-            }
-        }
-
         /// <summary>
         /// The AddressableAssetSettings that this group belongs to.
         /// </summary>
@@ -106,14 +91,37 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The collection of asset entries.
         /// </summary>
-        public virtual ICollection<AddressableAssetEntry> entries => m_EntryMap.Values;
+        public virtual ICollection<AddressableAssetEntry> entries => EntryMap.Values;
 
-        internal Dictionary<AssetGUID, AddressableAssetEntry> EntryMap => m_EntryMap;
+        internal Dictionary<AssetGUID, AddressableAssetEntry> EntryMap
+        {
+            get
+            {
+                if (m_EntryMap is not null)
+                    return m_EntryMap;
+
+                m_EntryMap = new Dictionary<AssetGUID, AddressableAssetEntry>();
+                foreach (var e in m_SerializeEntries)
+                {
+                    try
+                    {
+                        e.parentGroup = this;
+                        m_EntryMap.Add(e.guid, e);
+                    }
+                    catch (Exception ex)
+                    {
+                        L.I(e.address);
+                        Debug.LogException(ex);
+                    }
+                }
+                return m_EntryMap;
+            }
+        }
 
         /// <summary>
         /// Is the default group.
         /// </summary>
-        public bool Default => Guid == Settings.DefaultGroup.Guid;
+        public bool Default => this == Settings.DefaultGroup;
 
         /// <summary>
         /// Compares two asset entries based on their guids.
@@ -133,73 +141,16 @@ namespace UnityEditor.AddressableAssets.Settings
             };
         }
 
-        Hash128 m_CurrentHash;
-        internal Hash128 currentHash
-        {
-            get
-            {
-                if (!m_CurrentHash.isValid)
-                {
-                    m_CurrentHash.Append(name);
-                    m_CurrentHash.Append(Guid.GetHashCode());
-                    m_CurrentHash.Append(entries.Count);
-                    foreach (var e in entries)
-                        m_CurrentHash.Append(e.guid.Value);
-                }
-                return m_CurrentHash;
-            }
-        }
-
-        /// <summary>
-        /// Converts data to serializable format.
-        /// </summary>
-        public void OnBeforeSerialize()
-        {
-            if (m_SerializeEntries == null)
-            {
-                m_SerializeEntries = new List<AddressableAssetEntry>(entries.Count);
-                foreach (var e in entries)
-                    m_SerializeEntries.Add(e);
-            }
-        }
-
-        /// <summary>
-        /// Converts data from serializable format.
-        /// </summary>
-        public void OnAfterDeserialize()
-        {
-            ResetEntryMap();
-        }
-
-        internal void ResetEntryMap()
-        {
-            m_EntryMap.Clear();
-            foreach (var e in m_SerializeEntries)
-            {
-                try
-                {
-                    e.parentGroup = this;
-                    m_EntryMap.Add(e.guid, e);
-                }
-                catch (Exception ex)
-                {
-                    L.I(e.address);
-                    Debug.LogException(ex);
-                }
-            }
-        }
-
-        internal void Initialize(AddressableAssetSettings settings, string groupName, string guid)
+        internal void Initialize(AddressableAssetSettings settings, string groupName)
         {
             m_Settings = settings;
             name = groupName;
-            m_GUID = guid;
         }
 
         internal void AddAssetEntry(AddressableAssetEntry e, bool postEvent = true)
         {
             e.parentGroup = this;
-            m_EntryMap[e.guid] = e;
+            EntryMap[e.guid] = e;
             if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
                 throw new NotSupportedException(e.AssetPath);
             m_SerializeEntries = null;
@@ -211,9 +162,9 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="guid">The asset guid.</param>
         /// <returns></returns>
-        public virtual AddressableAssetEntry GetAssetEntry(AssetGUID guid)
+        public AddressableAssetEntry GetAssetEntry(AssetGUID guid)
         {
-            return m_EntryMap.GetValueOrDefault(guid);
+            return EntryMap.GetValueOrDefault(guid);
         }
 
         /// <summary>
@@ -225,10 +176,9 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="groupModified">If true, the group asset will be marked as dirty.</param>
         public void SetDirty(AddressableAssetSettings.ModificationEvent modificationEvent, object eventData, bool postEvent, bool groupModified = false)
         {
-            m_CurrentHash = default;
+            Assert.IsNotNull(this, "AddressableAssetGroup is destroyed.");
             if (Settings == null) return;
-            if (groupModified && this != null)
-                EditorUtility.SetDirty(this);
+            if (groupModified) EditorUtility.SetDirty(this);
             Settings.SetDirty(modificationEvent, eventData, postEvent, false);
         }
 
@@ -239,25 +189,10 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="postEvent">If true, post the event to callbacks.</param>
         public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
         {
-            m_EntryMap.Remove(entry.guid);
+            EntryMap.Remove(entry.guid);
             entry.parentGroup = null;
             m_SerializeEntries = null;
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
-        }
-
-        internal void RemoveAssetEntries(IEnumerable<AddressableAssetEntry> removeEntries, bool postEvent = true)
-        {
-            foreach (var entry in removeEntries)
-            {
-                m_EntryMap.Remove(entry.guid);
-                entry.parentGroup = null;
-            }
-
-            if (removeEntries.Any())
-            {
-                m_SerializeEntries = null;
-                SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, removeEntries.ToArray(), postEvent, true);
-            }
         }
     }
 }

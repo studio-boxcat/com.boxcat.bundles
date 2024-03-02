@@ -33,10 +33,7 @@ namespace UnityEditor.AddressableAssets.GUI
             m_Editor = ed;
             columnIndexForTreeFoldouts = 0;
             multiColumnHeader.canSort = false;
-            multiColumnHeader.sortingChanged += OnSortingChanged;
-
             BuiltinSceneCache.sceneListChanged += OnScenesChanged;
-            AddressablesAssetPostProcessor.OnPostProcess.Register(OnPostProcessAllAssets, 1);
         }
 
         internal TreeViewItem Root => rootItem;
@@ -46,34 +43,6 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_Editor.settings == null)
                 return;
             Reload();
-        }
-
-        void OnSortingChanged(MultiColumnHeader mch)
-        {
-            //This is where the sort happens in the groups view
-            SortChildren(rootItem);
-            Reload();
-        }
-
-        void OnPostProcessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-        {
-            foreach (var obj in Selection.objects)
-            {
-                if (obj == null) continue;
-                if (AssetDatabase.Contains(obj)) continue;
-
-                if (obj is GameObject go)
-                {
-                    if (SceneManagement.PrefabStageUtility.GetPrefabStage(go) != null)
-                        return;
-                    var containingScene = go.scene;
-                    if (containingScene.IsValid() && containingScene.isLoaded)
-                        return;
-                }
-
-                m_ForceSelectionClear = true;
-                return;
-            }
         }
 
         protected override void SelectionChanged(IList<int> selectedIds)
@@ -166,61 +135,6 @@ namespace UnityEditor.AddressableAssets.GUI
             return items;
         }
 
-        /*
-         * Hierarchical search requirements :
-         * An item is kept if :
-         * - it matches
-         * - an ancestor matches
-         * - at least one descendant matches
-         */
-        bool SearchHierarchical(TreeViewItem item, string search, bool? ancestorMatching = null)
-        {
-            var aeItem = item as AssetEntryTreeViewItem;
-            if (aeItem == null || search == null)
-                return false;
-
-            if (m_SearchedEntries.TryGetValue(aeItem, out var hierarchical))
-                return hierarchical;
-
-            if (ancestorMatching == null)
-                ancestorMatching = DoesAncestorMatch(aeItem, search);
-
-            bool isMatching = false;
-            if (!ancestorMatching.Value)
-                isMatching = DoesItemMatchSearch(aeItem, search);
-
-            bool descendantMatching = false;
-            if (!ancestorMatching.Value && !isMatching && aeItem.hasChildren)
-            {
-                foreach (var child in aeItem.children)
-                {
-                    descendantMatching = SearchHierarchical(child, search, false);
-                    if (descendantMatching)
-                        break;
-                }
-            }
-
-            bool keep = isMatching || ancestorMatching.Value || descendantMatching;
-            m_SearchedEntries.Add(aeItem, keep);
-            return keep;
-        }
-
-        private bool DoesAncestorMatch(TreeViewItem aeItem, string search)
-        {
-            if (aeItem == null)
-                return false;
-
-            var ancestor = aeItem.parent as AssetEntryTreeViewItem;
-            bool isMatching = DoesItemMatchSearch(ancestor, search);
-            while (ancestor != null && !isMatching)
-            {
-                ancestor = ancestor.parent as AssetEntryTreeViewItem;
-                isMatching = DoesItemMatchSearch(ancestor, search);
-            }
-
-            return isMatching;
-        }
-
         void SortChildren(TreeViewItem root)
         {
             if (!root.hasChildren)
@@ -243,7 +157,7 @@ namespace UnityEditor.AddressableAssets.GUI
             children.Clear();
             foreach (var c in copy)
             {
-                if (c is AssetEntryTreeViewItem {entry: not null} child)
+                if (c is AssetEntryTreeViewItem { entry: not null } child)
                     kids.Add(child);
                 else
                     children.Add(c);
@@ -293,33 +207,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void AddGroupChildrenBuild(AddressableAssetGroup group, TreeViewItem root)
         {
-            AssetEntryTreeViewItem groupItem = null;
-            groupItem = new AssetEntryTreeViewItem(group, 0);
+            Assert.IsNotNull(group);
+            var groupItem = new AssetEntryTreeViewItem(group, 0);
             root.AddChild(groupItem);
-
-            if (group == null || group.entries.Count == 0)
-                return;
-
             foreach (var entry in group.entries)
-            {
-                bool expanded = IsExpanded(groupItem.id);
-                var item = new AssetEntryTreeViewItem(entry, 1);
-                groupItem.AddChild(item);
-            }
-        }
-
-        protected override void ExpandedStateChanged()
-        {
-            foreach (var id in state.expandedIDs)
-            {
-                var item = FindItem(id, rootItem);
-                if (item != null && item.hasChildren)
-                {
-                    foreach (AssetEntryTreeViewItem c in item.children)
-                    {
-                    }
-                }
-            }
+                groupItem.AddChild(new AssetEntryTreeViewItem(entry, 1));
         }
 
         public override void OnGUI(Rect rect)
@@ -332,7 +224,7 @@ namespace UnityEditor.AddressableAssets.GUI
                  Event.current.button == 0 &&
                  rect.Contains(Event.current.mousePosition)))
             {
-                SetSelection(new int[0], TreeViewSelectionOptions.FireSelectionChanged);
+                SetSelection(Array.Empty<int>(), TreeViewSelectionOptions.FireSelectionChanged);
                 if (m_ForceSelectionClear)
                     m_ForceSelectionClear = false;
             }
@@ -342,23 +234,16 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             base.BeforeRowsGUI();
 
-            if (Event.current.type == EventType.Repaint)
+            if (Event.current.type is not EventType.Repaint) return;
+
+            var rows = GetRows();
+            if (rows.Count is 0) return;
+
+            GetFirstAndLastVisibleRows(out var first, out var last);
+            for (var rowId = first; rowId <= last; rowId++)
             {
-                var rows = GetRows();
-                if (rows.Count > 0)
-                {
-                    int first;
-                    int last;
-                    GetFirstAndLastVisibleRows(out first, out last);
-                    for (int rowId = first; rowId <= last; rowId++)
-                    {
-                        var aeI = rows[rowId] as AssetEntryTreeViewItem;
-                        if (aeI != null && aeI.entry != null)
-                        {
-                            DefaultStyles.backgroundEven.Draw(GetRowRect(rowId), false, false, false, false);
-                        }
-                    }
-                }
+                if (rows[rowId] is AssetEntryTreeViewItem { entry: not null })
+                    DefaultStyles.backgroundEven.Draw(GetRowRect(rowId), false, false, false, false);
             }
         }
 
@@ -509,12 +394,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (item != null)
             {
-                if (args.newName != null && args.newName.Contains("[") && args.newName.Contains("]"))
-                {
-                    args.acceptedRename = false;
-                    Debug.LogErrorFormat("Rename of address '{0}' cannot contain '[ ]'.", args.originalName);
-                }
-                else if (item.entry != null)
+                Assert.IsNotNull(args.newName, "args.newName is null");
+                if (item.entry != null)
                 {
                     item.entry.address = args.newName;
                 }
@@ -623,8 +504,6 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
             }
-            else
-                menu.AddItem(new GUIContent("Clear missing references."), false, RemoveMissingReferences);
 
             if (selectedNodes.Count == 1)
             {
@@ -651,7 +530,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal void CreateNewGroup()
         {
-            m_Editor.settings.CreateGroup("", false, false);
+            m_Editor.settings.CreateGroup(false);
             Reload();
         }
 
@@ -665,17 +544,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
             m_Editor.settings.DefaultGroup = group;
             Reload();
-        }
-
-        protected void RemoveMissingReferences()
-        {
-            RemoveMissingReferencesImpl();
-        }
-
-        internal void RemoveMissingReferencesImpl()
-        {
-            if (m_Editor.settings.RemoveMissingGroupReferences())
-                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupRemoved, null, true, true);
         }
 
         protected void RemoveGroup(object context)
@@ -711,36 +579,26 @@ namespace UnityEditor.AddressableAssets.GUI
 
         protected void RemoveEntry(object context)
         {
-            RemoveEntryImpl(context);
-        }
+            var selectedNodes = context as List<AssetEntryTreeViewItem>;
+            if (selectedNodes == null || selectedNodes.Count is 0)
+                return;
 
-        internal void RemoveEntryImpl(object context, bool forceRemoval = false)
-        {
-            if (forceRemoval || EditorUtility.DisplayDialog("Delete selected entries?", "Are you sure you want to delete the selected entries?\n\nYou cannot undo this action.", "Yes", "No"))
+            var entries = new List<AddressableAssetEntry>();
+            var modifiedGroups = new HashSet<AddressableAssetGroup>();
+            foreach (var item in selectedNodes)
             {
-                var selectedNodes = context as List<AssetEntryTreeViewItem>;
-                if (selectedNodes == null || selectedNodes.Count < 1)
-                    return;
-
-                var entries = new List<AddressableAssetEntry>();
-                var modifiedGroups = new HashSet<AddressableAssetGroup>();
-                foreach (var item in selectedNodes)
+                if (item.entry != null)
                 {
-                    if (item.entry != null)
-                    {
-                        entries.Add(item.entry);
-                        modifiedGroups.Add(item.entry.parentGroup);
-                        m_Editor.settings.RemoveAssetEntry(item.entry.guid, false);
-                    }
+                    entries.Add(item.entry);
+                    modifiedGroups.Add(item.entry.parentGroup);
+                    m_Editor.settings.RemoveAssetEntry(item.entry.guid, false);
                 }
-
-                foreach (var g in modifiedGroups)
-                {
-                    g.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, false, true);
-                }
-
-                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entries, true, false);
             }
+
+            foreach (var g in modifiedGroups)
+                g.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, false, true);
+
+            m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entries, true, false);
         }
 
         protected void RenameItem(object context)
@@ -912,7 +770,7 @@ namespace UnityEditor.AddressableAssets.GUI
                                 foreach (AddressableAssetEntry entry in entries)
                                 {
                                     modifiedGroups.Add(entry.parentGroup);
-                                    m_Editor.settings.MoveEntry(entry, parent, false);
+                                    AddressableAssetSettings.MoveEntry(entry, parent, false);
                                 }
 
                                 m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entries, true, false);
@@ -940,7 +798,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (target == null && !containsGroup)
                 return DragAndDropVisualMode.Rejected;
 
-            foreach (String path in DragAndDrop.paths)
+            foreach (var path in DragAndDrop.paths)
             {
                 if (!AddressableAssetUtility.IsPathValidForEntry(path) && (!PathPointsToAssetGroup(path) && target != rootItem))
                     return DragAndDropVisualMode.Rejected;
@@ -1004,7 +862,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         AddressableAssetGroup loadedGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(p);
                         if (loadedGroup != null)
                         {
-                            if (m_Editor.settings.FindGroup(g => g.Guid == loadedGroup.Guid) == null)
+                            if (m_Editor.settings.FindGroup(g => g == loadedGroup) == null)
                             {
                                 m_Editor.settings.groups.Add(loadedGroup);
                                 modified = true;
@@ -1043,7 +901,7 @@ namespace UnityEditor.AddressableAssets.GUI
             isRenaming = false;
         }
 
-        public AssetEntryTreeViewItem(AddressableAssetGroup g, int d) : base(g == null ? 0 : g.Guid.GetHashCode(), d, g == null ? "[Missing Reference]" : g.Name)
+        public AssetEntryTreeViewItem(AddressableAssetGroup g, int d) : base(g == null ? 0 : g.GetInstanceID(), d, g == null ? "[Missing Reference]" : g.Name)
         {
             entry = null;
             group = g;
@@ -1068,7 +926,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (group == null)
                     {
                         L.E("Group is destroyed");
-                        return "NA (Group)";
+                        return "Missing (Group)";
                     }
 
                     if (group.Default)

@@ -10,19 +10,6 @@ namespace UnityEditor.AddressableAssets.Settings
         static bool s_IsListening;
         public static event Action sceneListChanged;
 
-        internal static void ClearState(bool clearCallbacks = false)
-        {
-            InvalidateCache();
-            if (s_IsListening)
-            {
-                EditorBuildSettings.sceneListChanged -= EditorBuildSettings_sceneListChanged;
-                s_IsListening = false;
-            }
-
-            if (clearCallbacks)
-                sceneListChanged = null;
-        }
-
         public static EditorBuildSettingsScene[] scenes
         {
             get
@@ -68,11 +55,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             m_Scenes = null;
             s_GUIDSceneIndexLookup = null;
-        }
-
-        public static bool Contains(AssetGUID guid)
-        {
-            return GUIDSceneIndexLookup.ContainsKey(guid);
         }
 
         private static void EditorBuildSettings_sceneListChanged()
