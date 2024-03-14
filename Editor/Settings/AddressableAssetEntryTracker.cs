@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -9,8 +10,16 @@ namespace UnityEditor.AddressableAssets.Settings
         public static void Track(AddressableAssetEntry entry)
         {
             var path = AssetDatabase.GUIDToAssetPath(entry.guid.Value);
+            var alreadyExist = _dict.Remove(path);
+            if (alreadyExist) L.W("The asset path is already tracked. It can happen when the AssetGroup is modified by external tools: " + path);
             _dict.Add(path, entry);
             entry.ResetAssetPath(path);
+        }
+
+        public static void Untrack(AddressableAssetEntry entry)
+        {
+            _dict.Remove(entry.AssetPath);
+            entry.ResetAssetPath(null);
         }
 
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)

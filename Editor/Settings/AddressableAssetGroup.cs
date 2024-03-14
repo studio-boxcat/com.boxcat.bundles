@@ -119,7 +119,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Is the default group.
         /// </summary>
-        public bool Default => this == Settings.DefaultGroup;
+        public bool Default => ReferenceEquals(this, Settings.DefaultGroup);
 
         internal void SetUp(AddressableAssetSettings settings, string groupName)
         {
@@ -153,7 +153,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="postEvent">If true, post the event to callbacks.</param>
         public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
         {
-            entry.parentGroup = null;
+            entry.InternalEvict();
             m_EntryMap?.Remove(entry.guid);
             m_Entries.Remove(entry);
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);

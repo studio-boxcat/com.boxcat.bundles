@@ -59,17 +59,24 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public Type MainAssetType => MainAsset.GetType();
 
-        internal AddressableAssetEntry(AssetGUID guid, string address, AddressableAssetGroup parent)
+        internal AddressableAssetEntry(AssetGUID guid, AddressableAssetGroup parent)
         {
             m_GUID = guid.Value;
-            m_Address = address;
-            parentGroup = parent;
+            m_ParentGroup = parent;
+        }
+
+        internal void InternalEvict()
+        {
+            Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
+            m_ParentGroup = null;
+            AddressableAssetEntryTracker.Untrack(this);
+            Assert.IsNull(m_cachedAssetPath, "Failed to untrack asset path: " + guid);
         }
 
         internal void SetDirty(AddressableAssetSettings.ModificationEvent e, object o, bool postEvent)
         {
-            if (parentGroup != null)
-                parentGroup.SetDirty(e, o, postEvent, true);
+            Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
+            m_ParentGroup.SetDirty(e, o, postEvent, true);
         }
 
         [NonSerialized]

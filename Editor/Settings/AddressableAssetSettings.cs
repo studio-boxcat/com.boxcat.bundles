@@ -242,13 +242,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        internal AddressableAssetEntry CreateEntry(AssetGUID guid, string address, AddressableAssetGroup parent, bool postEvent = true)
-        {
-            var entry = parent.GetAssetEntry(guid) ?? new AddressableAssetEntry(guid, address, parent);
-            SetDirty(ModificationEvent.EntryCreated, entry, postEvent);
-            return entry;
-        }
-
         private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
 
         /// <summary>
@@ -258,18 +251,15 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>The found entry or null.</returns>
         public AddressableAssetEntry FindAssetEntry(AssetGUID guid)
         {
-            if (m_FindAssetEntryCache != null)
-            {
-                if (m_FindAssetEntryCache.TryGetCached(guid, out var foundEntry))
-                    return foundEntry;
-            }
-            else
-                m_FindAssetEntryCache = new Cache<AssetGUID, AddressableAssetEntry>(this);
+            m_FindAssetEntryCache ??= new Cache<AssetGUID, AddressableAssetEntry>(this);
+
+            if (m_FindAssetEntryCache.TryGetCached(guid, out var foundEntry))
+                return foundEntry;
 
             foreach (var group in m_GroupAssets)
             {
                 if (group == null) continue;
-                var foundEntry = group.GetAssetEntry(guid);
+                foundEntry = group.GetAssetEntry(guid);
                 if (foundEntry == null) continue;
                 m_FindAssetEntryCache.Add(guid, foundEntry);
                 return foundEntry;
@@ -335,8 +325,9 @@ namespace UnityEditor.AddressableAssets.Settings
 
         private AddressableAssetEntry CreateAndAddEntryToGroup(AssetGUID guid, AddressableAssetGroup targetParent, bool postEvent = true)
         {
-            var entry = CreateEntry(guid, "", targetParent, postEvent);
+            var entry = targetParent.GetAssetEntry(guid) ?? new AddressableAssetEntry(guid, targetParent);
             targetParent.AddAssetEntry(entry, postEvent);
+            SetDirty(ModificationEvent.EntryCreated, entry, postEvent);
             return entry;
         }
 
