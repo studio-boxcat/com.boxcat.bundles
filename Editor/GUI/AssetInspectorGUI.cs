@@ -186,20 +186,20 @@ namespace UnityEditor.AddressableAssets.GUI
 
         // Caching due to Gathering TargetInfos is an expensive operation
         // The InspectorGUI needs to call this multiple times per layout and paint
-        private static AddressableAssetSettings.Cache<int, List<TargetInfo>> s_Cache = null;
+        static int s_TargetInfoLastHash = 0;
+        static readonly List<TargetInfo> s_TargetInfoCache = new();
 
         internal static List<TargetInfo> GatherTargetInfos(Object[] targets, AddressableAssetSettings aaSettings)
         {
-            var selectionHashCode = targets[0].GetHashCode();
+            var hash = targets[0].GetHashCode();
             for (var i = 1; i < targets.Length; ++i)
-                selectionHashCode = selectionHashCode * 31 ^ targets[i].GetHashCode();
+                hash = hash * 31 ^ targets[i].GetHashCode();
 
-            if (s_Cache == null && aaSettings != null)
-                s_Cache = new AddressableAssetSettings.Cache<int, List<TargetInfo>>(aaSettings);
-            if (s_Cache != null && s_Cache.TryGetCached(selectionHashCode, out var targetInfos))
-                return targetInfos;
+            if (hash == s_TargetInfoLastHash)
+                return s_TargetInfoCache;
 
-            targetInfos = new List<TargetInfo>(targets.Length);
+            s_TargetInfoLastHash = hash;
+            s_TargetInfoCache.Clear();
             foreach (var t in targets)
             {
                 if (AddressableAssetUtility.TryGetPathAndGUIDFromTarget(t, out var path, out var rawGuid) is false)
@@ -220,12 +220,10 @@ namespace UnityEditor.AddressableAssets.GUI
                         info.MainAssetEntry = entry;
                 }
 
-                targetInfos.Add(info);
+                s_TargetInfoCache.Add(info);
             }
 
-            if (s_Cache != null && targetInfos.Count > 0)
-                s_Cache.Add(selectionHashCode, targetInfos);
-            return targetInfos;
+            return s_TargetInfoCache;
         }
 
         internal static void FindUniqueAssetGuids(List<TargetInfo> targetInfos, out HashSet<AssetGUID> uniqueAssetGuids, out HashSet<AssetGUID> uniqueAddressableAssetGuids)
