@@ -3,20 +3,23 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.Util
 {
-    public class Hasher
+    public static class Hasher
     {
         public static uint Hash(string str)
         {
-            ulong hash = 5381;
-            var i = 0;
-            for (i = 0; i < str.Length; i++)
-                hash = ((hash << 5) + hash) + ((byte) str[i]);
+            uint hash = 5381;
+            var len = str.Length;
+            for (var i = 0; i < len; i++)
+            {
+                var c = str[i];
+                Assert.IsTrue(c <= byte.MaxValue, $"Character is out of range: char={c} str={str}");
+                hash = ((hash << 5) + hash) + (byte) c;
+            }
 
-            var finalHash = (uint) hash.GetHashCode();
 #if DEBUG
-            Debug_AddReverseHash(finalHash, str);
+            Debug_AddReverseHash(hash, str);
 #endif
-            return finalHash;
+            return hash;
         }
 
 #if DEBUG
