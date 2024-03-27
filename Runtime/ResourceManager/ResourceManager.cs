@@ -25,8 +25,7 @@ namespace UnityEngine.AddressableAssets
 
         public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object
         {
-            var b = GetOpBlock();
-            InitOpBlock(b, address, _bundledAssetProvider);
+            var b = GetOpBlock(address, _bundledAssetProvider);
             return new AssetOp<TObject>(b);
         }
 
@@ -41,27 +40,29 @@ namespace UnityEngine.AddressableAssets
 
         public IAssetOp<Scene> LoadSceneAsync(string address)
         {
-            var b = GetOpBlock();
-            InitOpBlock(b, address, _sceneProvider);
+            var b = GetOpBlock(address, _sceneProvider);
             return new AssetOp<Scene>(b);
         }
 
-        AssetOpBlock GetOpBlock()
+        AssetOpBlock GetOpBlock(string address, IResourceProvider provider)
         {
             var count = _opBlockPool.Count;
-            if (count == 0)
-                return new AssetOpBlock(_catalog, _loader, _opBlockPool);
 
-            var opBlock = _opBlockPool[count - 1];
-            _opBlockPool.RemoveAt(count - 1);
-            return opBlock;
-        }
+            AssetOpBlock b;
+            if (count is 0)
+            {
+                b = new AssetOpBlock(_catalog, _loader, _opBlockPool);
+            }
+            else
+            {
+                b = _opBlockPool[count - 1];
+                _opBlockPool.RemoveAt(count - 1);
+            }
 
-        void InitOpBlock(AssetOpBlock b, string address, IResourceProvider provider)
-        {
             var addressHash = AddressUtils.Hash(address);
             var bundleId = _catalog.GetContainingBundle(addressHash);
             b.Init(addressHash, bundleId, provider);
+            return b;
         }
     }
 }
