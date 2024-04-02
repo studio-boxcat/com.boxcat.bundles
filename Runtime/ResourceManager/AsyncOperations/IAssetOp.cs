@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 
 namespace UnityEngine.AddressableAssets.AsyncOperations
 {
@@ -9,5 +10,14 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
         void AddOnComplete(Action<TResult> onComplete);
         void AddOnComplete(Action<TResult, object> onComplete, object payload);
         void AddOnComplete(Action<IAssetOp<TResult>, TResult, object> onComplete, object payload);
+    }
+
+    public static class AssetOpUtils
+    {
+        public static IEnumerator ToCoroutine<TResult>(this IAssetOp<TResult> op)
+        {
+            while (op.TryGetResult(out _) is false)
+                yield return null;
+        }
     }
 }
