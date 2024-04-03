@@ -2,6 +2,7 @@ using System.IO;
 using UnityEditor.AddressableAssets;
 using UnityEditor.Build;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 /// <summary>
@@ -29,6 +30,10 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
         {
             buildPlayerContext.AddAdditionalPathToStreamingAssets(
                 PathConfig.BuildPath_BundleRoot, PathConfig.RuntimeStreamingAssetsSubFolder);
+        }
+        else
+        {
+            L.W("[AddressablesPlayerBuildProcessor] No Addressables build data found. Skipping streaming assets copy.");
         }
     }
 }
