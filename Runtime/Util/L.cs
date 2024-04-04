@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace UnityEngine.AddressableAssets.Util
 {
-    public static class L
+    static class L
     {
         [Conditional("DEBUG")]
         public static void I(string msg)
