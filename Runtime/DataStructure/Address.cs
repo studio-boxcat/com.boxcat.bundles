@@ -11,6 +11,9 @@ namespace UnityEngine.AddressableAssets
     {
         public static Address Hash(string address)
         {
+            // XXX: Just right after adding the entry, address will be null for AddressableAssetEntry.
+            if (address is null) return default;
+
             var hash = Hasher.Hash(address) & 0xFFFFFF;
 #if DEBUG
             Hasher.Debug_ForceAddReverseHash(hash, address);
