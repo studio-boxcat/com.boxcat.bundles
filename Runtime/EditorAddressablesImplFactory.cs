@@ -13,7 +13,7 @@ namespace UnityEngine.AddressableAssets
     public static class EditorAddressablesImplFactory
     {
         // To keep state after compilation, use SessionState instead of static bool.
-        static string Argument
+        static string _argument
         {
             get => SessionState.GetString("EditorAddressablesImplFactory_Argument", "");
             set
@@ -23,8 +23,8 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
-        internal static void UseCatalog() => Argument = "CATALOG";
-        internal static void UseAssetDatabase(Object settings) => Argument = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(settings));
+        internal static void UseCatalog() => _argument = "CATALOG";
+        internal static void UseAssetDatabase(Object settings) => _argument = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(settings));
 
         [CanBeNull]
         internal static IAddressablesImpl Create()
@@ -34,7 +34,7 @@ namespace UnityEngine.AddressableAssets
                 return CreateEditorImpl(null);
 
             // If playing, use the argument set by UseCatalog or UseAssetDatabase.
-            var argument = Argument;
+            var argument = _argument;
             return argument != "CATALOG" ? CreateEditorImpl(argument) : null;
 
             static IAddressablesImpl CreateEditorImpl(string guid)
@@ -43,7 +43,7 @@ namespace UnityEngine.AddressableAssets
                 var argumentObj = string.IsNullOrEmpty(guid) is false
                     ? AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid))
                     : null; // Use default settings asset.
-                return (IAddressablesImpl) method.Invoke(null, new object[] {argumentObj});
+                return (IAddressablesImpl) method.Invoke(null, new object[] { argumentObj });
             }
         }
     }

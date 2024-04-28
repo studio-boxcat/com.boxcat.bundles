@@ -27,10 +27,5 @@ namespace UnityEngine.AddressableAssets
         {
             return Hex.To2((byte) id);
         }
-
-        public static AssetBundleId Parse(string name)
-        {
-            return (AssetBundleId) Hex.Parse2(name);
-        }
     }
 }

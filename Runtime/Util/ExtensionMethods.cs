@@ -1,11 +1,10 @@
 using System;
-using System.Threading;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
 
 namespace UnityEngine.AddressableAssets.Util
 {
-    public static class ExtensionMethods
+    static class ExtensionMethods
     {
         public static void SafeInvoke<T>(this Action<T> callback, T arg)
         {

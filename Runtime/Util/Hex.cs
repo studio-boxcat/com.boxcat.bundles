@@ -2,7 +2,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.Util
 {
-    public static class Hex
+    static class Hex
     {
         public static char Char(int value)
         {
@@ -30,19 +30,6 @@ namespace UnityEngine.AddressableAssets.Util
             _hexBuf[4] = Char((int) ((value >> 4) & 0xF));
             _hexBuf[5] = Char((int) (value & 0xF));
             return new string(_hexBuf, 0, 6);
-        }
-
-        public static uint Parse2(string str)
-        {
-            Assert.AreEqual(2, str.Length, "Invalid str length: " + str);
-
-            return (ParseChar(str[0]) << 4) | ParseChar(str[1]);
-
-            static uint ParseChar(char c)
-            {
-                Assert.IsTrue(c is (>= '0' and <= '9') or (>= 'a' and <= 'f'), "Invalid hex char");
-                return (uint) (c <= '9' ? (c - '0') : (c - 'a' + 10));
-            }
         }
     }
 }
