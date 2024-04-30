@@ -23,7 +23,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <returns>The build data result.</returns>
         public DataBuildResult BuildData(AddressableAssetSettings settings, BuildTarget target)
         {
-            L.I($"Building {Name}");
+            L.I($"[Addressables] Building {Name}");
 
             // Append the file registry to the results
             try
