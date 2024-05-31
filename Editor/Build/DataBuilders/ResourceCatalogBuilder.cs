@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.AddressableAssets;
@@ -6,7 +7,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
-    public static class ResourceCatalogBuilder
+    static class ResourceCatalogBuilder
     {
         public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
         {
@@ -187,10 +188,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return deps.Select(x => keyToId[x]).ToHashSet();
         }
 
-        struct DepSpan
+        readonly struct DepSpan
         {
-            public ushort Start;
-            public ushort Count;
+            public readonly ushort Start;
+            public readonly ushort Count;
 
             public DepSpan(int start, int count)
             {
@@ -204,9 +205,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         class DepNode
         {
             public AssetBundleId Bundle;
-            public HashSet<AssetBundleId> Deps;
+            public AssetBundleId[] Deps;
             public DepNode Parent;
             public readonly List<DepNode> Children = new();
+            public override string ToString() => Bundle.Name();
         }
 
         static (DepSpan[] SpanData, AssetBundleId[] DepData) BuildDepSpan(Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleDeps)
@@ -215,28 +217,28 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 .Select(x => new DepNode
                 {
                     Bundle = x.Key,
-                    Deps = x.Value,
+                    Deps = x.Value.OrderBy(y => y).ToArray()
                 })
                 .ToList();
 
             // If an item is subset of another, set parent and remove from the list.
             var toRemove = new List<DepNode>();
-            for (var i = 0; i < nodes.Count; i++)
+            for (var i = 0; i < nodes.Count; i++) // To be parent
             {
-                var item = nodes[i];
-                if (item.Parent is not null) continue; // Skip if already has a parent.
+                var parent = nodes[i];
+                if (parent.Parent is not null) continue; // Skip if already has a parent.
 
-                for (var j = 0; j < nodes.Count; j++)
+                for (var j = 0; j < nodes.Count; j++) // To be child
                 {
-                    var other = nodes[j];
-                    if (item == other) continue; // Skip self.
-                    if (other.Parent is not null) continue; // Skip if already has a parent.
+                    if (i == j) continue;
+                    var child = nodes[j];
+                    if (child.Parent is not null) continue; // Skip if already has a parent.
 
-                    if (other.Deps.IsSubsetOf(item.Deps))
+                    if (IsSequentialSubset(parent.Deps, child.Deps))
                     {
-                        other.Parent = item;
-                        item.Children.Add(other);
-                        toRemove.Add(other);
+                        child.Parent = parent;
+                        parent.Children.Add(child);
+                        toRemove.Add(child);
                     }
                 }
             }
@@ -254,10 +256,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 // Write span data.
                 var depStart = depData.Count;
-                spanData[(int) node.Bundle] = new DepSpan(depStart, node.Deps.Count);
+                spanData[(int) node.Bundle] = new DepSpan(depStart, node.Deps.Length);
 
                 // Write dependency data.
-                depData.AddRange(node.Deps.OrderBy(x => x));
+                depData.AddRange(node.Deps);
 
                 // Flatten children.
                 var toVisit = new List<DepNode>(node.Children);
@@ -277,7 +279,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 // Write span data for children.
                 foreach (var child in children)
                 {
-                    if (child.Deps.Count == 0)
+                    if (child.Deps.Length == 0)
                     {
                         spanData[(int) child.Bundle] = new DepSpan(depStart, 0); // dep start
                         continue;
@@ -286,11 +288,46 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var min = child.Deps.Min();
                     var minIndex = depData.IndexOf(min, depStart);
                     Assert.IsTrue(minIndex >= 0, "Dependency not found.");
-                    spanData[(int) child.Bundle] = new DepSpan(minIndex, child.Deps.Count); // dep start
+                    spanData[(int) child.Bundle] = new DepSpan(minIndex, child.Deps.Length); // dep start
                 }
             }
 
+            // Validate span data
+            foreach (var (bundleId, deps) in bundleDeps)
+            {
+                var span = spanData[(int) bundleId];
+                var resultDeps = depData.Skip(span.Start).Take(span.Count).ToHashSet();
+                Assert.IsTrue(deps.SetEquals(resultDeps), $"Invalid span data: {bundleId.Name()}, [{string.Join(", ", deps)}] != [{string.Join(", ", resultDeps)}]");
+            }
+
             return (spanData, depData.ToArray());
+
+            static bool IsSequentialSubset(AssetBundleId[] parentDeps, AssetBundleId[] subsetDeps)
+            {
+                // Trivial case
+                if (subsetDeps.Length is 0)
+                    return true;
+                if (parentDeps.Length < subsetDeps.Length)
+                    return false;
+
+                // Find start index
+                var startIndex = Array.IndexOf(parentDeps, subsetDeps[0]);
+                if (startIndex is -1)
+                    return false;
+
+                // Out of range
+                if (startIndex + subsetDeps.Length > parentDeps.Length)
+                    return false;
+
+                // Check if the rest is the same
+                for (var i = 1; i < subsetDeps.Length; i++)
+                {
+                    if (parentDeps[startIndex + i] != subsetDeps[i])
+                        return false;
+                }
+
+                return true;
+            }
         }
     }
 }

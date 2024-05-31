@@ -79,7 +79,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var settings = aaContext.Settings;
             var buildParams = settings.GetBuildParams(buildTarget);
 
-            L.I("ContentPipeline.BuildAssetBundles");
+            L.I("[BuildScriptPackedMode] ContentPipeline.BuildAssetBundles");
             IBundleBuildResults results;
             using (new SBPSettingsOverwriterScope(ProjectConfigData.GenerateBuildLayout)) // build layout generation requires full SBP write results
             {
@@ -96,7 +96,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             var bundleIds = ResourceCatalogBuilder.AssignBundleId(aaContext.entries.Values);
 
-            L.I("PostProcessBundles");
+            L.I("[BuildScriptPackedMode] PostProcessBundles");
             using (var progressTracker = new ProgressTracker())
             {
                 progressTracker.UpdateTask("Post Processing AssetBundles");
@@ -111,7 +111,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             {
-                L.I("Process Catalog Entries");
+                L.I("[BuildScriptPackedMode] Process Catalog Entries");
                 foreach (var r in results.WriteResults)
                 {
                     var resultValue = r.Value;
@@ -121,19 +121,19 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             {
-                L.I("Generate Binary Catalog");
+                L.I("[BuildScriptPackedMode] Generate Binary Catalog");
                 var bytes = ResourceCatalogBuilder.Build(aaContext.entries.Values, bundleIds);
                 WriteFile(PathConfig.BuildPath_CatalogBin, bytes);
             }
 
             {
-                L.I("Generate link");
+                L.I("[BuildScriptPackedMode] Generate link");
                 m_Linker.Save(Path.Combine(settings.ResolveConfigFolder(), "link.xml"));
             }
 
             if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)
             {
-                L.I("Generate Build Layout");
+                L.I("[BuildScriptPackedMode] Generate Build Layout");
                 using var progressTracker = new ProgressTracker();
                 progressTracker.UpdateTask("Generating Build Layout");
                 var tasks = new List<IBuildTask> { new BuildLayoutGenerationTask() };
