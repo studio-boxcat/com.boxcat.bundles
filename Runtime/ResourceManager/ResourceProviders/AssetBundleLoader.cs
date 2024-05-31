@@ -86,7 +86,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
 
             // Create a new context.
-            L.I($"[AssetBundleLoader] ResolveAsync: {bundleId.Name()}, deps: {deps.Count}");
+            L.I($"[AssetBundleLoader] ResolveAsync: {bundleId.Name()}, deps: {deps.ToString()}");
             ctx = RentResolveContext(bundleId);
             _contexts[bundleIndex] = ctx;
 
@@ -135,7 +135,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
             // Never resolved.
 
-            L.I($"[AssetBundleLoader] ResolveImmediate: {bundleId.Name()}, deps: {deps.Count}");
+            L.I($"[AssetBundleLoader] ResolveImmediate: {bundleId.Name()}, deps: {deps.ToString()}");
 
             // First, load the dependent asset bundles.
             var depCount = deps.Count;
@@ -171,6 +171,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     // No need to deal with the context as it will be fully resolved immediately.
                     bundle = ReadAssetBundle(bundleId);
                     _bundles[bundleId.Index()] = bundle;
+                    L.I($"[AssetBundleLoader] LoadBundle: {bundleId.Name()} ({bundle.name})");
                     return bundle;
                 }
             }
