@@ -91,7 +91,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
             catch (Exception ex)
             {
-                L.Exception(ex);
+                L.E(ex);
                 return false;
             }
         }

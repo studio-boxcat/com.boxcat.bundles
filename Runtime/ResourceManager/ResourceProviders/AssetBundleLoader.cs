@@ -333,7 +333,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 }
                 catch (Exception e)
                 {
-                    L.Exception(e);
+                    L.E(e);
                 }
             }
             callbacks.Clear();

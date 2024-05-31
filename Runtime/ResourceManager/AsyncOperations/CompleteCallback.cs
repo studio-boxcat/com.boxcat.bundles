@@ -48,7 +48,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
                 }
                 catch (Exception e)
                 {
-                    L.Exception(e);
+                    L.E(e);
                 }
             }
 

@@ -16,7 +16,7 @@ namespace UnityEngine.AddressableAssets.Util
             }
             catch (Exception e)
             {
-                L.Exception(e);
+                L.E(e);
             }
         }
 

@@ -4,6 +4,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets
@@ -27,18 +28,18 @@ namespace UnityEditor.AddressableAssets
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e);
+                    L.E(e);
                 }
             }
 
             var result = builder.BuildData(settings, target);
             if (!string.IsNullOrEmpty(result.Error))
             {
-                Debug.LogError(result.Error);
-                Debug.LogError($"Addressable content build failure (duration : {TimeSpan.FromSeconds(result.Duration):g})");
+                L.E(result.Error);
+                L.E($"[AddressableBuilder] Addressable content build failure (duration : {TimeSpan.FromSeconds(result.Duration):g})");
             }
             else
-                Debug.Log($"Addressable content successfully built (duration : {TimeSpan.FromSeconds(result.Duration):g})");
+                L.I($"[AddressableBuilder] Addressable content successfully built (duration : {TimeSpan.FromSeconds(result.Duration):g})");
 
             AssetDatabase.Refresh();
             return result;

@@ -51,7 +51,7 @@ namespace UnityEngine.AddressableAssets.Util
             Debug.LogError(msg, context);
         }
 
-        public static void Exception(Exception ex)
+        public static void E(Exception ex)
         {
             Debug.LogException(ex);
         }

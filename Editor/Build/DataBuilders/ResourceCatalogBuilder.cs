@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     {
         public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
         {
-            L.I("Building ResourceCatalog...");
+            L.I("[ResourceCatalogBuilder] Building ResourceCatalog...");
 
             Assert.IsTrue(keyToId.Count < byte.MaxValue, "Too many asset bundles.");
 
@@ -36,7 +36,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     return (uint) ((byte) keyToId[bundle] << 24) | address;
                 })
                 .ToList();
-            L.I("All addresses: " + string.Join(", ", addresses.Select(x => ((Address) (x & 0x00FFFFFF)).ReadableString())));
+            L.I("[ResourceCatalogBuilder] All addresses: " + string.Join(", ", addresses.Select(x => ((Address) (x & 0x00FFFFFF)).ReadableString())));
             Assert.AreEqual(addresses.Count, addresses.Distinct().Count(), "Duplicate address found.");
 
             // AssetBundleCount: ushort
@@ -92,7 +92,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
-            L.I($"ResourceCatalog built. {data.Length} bytes\n"
+            L.I($"[ResourceCatalogBuilder] ResourceCatalog built. {data.Length} bytes\n"
                 + $"  AssetBundleCount: {bundleCount}\n"
                 + $"  ResourceLocationCount: {addressCount}\n"
                 + $"  AssetBundleDepSpans: {bundleCount * 4} bytes\n"
@@ -158,6 +158,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
+            L.I($"[ResourceCatalogBuilder] AssetBundleId assigned. {idToKey.Count} bundles\n"
+                + $"  AssetBundleId: {string.Join("\n", idToKey.Select(x => $"{x.Key.Name()} -> {x.Value}"))}");
+
             return keyToId;
         }
 
@@ -177,6 +180,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             // Remove MonoScript bundle from deps as it will be loaded manually. See AssetBundleLoader.cs.
             deps.Remove(BundleKey.FromBuildName(BundleNames.MonoScript));
+
+            L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Value}: {string.Join(", ", deps.Select(x => x.Value))}");
 
             // Build final dependency data.
             return deps.Select(x => keyToId[x]).ToHashSet();
