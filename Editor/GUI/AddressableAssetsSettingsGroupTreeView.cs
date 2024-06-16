@@ -923,7 +923,9 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (string.IsNullOrEmpty(entry.address))
                     {
                         Assert.IsTrue(string.IsNullOrEmpty(baseName));
-                        return "NA (" + entry.MainAsset.name + ")";
+                        var asset = entry.MainAsset;
+                        var assetName = asset != null ? asset.name : "Missing";
+                        return "NA (" + assetName + ")";
                     }
                 }
 
