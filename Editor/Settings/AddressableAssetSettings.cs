@@ -6,7 +6,6 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -15,7 +14,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// </summary>
     public class AddressableAssetSettings : ScriptableObject, ISelfValidator
     {
-        internal class Cache<T1, T2>
+        class Cache<T1, T2>
         {
             private readonly AddressableAssetSettings m_Settings;
             private readonly Dictionary<T1, T2> m_Data = new();
@@ -107,33 +106,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }
 
-        [FormerlySerializedAs("m_defaultGroup")]
-        [SerializeField]
-        AddressableAssetGroup m_DefaultGroup;
-
-        [SerializeField]
-#if UNITY_2021_1_OR_NEWER
-        bool m_NonRecursiveBuilding = true;
-#else
-        bool m_NonRecursiveBuilding = false;
-#endif
-
-        [SerializeField]
-#if UNITY_2021_1_OR_NEWER
-        bool m_ContiguousBundles = true;
-#else
-        bool m_ContiguousBundles = false;
-#endif
-
-        /// <summary>
-        /// If set, packs assets in bundles contiguously based on the ordering of the source asset which results in improved asset loading times. Disable this if you've built bundles with a version of Addressables older than 1.12.1 and you want to minimize bundle changes.
-        /// </summary>
-        public bool ContiguousBundles => m_ContiguousBundles;
-
-        /// <summary>
-        /// If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods. This approach helps reduce asset bundle rebuilds and runtime memory consumption.
-        /// </summary>
-        public bool NonRecursiveBuilding => m_NonRecursiveBuilding;
+        [SerializeField] AddressableAssetGroup m_DefaultGroup;
 
         int m_Version;
 

@@ -85,8 +85,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <returns> The return code of whether analyze build was successful, </returns>
         protected internal ReturnCode RefreshBuild(AddressableAssetsBuildContext buildContext)
         {
-            var settings = buildContext.Settings;
-            var buildParams = settings.GetBuildParams(EditorUserBuildSettings.activeBuildTarget);
+            var buildParams = BundleBuildParamsFactory.Get(EditorUserBuildSettings.activeBuildTarget);
             var buildTasks = RuntimeDataBuildTasks();
             m_ExtractData = new ExtractDataTask();
             buildTasks.Add(m_ExtractData);

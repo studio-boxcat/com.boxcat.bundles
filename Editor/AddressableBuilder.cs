@@ -59,11 +59,11 @@ namespace UnityEditor.AddressableAssets
             if (settings == null)
             {
                 if (EditorApplication.isUpdating)
-                    Debug.LogError("Addressable Asset Settings does not exist.  EditorApplication.isUpdating was true.");
+                    L.E("Addressable Asset Settings does not exist.  EditorApplication.isUpdating was true.");
                 else if (EditorApplication.isCompiling)
-                    Debug.LogError("Addressable Asset Settings does not exist.  EditorApplication.isCompiling was true.");
+                    L.E("Addressable Asset Settings does not exist.  EditorApplication.isCompiling was true.");
                 else
-                    Debug.LogError("Addressable Asset Settings does not exist.  Failed to create.");
+                    L.E("Addressable Asset Settings does not exist.  Failed to create.");
                 return;
             }
 

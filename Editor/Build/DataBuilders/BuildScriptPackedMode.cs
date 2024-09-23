@@ -77,7 +77,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 return CreateErrorResult("Unsaved scenes", aaContext);
 
             var settings = aaContext.Settings;
-            var buildParams = settings.GetBuildParams(buildTarget);
+            var buildParams = BundleBuildParamsFactory.Get(buildTarget);
 
             L.I("[BuildScriptPackedMode] ContentPipeline.BuildAssetBundles");
             IBundleBuildResults results;
