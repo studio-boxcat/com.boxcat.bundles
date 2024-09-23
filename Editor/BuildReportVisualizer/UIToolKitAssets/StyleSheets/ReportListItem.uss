@@ -33,53 +33,53 @@
 }
 
 .ReportsListItemPlatformIcon.NoIcon {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/NoIconIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/NoIconIcon.png');
 }
 
 .ReportsListItemPlatformIcon.Android {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformAndroidIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformAndroidIcon.png');
 }
 
 .ReportsListItemPlatformIcon.StandaloneOSX {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformStandaloneOSXIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformStandaloneOSXIcon.png');
 }
 
 .ReportsListItemPlatformIcon.StandaloneWindows {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformStandaloneWindowsIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformStandaloneWindowsIcon.png');
 }
 
 .ReportsListItemPlatformIcon.iOS {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformiOSIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformiOSIcon.png');
 }
 
 .ReportsListItemPlatformIcon.StandaloneLinux64 {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformStandaloneLinux64Icon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformStandaloneLinux64Icon.png');
 }
 
 .ReportsListItemPlatformIcon.WebGL {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformWebGLIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformWebGLIcon.png');
 }
 
 .ReportsListItemPlatformIcon.WSAPlayer {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformWSAPlayerIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformWSAPlayerIcon.png');
 }
 
 .ReportsListItemPlatformIcon.PS4 {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformPS4Icon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformPS4Icon.png');
 }
 
 .ReportsListItemPlatformIcon.XboxOne {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformXboxOneIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformXboxOneIcon.png');
 }
 
 .ReportsListItemPlatformIcon.tvOS {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformtvOSIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformtvOSIcon.png');
 }
 
 .ReportsListItemPlatformIcon.Switch {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformSwitchIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformSwitchIcon.png');
 }
 
 .ReportsListItemPlatformIcon.Lumin {
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformLuminIcon.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/PlatformLuminIcon.png');
 }

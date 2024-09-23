@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
         public const string HelpIconButtonClass = "icon-button__help-icon";
         public const string MenuIconButtonClass = "icon-button__menu-icon";
 
-        public const string UIToolKitAssetsPath = "Packages/com.unity.addressables/Editor/GUI/GUIElements/";
+        public const string UIToolKitAssetsPath = "Packages/com.boxcat.addressables/Editor/GUI/GUIElements/";
         public const string UxmlFilesPath = UIToolKitAssetsPath + "UXML/";
         public const string StyleSheetsPath = UIToolKitAssetsPath + "StyleSheets/";
 

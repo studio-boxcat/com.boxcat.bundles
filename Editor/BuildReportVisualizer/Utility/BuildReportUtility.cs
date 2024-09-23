@@ -219,15 +219,15 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string DetailsViewDarkPath = StyleSheetsPath + "DetailsViewDark.uss";
         public static readonly string DetailsViewLightPath = StyleSheetsPath + "DetailsViewLight.uss";
 
-        public const string UIToolKitAssetsPath = "Packages/com.unity.addressables/Editor/BuildReportVisualizer/UIToolKitAssets/";
+        public const string UIToolKitAssetsPath = "Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/UIToolKitAssets/";
         public const string UxmlFilesPath = UIToolKitAssetsPath + "UXML/";
         public const string StyleSheetsPath = UIToolKitAssetsPath + "StyleSheets/";
 
         public const string MainToolbarButtonsUssPath = StyleSheetsPath + "MainToolbarButtons.uss";
         public const string MainToolbarButtonsDarkUssPath = StyleSheetsPath + "MainToolbarButtonsDark.uss";
         public const string MainToolbarButtonsLightUssPath = StyleSheetsPath + "MainToolbarButtonsLight.uss";
-        public const string SideBarDark = "Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_DarkTheme@2x.png";
-        public const string SideBarLight = "Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_LightTheme@2x.png";
+        public const string SideBarDark = "Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_DarkTheme@2x.png";
+        public const string SideBarLight = "Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_LightTheme@2x.png";
 
 
         internal static string GetAssetBundleIconPath()

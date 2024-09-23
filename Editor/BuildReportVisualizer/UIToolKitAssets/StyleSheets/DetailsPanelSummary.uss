@@ -48,5 +48,5 @@
     flex-shrink: 0;
     margin-left: 4px;
     margin-right: 4px;
-    background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/d_icon dropdown@2x.png');
+    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/d_icon dropdown@2x.png');
 }

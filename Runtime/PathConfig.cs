@@ -30,9 +30,9 @@ namespace UnityEngine.AddressableAssets
         }
 
 #if UNITY_EDITOR
-        public const string LibraryPath = "Library/com.unity.addressables/";
-        public const string BuildReportPath = "Library/com.unity.addressables/BuildReports/";
-        public const string TempPath_BundleRoot = "Temp/com.unity.addressables/AssetBundles";
+        public const string LibraryPath = "Library/com.boxcat.addressables/";
+        public const string BuildReportPath = "Library/com.boxcat.addressables/BuildReports/";
+        public const string TempPath_BundleRoot = "Temp/com.boxcat.addressables/AssetBundles";
 
         static string _buildPath;
         public static string BuildPath => _buildPath ??=
