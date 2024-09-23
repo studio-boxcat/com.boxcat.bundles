@@ -17,16 +17,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         internal string m_SearchValue;
 
         protected MultiColumnTreeView m_TreeView = null;
-        public MultiColumnTreeView ContentTreeView
-        {
-            get { return m_TreeView; }
-        }
+        public MultiColumnTreeView ContentTreeView => m_TreeView;
 
         protected IList<IAddressablesBuildReportItem> m_TreeItems = null;
-        public IList<IAddressablesBuildReportItem> TreeItems
-        {
-            get { return m_TreeItems; }
-        }
+        public IList<IAddressablesBuildReportItem> TreeItems => m_TreeItems;
 
         public struct TreeDataReportItem
         {

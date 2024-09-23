@@ -155,7 +155,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public AssetsViewBuildReportAsset(BuildLayout.ExplicitAsset asset)
         {
             ExplicitAsset = asset;
-            Name = asset.AddressableName;
+            Name = $"{asset.AddressableName} ({asset.AssetPath})";
             Bundle = asset.Bundle;
             Bundles = new List<BuildLayout.Bundle>(){ Bundle };
             BundleName = asset.Bundle?.Name;
@@ -182,7 +182,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             DataFromOtherAsset = asset;
             Bundles = new List<BuildLayout.Bundle>() { asset.File.Bundle };
-            Name = asset.AssetPath;
+            Name = $" ({asset.AssetPath})";
             RefsBy = asset.ReferencingAssets.Count;
             RefsTo = -1;
             FileSizeUncompressed = asset.SerializedSize + asset.StreamedSize;
