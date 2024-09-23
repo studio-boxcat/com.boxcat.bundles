@@ -1,13 +1,7 @@
 #if UNITY_2022_2_OR_NEWER
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.GUIElements;
-using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEditor.AddressableAssets.BuildReportVisualizer.BuildReportWindow;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
@@ -20,13 +14,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     class DetailsView : IAddressableView
     {
         DetailsViewTab m_ActiveContentsTab;
-        VisualElement m_Root;
         BuildReportWindow m_Window;
 
         DetailsContentView m_Contents;
         DetailsSummaryView m_Summary;
 
-        object m_DetailsRootObject;
         object m_DetailsActiveObject;
 
         internal DetailsView(BuildReportWindow window)
@@ -37,8 +29,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public void CreateGUI(VisualElement rootVisualElement)
         {
-            m_Root = rootVisualElement;
-
             m_Summary = new DetailsSummaryView(rootVisualElement, m_Window);
             m_Contents = new DetailsContentView(rootVisualElement, m_Window);
 
@@ -70,7 +60,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             {
                 DisplayItemSummary(item);
                 DisplayContents(item);
-                m_DetailsRootObject = m_DetailsActiveObject = item;
+                m_DetailsActiveObject = item;
             }
         }
 

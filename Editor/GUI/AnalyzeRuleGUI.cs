@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
