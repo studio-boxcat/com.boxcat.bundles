@@ -8,7 +8,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal class MainPanelSummaryTab : IAddressableView, IBuildReportConsumer
     {
-        BuildLayout m_Report;
         public VisualElement tabRootElement;
         internal ScrollView scrollbarElement;
 
@@ -55,7 +54,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public void Consume(BuildLayout buildReport)
         {
-            m_Report = buildReport;
             ClearGUI();
 
             BuildLayoutSummary summary = BuildLayoutSummary.GetSummaryWithoutAssetTypes(buildReport);
