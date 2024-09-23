@@ -19,7 +19,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
-    public class BuildScriptPackedMode : BuildScriptBase
+    class BuildScriptPackedMode : BuildScriptBase
     {
         LinkXmlGenerator m_Linker;
 

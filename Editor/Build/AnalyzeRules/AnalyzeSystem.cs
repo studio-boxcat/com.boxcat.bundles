@@ -15,7 +15,7 @@ namespace UnityEditor.AddressableAssets.Build
     /// Static system to manage Analyze functionality.
     /// </summary>
     [Serializable]
-    public static class AnalyzeSystem
+    static class AnalyzeSystem
     {
         /// <summary>
         /// Method used to register any custom AnalyzeRules with the AnalyzeSystem.  This replaces calling into the AnalyzeWindow

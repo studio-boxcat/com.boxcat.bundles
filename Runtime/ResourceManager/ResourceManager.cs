@@ -8,7 +8,7 @@ namespace UnityEngine.AddressableAssets
     /// <summary>
     /// Entry point for ResourceManager API
     /// </summary>
-    public class AddressablesImpl : IAddressablesImpl
+    class AddressablesImpl : IAddressablesImpl
     {
         readonly ResourceCatalog _catalog;
         readonly AssetBundleLoader _loader;

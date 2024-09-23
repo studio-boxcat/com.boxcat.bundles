@@ -3,7 +3,7 @@ using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
-    public class AddressableAssetEntryTracker : AssetPostprocessor
+    class AddressableAssetEntryTracker : AssetPostprocessor
     {
         static readonly Dictionary<string, AddressableAssetEntry> _dict = new();
 

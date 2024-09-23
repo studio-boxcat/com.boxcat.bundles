@@ -12,7 +12,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// <summary>
     /// Defines how bundles are created.
     /// </summary>
-    public enum BundlePackingMode
+    enum BundlePackingMode
     {
         /// <summary>
         /// Creates a bundle for all non-scene entries and another for all scenes entries.
@@ -38,7 +38,7 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField, HideInInspector]
         BundlePackingMode m_BundleMode;
         [ShowInInspector, PropertyOrder(1)]
-        public BundlePackingMode BundleMode
+        internal BundlePackingMode BundleMode
         {
             get => m_BundleMode;
             set

@@ -19,7 +19,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
     /// <summary>
     /// The BuildTask used to generate the bundle layout.
     /// </summary>
-    public class BuildLayoutGenerationTask : IBuildTask
+    class BuildLayoutGenerationTask : IBuildTask
     {
         const bool k_PrettyPrint = false;
 

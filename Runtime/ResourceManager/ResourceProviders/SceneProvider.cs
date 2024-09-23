@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
-    public class SceneProvider : IResourceProvider
+    class SceneProvider : IResourceProvider
     {
         public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
         {

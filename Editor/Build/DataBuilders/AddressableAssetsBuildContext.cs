@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Simple context object for passing data through SBP, between different sections of Addressables code.
     /// </summary>
-    public class AddressableAssetsBuildContext : IContextObject
+    class AddressableAssetsBuildContext : IContextObject
     {
         /// <summary>
         /// The settings object to use.

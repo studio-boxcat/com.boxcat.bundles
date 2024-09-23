@@ -2,7 +2,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
-    public class BundledAssetProvider : IResourceProvider
+    class BundledAssetProvider : IResourceProvider
     {
         public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
         {

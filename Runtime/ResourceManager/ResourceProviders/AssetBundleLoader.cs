@@ -6,7 +6,7 @@ using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
-    public class AssetBundleLoader
+    class AssetBundleLoader
     {
         class AssetBundleResolveContext
         {

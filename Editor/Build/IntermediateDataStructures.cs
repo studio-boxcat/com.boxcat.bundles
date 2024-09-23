@@ -59,7 +59,7 @@ namespace UnityEditor.AddressableAssets
         public static bool operator !=(BundleKey x, BundleKey y) => !x.Equals(y);
     }
 
-    public readonly struct EntryDef
+    readonly struct EntryDef
     {
         public readonly AssetGUID GUID;
         public readonly Address? Address;

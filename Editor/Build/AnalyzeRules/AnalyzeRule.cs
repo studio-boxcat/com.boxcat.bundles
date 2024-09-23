@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     ///  a rule with the GUI window.
     /// </summary>
     [Serializable]
-    public class AnalyzeRule
+    class AnalyzeRule
     {
         internal struct CustomContextMenu
         {

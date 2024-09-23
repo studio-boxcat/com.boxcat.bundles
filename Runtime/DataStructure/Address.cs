@@ -3,11 +3,11 @@ using UnityEngine.AddressableAssets.Util;
 namespace UnityEngine.AddressableAssets
 {
     // Only use least significant 24 bits.
-    public enum Address : uint
+    enum Address : uint
     {
     }
 
-    public static class AddressUtils
+    static class AddressUtils
     {
         public static Address Hash(string address)
         {

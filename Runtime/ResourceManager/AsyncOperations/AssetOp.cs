@@ -6,7 +6,7 @@ using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEngine.AddressableAssets.AsyncOperations
 {
-    public class AssetOpBlock
+    class AssetOpBlock
     {
         public Address Address;
         public AssetBundleId Bundle;
@@ -48,7 +48,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
         TResult _result;
 
 
-        public AssetOp(AssetOpBlock b)
+        internal AssetOp(AssetOpBlock b)
         {
             _b = b;
 

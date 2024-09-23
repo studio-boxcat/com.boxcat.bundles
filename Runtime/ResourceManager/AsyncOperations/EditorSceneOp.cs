@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets.AsyncOperations
 {
-    public class EditorSceneOp : IAssetOp<Scene>
+    class EditorSceneOp : IAssetOp<Scene>
     {
         AsyncOperation _op;
         Scene _scene;

@@ -52,7 +52,7 @@ namespace UnityEngine.AddressableAssets
         }
     }
 
-    public readonly struct ResourceCatalog
+    readonly struct ResourceCatalog
     {
         // AssetBundleCount: ushort
         // ResourceLocationCount: ushort

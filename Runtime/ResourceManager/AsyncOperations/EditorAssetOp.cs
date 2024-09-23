@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.AsyncOperations
 {
-    public class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : Object
+    class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : Object
     {
         readonly string _path;
         readonly DateTime _loadTime;

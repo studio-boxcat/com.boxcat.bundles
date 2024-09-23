@@ -1,6 +1,3 @@
-using System;
-using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Build.AnalyzeRules;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
@@ -28,10 +25,7 @@ namespace UnityEditor.AddressableAssets.GUI
         [SerializeField]
         private AnalyzeRuleGUI m_AnalyzeEditor;
 
-        private Rect displayAreaRect
-        {
-            get { return new Rect(0, 0, position.width, position.height); }
-        }
+        private Rect displayAreaRect => new(0, 0, position.width, position.height);
 
         [MenuItem("Window/Asset Management/Addressables/Analyze", priority = 2052)]
         internal static void ShowWindow()
@@ -50,8 +44,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnEnable()
         {
-            if (m_AnalyzeEditor == null)
-                m_AnalyzeEditor = new AnalyzeRuleGUI();
+            m_AnalyzeEditor ??= new AnalyzeRuleGUI();
         }
 
         void OnGUI()
@@ -63,16 +56,6 @@ namespace UnityEditor.AddressableAssets.GUI
             GUILayout.BeginArea(displayAreaRect);
             m_AnalyzeEditor.OnGUI(displayAreaRect);
             GUILayout.EndArea();
-        }
-
-        /// <summary>
-        /// Obsolete - please use AnalyzeSystem.RegisterNewRule&lt;TRule&gt;()
-        /// </summary>
-        /// <typeparam name="TRule">The rule type.</typeparam>
-        [Obsolete("Please use AnalyzeSystem.RegisterNewRule<TRule>()")]
-        public static void RegisterNewRule<TRule>() where TRule : AnalyzeRule, new()
-        {
-            AnalyzeSystem.RegisterNewRule<TRule>();
         }
     }
 }

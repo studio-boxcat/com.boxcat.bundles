@@ -11,7 +11,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// <summary>
     /// Rule class to check for duplicate bundle dependencies
     /// </summary>
-    public class CheckBundleDupeDependencies : BundleRuleBase
+    class CheckBundleDupeDependencies : BundleRuleBase
     {
         /// <summary>
         /// Result for checking for duplicates
