@@ -45,7 +45,7 @@ namespace UnityEngine.AddressableAssets
 
         public static IAssetOp<Scene> LoadSceneAsync(string key)
         {
-            L.I($"[Addressables] Load Start: {key} ~ {_impl.GetType().Name})");
+            L.I($"[Addressables] Load Start: {key} (Scene) ~ {_impl.GetType().Name}");
             var op = _impl.LoadSceneAsync(key);
 #if DEBUG
             op.AddOnComplete(o => L.I("[Addressables] Load Done: " + key + " - " + o.name));
