@@ -9,7 +9,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
         {
             var name = address.Name();
-            L.I($"[Addressables] SceneManager.LoadSceneAsync: {name}");
+#if DEBUG
+            var startTime = Time.unscaledTime;
+            L.I($"[Addressables] SceneManager.LoadSceneAsync: key={name}, bundle={bundle.name}, startTime={startTime}");
+#endif
             Assert.AreEqual(typeof(Scene), typeof(T));
             Assert.IsTrue(bundle.Contains(name), $"Bundle does not contain scene: {name}");
 
@@ -18,7 +21,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             var scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             AsyncOpPayloads.SetScene(op, scene);
 #if DEBUG
-            op.completed += _ => L.I($"[Addressables] SceneManager.LoadSceneAsync completed: {name}");
+            op.completed += _ =>
+            {
+                var deltaTime = Time.unscaledTime - startTime;
+                L.I("[Addressables] SceneManager.LoadAssetAsync completed: " +
+                    $"key={name}, bundle={bundle.name}, time={deltaTime}");
+            };
 #endif
             return op;
         }
