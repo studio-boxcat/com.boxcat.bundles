@@ -168,11 +168,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public string UnityVersion;
 
         /// <summary>
-        /// Version of the Addressables package used to perform the build.
-        /// </summary>
-        public string PackageVersion;
-
-        /// <summary>
         /// The Addressable Groups that reference this data
         /// </summary>
         [SerializeReference]

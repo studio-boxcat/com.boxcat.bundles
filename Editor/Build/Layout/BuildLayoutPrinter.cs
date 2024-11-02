@@ -208,8 +208,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
                 writer.WriteLine("WARNING! The formatting in this file may change in future package versions.");
                 writer.WriteLine($"Unity Version: {layout.UnityVersion}");
-                if (!string.IsNullOrEmpty(layout.PackageVersion))
-                    writer.WriteLine(layout.PackageVersion);
 
                 WriteSummary(writer, layout);
                 writer.WriteLine("");

@@ -62,7 +62,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             generalInfo
                 .With("Platform", buildReport.BuildTarget.ToString())
                 .With("Build Duration", TimeSpan.FromSeconds(buildReport.Duration).ToString("g"))
-                .With("Package Version", buildReport.PackageVersion)
                 .With("Unity Editor Version", buildReport.UnityVersion);
 
             scrollbarElement.Add(generalInfo.Build());

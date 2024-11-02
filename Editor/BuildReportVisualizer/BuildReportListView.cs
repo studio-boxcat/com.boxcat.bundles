@@ -182,49 +182,23 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        bool BuildLayoutIsValid(BuildLayout layout)
-        {
-            int startOfVersionIndex = layout.PackageVersion.IndexOf(":", StringComparison.Ordinal);
-            string versionString = layout.PackageVersion.Substring(startOfVersionIndex + 1);
-            var versionNumbers = versionString.Split(".");
-
-            int versionNumber = 0;
-            int majorVersionNumber = 0;
-            int minorVersionNumber = 0;
-
-            bool digitParsingSuccessful = int.TryParse(versionNumbers[0], out versionNumber)
-                                       && int.TryParse(versionNumbers[1], out majorVersionNumber)
-                                       && int.TryParse(versionNumbers[2], out minorVersionNumber);
-
-            if (!digitParsingSuccessful)
-            {
-                L.E("Failed to parse version number from BuildLayout");
-                return false;
-            }
-
-            var compatible = (versionNumber >= 1 && majorVersionNumber > 21) || (versionNumber == 1 && majorVersionNumber == 21 && minorVersionNumber >= 3);
-            if (!compatible)
-            {
-                L.E("BuildLayout version is not compatible with this version of the Addressables package");
-                return false;
-            }
-
-            return true;
-        }
-
         void AddReportFromFile(string filePath, ListView listView, bool logWarning, bool shouldRebuild)
         {
             string parsedFilePath = filePath.Replace("\\", "/");
             if (!ProjectConfigData.BuildReportFilePaths.Contains(parsedFilePath))
             {
                 var layout = LoadLayout(filePath); // can consider adding error logs when file fails to load
-                if (layout != null && BuildLayoutIsValid(layout))
+                if (layout != null)
                 {
                     ProjectConfigData.AddBuildReportFilePath(parsedFilePath);
                     m_BuildReportItems.Insert(0, new BuildReportListItem(m_BuildReportItems.Count, filePath, layout));
 
                     if (listView != null && shouldRebuild)
                         listView.Rebuild();
+                }
+                else
+                {
+                    L.E($"Failed to load build report at '{parsedFilePath}'");
                 }
             }
             else if (logWarning)
