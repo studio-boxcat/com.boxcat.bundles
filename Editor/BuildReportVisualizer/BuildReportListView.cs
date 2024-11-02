@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
@@ -195,12 +196,20 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                                        && int.TryParse(versionNumbers[1], out majorVersionNumber)
                                        && int.TryParse(versionNumbers[2], out minorVersionNumber);
 
-            if (digitParsingSuccessful)
+            if (!digitParsingSuccessful)
             {
-                return (versionNumber >= 1 && majorVersionNumber > 21) || (versionNumber == 1 && majorVersionNumber == 21 && minorVersionNumber >= 3);
+                L.E("Failed to parse version number from BuildLayout");
+                return false;
             }
 
-            return false;
+            var compatible = (versionNumber >= 1 && majorVersionNumber > 21) || (versionNumber == 1 && majorVersionNumber == 21 && minorVersionNumber >= 3);
+            if (!compatible)
+            {
+                L.E("BuildLayout version is not compatible with this version of the Addressables package");
+                return false;
+            }
+
+            return true;
         }
 
         void AddReportFromFile(string filePath, ListView listView, bool logWarning, bool shouldRebuild)
