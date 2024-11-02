@@ -1,6 +1,6 @@
 {
   "name": "com.boxcat.addressables",
-  "version": "1.0.0",
+  "version": "1.21.12",
   "dependencies": {
     "com.unity.scriptablebuildpipeline": "1.21.22"
   }
