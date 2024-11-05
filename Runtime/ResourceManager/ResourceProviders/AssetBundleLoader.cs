@@ -362,8 +362,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             _debug_AllRequests.Add(op);
             op.completed += op =>
             {
-                _debug_AllRequests.Remove((AssetBundleCreateRequest) op);
-
                 var bundle = ((AssetBundleCreateRequest) op).assetBundle;
                 if (bundle is null)
                 {
@@ -391,9 +389,8 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 var req = reqs[0];
                 reqs.RemoveAt(0);
                 req.WaitForComplete();
+                req.assetBundle.Unload(true);
             }
-
-            AssetBundle.UnloadAllAssetBundles(true);
         }
 #endif
 
