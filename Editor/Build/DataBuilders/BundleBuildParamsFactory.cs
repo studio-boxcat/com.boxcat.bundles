@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 // LZ4: compression is a chunk-based compression algorithm.
                 // If Unity needs to access an Asset from an LZ4 archive,
                 // it only needs to decompress and read the chunks that contain bytes of the requested Asset.
-                // XXX: BuildCompression.LZMA 를 사용하는 경우, 다수의 애셋을 동시로드하면 안드로이드에서 데드락이 걸림.
+                // XXX: BuildCompression.LZ4 를 사용하는 경우, 다수의 애셋을 동시로드하면 안드로이드에서 데드락이 걸림.
                 BundleCompression = BuildCompression.LZMA,
             };
 
