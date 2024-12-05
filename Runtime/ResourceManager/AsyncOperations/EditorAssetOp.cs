@@ -43,7 +43,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             }
 
             // Even if _result is null, we still want to return true if the load time has passed.
-            if (_loadTime >= DateTime.Now)
+            if (DateTime.Now >= _loadTime)
             {
                 LoadImmediate();
                 Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
