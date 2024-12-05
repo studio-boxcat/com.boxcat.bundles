@@ -28,8 +28,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             }
 
             _loadTime = DateTime.Now.AddSeconds(loadDelay);
-            Task.Delay((int) (loadDelay * 1000))
-                .ContinueWith(_ => LoadImmediate());
+            Task.Delay((int) (loadDelay * 1000)).ContinueWith(_ => EditorApplication.delayCall += LoadImmediate);
         }
 
         public override string ToString() => $"EditorAssetOp:{_path} ({(_result != default ? "Loaded" : "Loading")})";
@@ -70,7 +69,16 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             if (_result is not null)
                 return;
 
-            _result = AssetDatabase.LoadAssetAtPath<TObject>(_path);
+            try
+            {
+                _result = AssetDatabase.LoadAssetAtPath<TObject>(_path);
+            }
+            catch (Exception e)
+            {
+                L.E("[EditorAssetOp] Failed to load asset at path: " + _path);
+                L.E(e);
+                throw;
+            }
 
             var onComplete = _onComplete;
             _onComplete = null;
