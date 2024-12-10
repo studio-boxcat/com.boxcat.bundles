@@ -32,7 +32,7 @@ namespace UnityEngine.AddressableAssets
             L.I($"[Addressables] Load Start: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             var op = _impl.LoadAssetAsync<TObject>(key);
 #if DEBUG
-            op.AddOnComplete(o => L.I("[Addressables] Load Done: " + key + " - " + o.name));
+            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key);
 #endif
             return op;
         }
@@ -48,7 +48,7 @@ namespace UnityEngine.AddressableAssets
             L.I($"[Addressables] Load Start: {key} (Scene) ~ {_impl.GetType().Name}");
             var op = _impl.LoadSceneAsync(key);
 #if DEBUG
-            op.AddOnComplete(o => L.I("[Addressables] Load Done: " + key + " - " + o.name));
+            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key);
 #endif
             return op;
         }
