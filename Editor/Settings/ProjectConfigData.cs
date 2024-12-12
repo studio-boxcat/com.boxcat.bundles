@@ -5,7 +5,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
     /// <summary>
     /// The project configuration settings for addressables.

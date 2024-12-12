@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
     internal static class BuiltinSceneCache
     {

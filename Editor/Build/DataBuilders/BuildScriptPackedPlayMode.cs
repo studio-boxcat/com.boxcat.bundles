@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -9,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// </summary>
     public class BuildScriptPackedPlayMode : BuildScriptBase
     {
-        protected override DataBuildResult BuildDataImplementation(AddressableAssetSettings settings, BuildTarget target)
+        protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
         {
             var timer = new Stopwatch();
             timer.Start();

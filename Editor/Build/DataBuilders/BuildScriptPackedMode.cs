@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
@@ -24,11 +23,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         LinkXmlGenerator m_Linker;
 
         /// <inheritdoc />
-        protected override DataBuildResult BuildDataImplementation(AddressableAssetSettings settings, BuildTarget target)
+        protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
         {
             m_Linker = LinkXmlGenerator.CreateDefault();
 
-            var aaContext = new AddressableAssetsBuildContext(settings) { buildStartTime = DateTime.Now };
+            var aaContext = new AddressableAssetsBuildContext(catalog) { buildStartTime = DateTime.Now };
             var result = DoBuild(aaContext, target);
 
             if (result != null)
@@ -76,7 +75,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
                 return CreateErrorResult("Unsaved scenes", aaContext);
 
-            var settings = aaContext.Settings;
+            var catalog = aaContext.Catalog;
             var buildParams = BundleBuildParamsFactory.Get(buildTarget);
 
             L.I("[BuildScriptPackedMode] ContentPipeline.BuildAssetBundles");
@@ -84,7 +83,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             using (new SBPSettingsOverwriterScope(ProjectConfigData.GenerateBuildLayout)) // build layout generation requires full SBP write results
             {
                 aaContext.bundleToAssetGroup = new Dictionary<BundleKey, AddressableAssetGroup>();
-                var bundleBuilds = GenerateBundleBuilds(settings.groups, aaContext.bundleToAssetGroup);
+                var bundleBuilds = GenerateBundleBuilds(catalog.groups, aaContext.bundleToAssetGroup);
                 var buildContent = new BundleBuildContent(bundleBuilds);
                 var buildTasks = RuntimeDataBuildTasks();
                 buildTasks.Add(extractData);
@@ -128,7 +127,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             {
                 L.I("[BuildScriptPackedMode] Generate link");
-                m_Linker.Save(Path.Combine(settings.ResolveConfigFolder(), "link.xml"));
+                m_Linker.Save(Path.Combine(catalog.ResolveConfigFolder(), "link.xml"));
             }
 
             if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)

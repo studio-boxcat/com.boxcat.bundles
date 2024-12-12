@@ -7,8 +7,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-
-    public class AssetsViewBuildReportItem : IAddressablesBuildReportItem
+    class AssetsViewBuildReportItem : IAddressablesBuildReportItem
     {
         public string Name { get; set; }
 
@@ -88,7 +87,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    public class AssetsViewTypeHeader : AssetsViewBuildReportItem
+    class AssetsViewTypeHeader : AssetsViewBuildReportItem
     {
         public AssetsViewTypeHeader(string name)
         {
@@ -112,7 +111,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
 
-    public class AssetsViewBuildReportBundle : AssetsViewBuildReportItem, IAddressablesBuildReportBundle
+    class AssetsViewBuildReportBundle : AssetsViewBuildReportItem, IAddressablesBuildReportBundle
     {
         public AssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
@@ -129,7 +128,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    public class AssetsViewBuildReportUnrelatedAssets : AssetsViewBuildReportItem
+    class AssetsViewBuildReportUnrelatedAssets : AssetsViewBuildReportItem
     {
         public AssetsViewBuildReportUnrelatedAssets(ulong assetSize, int assetCount)
         {
@@ -140,7 +139,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    public class AssetsViewBuildReportAsset : AssetsViewBuildReportItem, IAddressablesBuildReportAsset
+    class AssetsViewBuildReportAsset : AssetsViewBuildReportItem, IAddressablesBuildReportAsset
     {
         public List<BuildLayout.ExplicitAsset> InternallyReferencedAssets { get; }
 

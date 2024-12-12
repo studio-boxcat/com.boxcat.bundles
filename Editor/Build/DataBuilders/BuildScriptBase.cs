@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
 
@@ -21,14 +20,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         ///  Child class overrides should use <see cref="BuildDataImplementation"/>
         /// </summary>
         /// <returns>The build data result.</returns>
-        public DataBuildResult BuildData(AddressableAssetSettings settings, BuildTarget target)
+        public DataBuildResult BuildData(AddressableCatalog catalog, BuildTarget target)
         {
             L.I($"[Addressables] Building {Name}");
 
             // Append the file registry to the results
             try
             {
-                return BuildDataImplementation(settings, target);
+                return BuildDataImplementation(catalog, target);
             }
             catch (Exception e)
             {
@@ -47,7 +46,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         ///  this is the home for child class overrides.
         /// </summary>
         /// <returns>The build data result</returns>
-        protected abstract DataBuildResult BuildDataImplementation(AddressableAssetSettings settings, BuildTarget target);
+        protected abstract DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target);
 
         /// <summary>
         /// Used to clean up any cached data created by this builder.

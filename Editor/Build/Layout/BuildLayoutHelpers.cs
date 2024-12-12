@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     /// <summary>
     /// Helper methods for gathering data about a build layout.
     /// </summary>
-    public class BuildLayoutHelpers
+    class BuildLayoutHelpers
     {
         /// <summary>
         /// Gather a list of Explicit Assets defined in a BuildLayout

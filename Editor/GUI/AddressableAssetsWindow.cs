@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -12,7 +11,7 @@ namespace UnityEditor.AddressableAssets.GUI
         [MenuItem("Window/Asset Management/Addressables/Settings", priority = 2051)]
         internal static void ShowSettingsInspector()
         {
-            var setting = AddressableDefaultSettings.Settings;
+            var setting = AddressableCatalog.Default;
             EditorApplication.ExecuteMenuItem("Window/General/Inspector");
             EditorGUIUtility.PingObject(setting);
             Selection.activeObject = setting;

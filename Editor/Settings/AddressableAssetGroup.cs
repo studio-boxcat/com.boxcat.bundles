@@ -5,9 +5,10 @@ using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
+using UnityEngine.Serialization;
 using Assert = UnityEngine.Assertions.Assert;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
     /// <summary>
     /// Defines how bundles are created.
@@ -31,9 +32,10 @@ namespace UnityEditor.AddressableAssets.Settings
     [Serializable]
     public class AddressableAssetGroup : ScriptableObject
     {
+        [FormerlySerializedAs("m_Settings")]
         [SerializeField, ReadOnly, PropertyOrder(0)]
-        AddressableAssetSettings m_Settings;
-        public AddressableAssetSettings Settings => m_Settings;
+        AddressableCatalog _m_Catalog;
+        public AddressableCatalog Catalog => _m_Catalog;
 
         [SerializeField, HideInInspector]
         BundlePackingMode m_BundleMode;
@@ -45,7 +47,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 if (m_BundleMode == value) return;
                 m_BundleMode = value;
-                SetDirty(AddressableAssetSettings.ModificationEvent.GroupModified, this, true, true);
+                SetDirty(AddressableCatalog.ModificationEvent.GroupModified, this, true, true);
             }
         }
 
@@ -88,7 +90,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Assert.IsTrue(AssetDatabase.Contains(this), "AddressableAssetGroup.Name can only be set on assets that are persisted.");
 
                 name = value;
-                SetDirty(AddressableAssetSettings.ModificationEvent.GroupRenamed, this, true, true);
+                SetDirty(AddressableCatalog.ModificationEvent.GroupRenamed, this, true, true);
             }
         }
 
@@ -120,11 +122,11 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Is the default group.
         /// </summary>
-        public bool Default => ReferenceEquals(this, Settings.DefaultGroup);
+        public bool Default => ReferenceEquals(this, Catalog.DefaultGroup);
 
-        internal void SetUp(AddressableAssetSettings settings, string groupName)
+        internal void SetUp(AddressableCatalog catalog, string groupName)
         {
-            m_Settings = settings;
+            _m_Catalog = catalog;
             name = groupName;
         }
 
@@ -144,7 +146,7 @@ namespace UnityEditor.AddressableAssets.Settings
             e.parentGroup = this;
             m_Entries.Add(e);
             m_EntryMap?.Add(e.guid, e);
-            SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
+            SetDirty(AddressableCatalog.ModificationEvent.EntryAdded, e, postEvent, true);
         }
 
         /// <summary>
@@ -157,7 +159,7 @@ namespace UnityEditor.AddressableAssets.Settings
             entry.InternalEvict();
             m_Entries.Remove(entry);
             m_EntryMap?.Remove(entry.guid);
-            SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
+            SetDirty(AddressableCatalog.ModificationEvent.EntryRemoved, entry, postEvent, true);
         }
 
         /// <summary>
@@ -167,27 +169,27 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="eventData">The object data that corresponds to the event.</param>
         /// <param name="postEvent">If true, the event is propagated to callbacks.</param>
         /// <param name="groupModified">If true, the group asset will be marked as dirty.</param>
-        public void SetDirty(AddressableAssetSettings.ModificationEvent modificationEvent, object eventData, bool postEvent, bool groupModified = false)
+        public void SetDirty(AddressableCatalog.ModificationEvent modificationEvent, object eventData, bool postEvent, bool groupModified = false)
         {
             Assert.IsNotNull(this, "AddressableAssetGroup is destroyed.");
             if (groupModified) EditorUtility.SetDirty(this);
-            Settings.SetDirty(modificationEvent, eventData, postEvent, false);
+            Catalog.SetDirty(modificationEvent, eventData, postEvent, false);
         }
 
         void Entries_OnCollectionChanged_After(CollectionChangeInfo info)
         {
             var entry = (AddressableAssetEntry) info.Value;
-            AddressableAssetSettings.ModificationEvent e;
+            AddressableCatalog.ModificationEvent e;
 
             switch (info.ChangeType)
             {
                 case CollectionChangeType.Add or CollectionChangeType.Insert:
                     entry.parentGroup = this;
-                    e = AddressableAssetSettings.ModificationEvent.EntryAdded;
+                    e = AddressableCatalog.ModificationEvent.EntryAdded;
                     break;
                 case CollectionChangeType.RemoveIndex or CollectionChangeType.Clear:
                     entry.InternalEvict();
-                    e = AddressableAssetSettings.ModificationEvent.EntryRemoved;
+                    e = AddressableCatalog.ModificationEvent.EntryRemoved;
                     break;
                 default:
                     throw new NotSupportedException($"Unhandled CollectionChangeType: {info.ChangeType}");
@@ -213,7 +215,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 return string.Compare(pathX, pathY, StringComparison.Ordinal);
             });
 
-            SetDirty(AddressableAssetSettings.ModificationEvent.GroupModified, this, true, true);
+            SetDirty(AddressableCatalog.ModificationEvent.GroupModified, this, true, true);
         }
     }
 }

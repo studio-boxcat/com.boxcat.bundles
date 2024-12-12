@@ -1,36 +1,13 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
-    using Object = UnityEngine.Object;
-
     internal static class AddressableAssetUtility
     {
         internal static bool IsInResources(string path)
         {
             return path.Contains("/Resources/", StringComparison.Ordinal);
-        }
-
-        internal static bool TryGetPathAndGUIDFromTarget(Object target, out string path, out string guid)
-        {
-            if (target == null)
-            {
-                guid = string.Empty;
-                path = string.Empty;
-                return false;
-            }
-
-            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out guid, out long _))
-            {
-                guid = string.Empty;
-                path = string.Empty;
-                return false;
-            }
-
-            path = AssetDatabase.GetAssetOrScenePath(target);
-            return IsPathValidForEntry(path);
         }
 
         static readonly string[] _excludedExtensions = { ".cs", ".js", ".boo", ".exe", ".dll", ".meta", ".preset", ".asmdef" };
@@ -66,15 +43,6 @@ namespace UnityEditor.AddressableAssets.Settings
                         return true;
                 }
                 return false;
-            }
-        }
-
-        internal static void MoveEntriesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
-        {
-            foreach (var entry in entries)
-            {
-                if (entry.parentGroup != group)
-                    AddressableAssetSettings.MoveEntry(entry, group);
             }
         }
     }

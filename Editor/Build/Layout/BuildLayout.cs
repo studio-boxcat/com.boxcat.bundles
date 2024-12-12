@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -63,7 +62,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     /// A storage class used to gather data about an Addressable build.
     /// </summary>
     [Serializable]
-    public class BuildLayout
+    internal class BuildLayout
     {
         /// <summary>
         /// Helper class to wrap header values for BuildLayout
@@ -409,9 +408,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public class AddressablesEditorData
         {
             /// <summary>
-            /// Hash value of the settings at the time of building
+            /// Hash value of the catalog at the time of building
             /// </summary>
-            public string SettingsHash;
+            public string CatalogHash;
 
             /// <summary>
             /// Addressables setting value set for if the build used non recursive dependency calculation
@@ -536,7 +535,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Represents a dependency from the containing Bundle to dependentBundle, with AssetDependencies representing each of the assets in parentBundle that create the link to dependentBundle
             /// </summary>
             [Serializable]
-            public class BundleDependency
+            internal class BundleDependency
             {
                 /// <summary>
                 /// The bundle that the parent bundle depends on
@@ -711,7 +710,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Data store for the main File created for the AssetBundle
         /// </summary>
         [Serializable]
-        public class File
+        internal class File
         {
             /// <summary>
             /// The name of the File.
@@ -841,7 +840,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Data store for Assets explicitly defined in an AssetBundle
         /// </summary>
         [Serializable]
-        public class ExplicitAsset
+        internal class ExplicitAsset
         {
             /// <summary>
             /// The Asset Guid.
@@ -926,7 +925,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Data store for implicit Asset references
         /// </summary>
         [Serializable]
-        public class DataFromOtherAsset
+        internal class DataFromOtherAsset
         {
             /// <summary>
             /// The Guid of the Asset
@@ -1017,7 +1016,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     /// <summary>
     /// Utility used to quickly reference data built with the build pipeline
     /// </summary>
-    public class LayoutLookupTables
+    internal class LayoutLookupTables
     {
         /// <summary>
         /// The default AssetBundle name to the Bundle data map.

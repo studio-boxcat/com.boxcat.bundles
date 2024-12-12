@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 
@@ -32,7 +31,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             => m_ResultData ??= BuildResult(AllBundleInputDefs, ExtractData.WriteData);
 
         /// <inheritdoc />
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
+        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
         {
             ClearAnalysis();
 
@@ -43,8 +42,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 return m_Results;
             }
 
-            CalculateInputDefinitions(settings);
-            var context = new AddressableAssetsBuildContext(settings);
+            CalculateInputDefinitions(catalog);
+            var context = new AddressableAssetsBuildContext(catalog);
             RefreshBuild(context);
             foreach (var resultData in BuildBundleLayoutResults)
             {

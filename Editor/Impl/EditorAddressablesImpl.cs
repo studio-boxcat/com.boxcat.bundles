@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.AsyncOperations;
@@ -16,33 +15,33 @@ namespace UnityEditor.AddressableAssets
         static readonly List<EditorAddressablesImpl> _cache = new();
 
         [EditorAddressablesImplFactory, UsedImplicitly]
-        static EditorAddressablesImpl CreateImpl([CanBeNull] AddressableAssetSettings settings)
+        static EditorAddressablesImpl CreateImpl([CanBeNull] AddressableCatalog catalog)
         {
-            // Use default settings if none provided.
-            settings ??= AddressableDefaultSettings.Settings;
+            // Use default catalog if none provided.
+            catalog ??= AddressableCatalog.Default;
 
-            // Reuse existing instance if settings are the same.
-            var impl = _cache.Find(i => i._settings == settings);
+            // Reuse existing instance if catalog are the same.
+            var impl = _cache.Find(i => i._catalog == catalog);
             if (impl is not null) return impl;
 
             // Create new instance.
-            impl = new EditorAddressablesImpl(settings);
+            impl = new EditorAddressablesImpl(catalog);
             _cache.Add(impl);
             return impl;
         }
 
 
         readonly GuidMap _guidMap;
-        readonly AddressableAssetSettings _settings;
+        readonly AddressableCatalog _catalog;
         bool _dirty;
 
 
-        public EditorAddressablesImpl(AddressableAssetSettings settings)
+        public EditorAddressablesImpl(AddressableCatalog catalog)
         {
             _guidMap = new GuidMap();
-            _guidMap.RebuildInternalData(settings.groups);
-            _settings = settings;
-            _settings.OnModification += Settings_OnModification;
+            _guidMap.RebuildInternalData(catalog.groups);
+            _catalog = catalog;
+            _catalog.OnModification += Settings_OnModification;
         }
 
         public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object
@@ -66,21 +65,21 @@ namespace UnityEditor.AddressableAssets
         void RebuildInternalData()
         {
             if (_dirty is false) return;
-            _guidMap.RebuildInternalData(_settings.groups);
+            _guidMap.RebuildInternalData(_catalog.groups);
             _dirty = false;
         }
 
-        void Settings_OnModification(AddressableAssetSettings settings, AddressableAssetSettings.ModificationEvent evt, object arg3)
+        void Settings_OnModification(AddressableCatalog catalog, AddressableCatalog.ModificationEvent evt, object arg3)
         {
             switch (evt)
             {
-                case AddressableAssetSettings.ModificationEvent.EntryAdded:
-                case AddressableAssetSettings.ModificationEvent.EntryCreated:
-                case AddressableAssetSettings.ModificationEvent.EntryModified:
-                case AddressableAssetSettings.ModificationEvent.EntryMoved:
-                case AddressableAssetSettings.ModificationEvent.EntryRemoved:
-                case AddressableAssetSettings.ModificationEvent.GroupRemoved:
-                case AddressableAssetSettings.ModificationEvent.BatchModification:
+                case AddressableCatalog.ModificationEvent.EntryAdded:
+                case AddressableCatalog.ModificationEvent.EntryCreated:
+                case AddressableCatalog.ModificationEvent.EntryModified:
+                case AddressableCatalog.ModificationEvent.EntryMoved:
+                case AddressableCatalog.ModificationEvent.EntryRemoved:
+                case AddressableCatalog.ModificationEvent.GroupRemoved:
+                case AddressableCatalog.ModificationEvent.BatchModification:
                     _dirty = true;
                     break;
             }

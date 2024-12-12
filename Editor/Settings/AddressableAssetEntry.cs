@@ -5,7 +5,7 @@ using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
     /// <summary>
     /// Contains data for an addressable asset entry.
@@ -46,7 +46,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (m_Address == addr) return;
             m_Address = addr;
-            SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, postEvent);
+            SetDirty(AddressableCatalog.ModificationEvent.EntryModified, this, postEvent);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace UnityEditor.AddressableAssets.Settings
             m_ParentGroup = null;
         }
 
-        internal void SetDirty(AddressableAssetSettings.ModificationEvent e, object o, bool postEvent)
+        internal void SetDirty(AddressableCatalog.ModificationEvent e, object o, bool postEvent)
         {
             Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
             m_ParentGroup.SetDirty(e, o, postEvent, true);
@@ -96,7 +96,7 @@ namespace UnityEditor.AddressableAssets.Settings
             set
             {
                 m_MainAsset = value;
-                SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, true);
+                SetDirty(AddressableCatalog.ModificationEvent.EntryModified, this, true);
             }
         }
 

@@ -280,12 +280,12 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
     }
 
-    public interface IAddressablesBuildReportBundle
+    interface IAddressablesBuildReportBundle
     {
         public BuildLayout.Bundle Bundle { get; }
     }
 
-    public interface IAddressablesBuildReportAsset
+    interface IAddressablesBuildReportAsset
     {
         public BuildLayout.ExplicitAsset ExplicitAsset { get; }
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; }

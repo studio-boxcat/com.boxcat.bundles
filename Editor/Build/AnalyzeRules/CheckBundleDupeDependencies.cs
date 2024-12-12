@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline;
 using UnityEngine;
 
@@ -64,12 +63,12 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Clear current analysis and rerun check for duplicates
         /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
+        /// <param name="catalog">The current Addressables catalog object</param>
         /// <returns>List of the analysis results</returns>
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
+        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
         {
             ClearAnalysis();
-            return CheckForDuplicateDependencies(settings);
+            return CheckForDuplicateDependencies(catalog);
         }
 
         void RefreshDisplay()
@@ -149,9 +148,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Check for duplicates among the dependencies and build implicit duplicates
         /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
+        /// <param name="catalog">The current Addressables catalog object</param>
         /// <returns>List of results from analysis</returns>
-        protected List<AnalyzeResult> CheckForDuplicateDependencies(AddressableAssetSettings settings)
+        protected List<AnalyzeResult> CheckForDuplicateDependencies(AddressableCatalog catalog)
         {
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
             {
@@ -160,11 +159,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 return m_Results;
             }
 
-            CalculateInputDefinitions(settings);
+            CalculateInputDefinitions(catalog);
 
             if (AllBundleInputDefs.Count > 0)
             {
-                var context = new AddressableAssetsBuildContext(settings);
+                var context = new AddressableAssetsBuildContext(catalog);
                 ReturnCode exitCode = RefreshBuild(context);
                 if (exitCode < ReturnCode.Success)
                 {

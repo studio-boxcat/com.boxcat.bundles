@@ -1,17 +1,16 @@
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     /// <summary>
-    /// Only saves the guid of the settings asset to PlayerPrefs.  All catalog data is generated directly from the settings as needed.
+    /// Only saves the guid of the catalog asset to PlayerPrefs.  All catalog data is generated directly from the catalog as needed.
     /// </summary>
     public class BuildScriptFastMode : BuildScriptBase
     {
         /// <inheritdoc />
-        protected override DataBuildResult BuildDataImplementation(AddressableAssetSettings settings, BuildTarget target)
+        protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
         {
-            EditorAddressablesImplFactory.UseAssetDatabase(settings);
+            EditorAddressablesImplFactory.UseAssetDatabase(catalog);
             return new DataBuildResult();
         }
     }

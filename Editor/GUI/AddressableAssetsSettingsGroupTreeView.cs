@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
@@ -39,7 +38,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnScenesChanged()
         {
-            if (m_Editor.settings == null)
+            if (m_Editor.Catalog == null)
                 return;
             Reload();
         }
@@ -89,7 +88,7 @@ namespace UnityEditor.AddressableAssets.GUI
         protected override TreeViewItem BuildRoot()
         {
             var root = new TreeViewItem(-1, -1);
-            foreach (var group in m_Editor.settings.groups)
+            foreach (var group in m_Editor.Catalog.groups)
                 AddGroupChildrenBuild(group, root);
             return root;
         }
@@ -385,7 +384,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
                 else if (item.group != null)
                 {
-                    if (m_Editor.settings.IsNotUniqueGroupName(args.newName))
+                    if (m_Editor.Catalog.IsNotUniqueGroupName(args.newName))
                     {
                         args.acceptedRename = false;
                         L.W("There is already a group named '" + args.newName + "'.  Cannot rename this group to match");
@@ -510,7 +509,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal void CreateNewGroup()
         {
-            m_Editor.settings.CreateGroup(false);
+            m_Editor.Catalog.CreateGroup(false);
             Reload();
         }
 
@@ -532,7 +531,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     foreach (var item in selectedNodes)
                     {
-                        m_Editor.settings.RemoveGroupInternal(item == null ? null : item.group, true, false);
+                        m_Editor.Catalog.RemoveGroupInternal(item == null ? null : item.group, true, false);
                         groups.Add(item.group);
                     }
                 }
@@ -541,7 +540,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     AssetDatabase.StopAssetEditing();
                 }
 
-                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupRemoved, groups, true, true);
+                m_Editor.Catalog.SetDirty(AddressableCatalog.ModificationEvent.GroupRemoved, groups, true, true);
             }
         }
 
@@ -559,14 +558,14 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     entries.Add(item.entry);
                     modifiedGroups.Add(item.entry.parentGroup);
-                    m_Editor.settings.RemoveAssetEntry(item.entry.guid, false);
+                    m_Editor.Catalog.RemoveAssetEntry(item.entry.guid, false);
                 }
             }
 
             foreach (var g in modifiedGroups)
-                g.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, false, true);
+                g.SetDirty(AddressableCatalog.ModificationEvent.EntryModified, entries, false, true);
 
-            m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entries, true, false);
+            m_Editor.Catalog.SetDirty(AddressableCatalog.ModificationEvent.EntryRemoved, entries, true, false);
         }
 
         protected void RenameItem(object context)
@@ -695,16 +694,16 @@ namespace UnityEditor.AddressableAssets.GUI
                         {
                             AssetEntryTreeViewItem node = draggedNodes[i];
                             AddressableAssetGroup group = node.@group;
-                            int index = m_Editor.settings.groups.FindIndex(g => g == group);
+                            int index = m_Editor.Catalog.groups.FindIndex(g => g == group);
                             if (index < args.insertAtIndex)
                                 args.insertAtIndex--;
 
-                            m_Editor.settings.groups.RemoveAt(index);
+                            m_Editor.Catalog.groups.RemoveAt(index);
 
-                            if (args.insertAtIndex < 0 || args.insertAtIndex > m_Editor.settings.groups.Count)
-                                m_Editor.settings.groups.Insert(m_Editor.settings.groups.Count, group);
+                            if (args.insertAtIndex < 0 || args.insertAtIndex > m_Editor.Catalog.groups.Count)
+                                m_Editor.Catalog.groups.Insert(m_Editor.Catalog.groups.Count, group);
                             else
-                                m_Editor.settings.groups.Insert(args.insertAtIndex, group);
+                                m_Editor.Catalog.groups.Insert(args.insertAtIndex, group);
                         }
 
                         Reload();
@@ -731,10 +730,10 @@ namespace UnityEditor.AddressableAssets.GUI
                                 foreach (AddressableAssetEntry entry in entries)
                                 {
                                     modifiedGroups.Add(entry.parentGroup);
-                                    AddressableAssetSettings.MoveEntry(entry, parent, false);
+                                    AddressableCatalog.MoveEntry(entry, parent, false);
                                 }
 
-                                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entries, true, false);
+                                m_Editor.Catalog.SetDirty(AddressableCatalog.ModificationEvent.EntryMoved, entries, true, false);
                             }
                         }
                     }
@@ -798,12 +797,12 @@ namespace UnityEditor.AddressableAssets.GUI
                         {
                             var entriesMoved = new List<AddressableAssetEntry>();
                             var entriesCreated = new List<AddressableAssetEntry>();
-                            m_Editor.settings.CreateOrMoveEntries(nonResourceGuids, parent, entriesCreated, entriesMoved, false);
+                            m_Editor.Catalog.CreateOrMoveEntries(nonResourceGuids, parent, entriesCreated, entriesMoved, false);
 
                             if (entriesMoved.Count > 0)
-                                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entriesMoved, true);
+                                m_Editor.Catalog.SetDirty(AddressableCatalog.ModificationEvent.EntryMoved, entriesMoved, true);
                             if (entriesCreated.Count > 0)
-                                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, entriesCreated, true);
+                                m_Editor.Catalog.SetDirty(AddressableCatalog.ModificationEvent.EntryAdded, entriesCreated, true);
                         }
 
                         if (targetIsGroup)
@@ -821,16 +820,16 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (PathPointsToAssetGroup(p) is false) continue;
                     var loadedGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(p);
                     if (loadedGroup is null) continue;
-                    if (m_Editor.settings.FindGroup(g => g == loadedGroup) == null)
+                    if (m_Editor.Catalog.FindGroup(g => g == loadedGroup) == null)
                     {
-                        m_Editor.settings.groups.Add(loadedGroup);
+                        m_Editor.Catalog.groups.Add(loadedGroup);
                         modified = true;
                     }
                 }
 
                 if (modified)
-                    m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupAdded,
-                        m_Editor.settings, true, true);
+                    m_Editor.Catalog.SetDirty(AddressableCatalog.ModificationEvent.GroupAdded,
+                        m_Editor.Catalog, true, true);
             }
 
             return DragAndDropVisualMode.Copy;

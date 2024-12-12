@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Settings;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 {
@@ -15,16 +14,16 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Clear analysis and calculate built in resources and corresponding bundle dependencies for scenes
         /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
+        /// <param name="catalog">The current Addressables catalog object</param>
         /// <returns>List of results from analysis</returns>
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
+        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
         {
             ClearAnalysis();
 
             string[] scenePaths = (from editorScene in EditorBuildSettings.scenes
                 where editorScene.enabled
                 select editorScene.path).ToArray();
-            return CalculateBuiltInResourceDependenciesToBundleDependecies(settings, scenePaths);
+            return CalculateBuiltInResourceDependenciesToBundleDependecies(catalog, scenePaths);
         }
 
         /// <inheritdoc />

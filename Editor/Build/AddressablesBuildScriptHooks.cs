@@ -16,14 +16,14 @@ namespace UnityEditor.AddressableAssets.Build
             if (state != PlayModeStateChange.ExitingEditMode)
                 return;
 
-            var settings = AddressableDefaultSettings.Settings;
-            if (settings == null)
+            var catalog = AddressableCatalog.Default;
+            if (catalog == null)
                 return;
 
             var builder = DataBuilderList.Editor;
             L.I("[Addressables] BuildScriptHooks: " + builder.Name);
 
-            var res = builder.BuildData(settings, BuildTarget.NoTarget);
+            var res = builder.BuildData(catalog, BuildTarget.NoTarget);
             if (!string.IsNullOrEmpty(res.Error))
             {
                 L.E(res.Error);

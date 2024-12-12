@@ -21,8 +21,8 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     /// <param name="buildPlayerContext"></param>
     public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
     {
-        var settings = AddressableDefaultSettings.Settings;
-        Assert.IsNotNull(settings, "AddressableAssetSettings object is null");
+        var catalog = AddressableCatalog.Default;
+        Assert.IsNotNull(catalog, "AddressableAssetSettings object is null");
         Assert.IsNotNull(buildPlayerContext, "BuildPlayerContext object is null");
 
         // Add asset bundles with catalog.bin to streaming assets.

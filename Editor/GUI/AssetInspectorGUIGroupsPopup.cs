@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -10,11 +9,11 @@ namespace UnityEditor.AddressableAssets.GUI
     [InitializeOnLoad, ExcludeFromCoverage]
     class GroupsPopupWindow : EditorWindow
     {
-        private AddressableAssetSettings m_Settings;
+        private AddressableCatalog m_Catalog;
         private List<AddressableAssetEntry> m_Entries;
         private bool m_SetInitialSelection;
         private bool m_StayOpenAfterSelection;
-        private Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> m_Action;
+        private Action<AddressableCatalog, List<AddressableAssetEntry>, AddressableAssetGroup> m_Action;
 
         private GroupsPopupTreeView m_Tree;
         private TreeViewState m_TreeState;
@@ -28,10 +27,10 @@ namespace UnityEditor.AddressableAssets.GUI
             m_ShouldClose = true;
         }
 
-        public void Initialize(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, bool setInitialSelection, bool stayOpenAfterSelection,
-            Vector2 mouseLocation, Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> action)
+        public void Initialize(AddressableCatalog catalog, List<AddressableAssetEntry> entries, bool setInitialSelection, bool stayOpenAfterSelection,
+            Vector2 mouseLocation, Action<AddressableCatalog, List<AddressableAssetEntry>, AddressableAssetGroup> action)
         {
-            m_Settings = settings;
+            m_Catalog = catalog;
             m_Entries = entries;
             m_SetInitialSelection = setInitialSelection;
             m_StayOpenAfterSelection = stayOpenAfterSelection;
@@ -142,7 +141,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var groupTreeItem = FindItem(id, rootItem) as GroupsPopupTreeItem;
                 if (groupTreeItem != null)
                 {
-                    m_Popup.m_Action(m_Popup.m_Settings, m_Popup.m_Entries, groupTreeItem.m_Group);
+                    m_Popup.m_Action(m_Popup.m_Catalog, m_Popup.m_Entries, groupTreeItem.m_Group);
                 }
                 m_Popup.ForceClose();
             }
@@ -166,7 +165,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     var groupTreeItem = FindItem(selectedIds[0], rootItem) as GroupsPopupTreeItem;
                     if (groupTreeItem != null)
                     {
-                        m_Popup.m_Action(m_Popup.m_Settings, m_Popup.m_Entries, groupTreeItem.m_Group);
+                        m_Popup.m_Action(m_Popup.m_Catalog, m_Popup.m_Entries, groupTreeItem.m_Group);
                     }
                     if (m_Popup.m_StayOpenAfterSelection)
                         SetFocus();
@@ -200,15 +199,15 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 var root = new TreeViewItem(-1, -1);
 
-                var aaSettings = AddressableDefaultSettings.Settings;
-                if (aaSettings == null)
+                var aaCatalog = AddressableCatalog.Default;
+                if (aaCatalog == null)
                 {
                     var message = "Use 'Window->Addressables' to initialize.";
                     root.AddChild(new GroupsPopupTreeItem(message.GetHashCode(), 0, message, null, m_Popup.m_FolderTexture));
                 }
                 else
                 {
-                    foreach (AddressableAssetGroup group in aaSettings.groups)
+                    foreach (AddressableAssetGroup group in aaCatalog.groups)
                     {
                         var child = new GroupsPopupTreeItem(group.GetInstanceID(), 0, group.name, group, m_Popup.m_FolderTexture);
                         root.AddChild(child);

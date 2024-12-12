@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
@@ -14,9 +13,9 @@ namespace UnityEditor.AddressableAssets
         /// Runs the active player data build script to create runtime data.
         /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
         /// </summary>
-        public static DataBuildResult BuildPlayerContent(AddressableAssetSettings settings, IDataBuilder builder, BuildTarget target)
+        public static DataBuildResult BuildPlayerContent(AddressableCatalog catalog, IDataBuilder builder, BuildTarget target)
         {
-            Assert.IsNotNull(settings, "AddressableAssetSettings must not be null");
+            Assert.IsNotNull(catalog, "AddressableAssetSettings must not be null");
             Assert.IsNotNull(builder, "IDataBuilder must not be null");
 
             if (Directory.Exists(PathConfig.BuildPath))
@@ -31,7 +30,7 @@ namespace UnityEditor.AddressableAssets
                 }
             }
 
-            var result = builder.BuildData(settings, target);
+            var result = builder.BuildData(catalog, target);
             if (!string.IsNullOrEmpty(result.Error))
             {
                 L.E(result.Error);
@@ -46,7 +45,7 @@ namespace UnityEditor.AddressableAssets
 
         public static DataBuildResult BuildPlayerContent()
         {
-            return BuildPlayerContent(AddressableDefaultSettings.Settings, DataBuilderList.Builder, EditorUserBuildSettings.activeBuildTarget);
+            return BuildPlayerContent(AddressableCatalog.Default, DataBuilderList.Builder, EditorUserBuildSettings.activeBuildTarget);
         }
 
         /// <summary>
@@ -54,8 +53,8 @@ namespace UnityEditor.AddressableAssets
         /// </summary>
         public static void CleanPlayerContent()
         {
-            var settings = AddressableDefaultSettings.Settings;
-            if (settings == null)
+            var catalog = AddressableCatalog.Default;
+            if (catalog == null)
             {
                 if (EditorApplication.isUpdating)
                     L.E("Addressable Asset Settings does not exist.  EditorApplication.isUpdating was true.");

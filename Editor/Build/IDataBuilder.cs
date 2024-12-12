@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -62,7 +61,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// Build the data of a specific type.
         /// </summary>
         /// <returns>The built data.</returns>
-        DataBuildResult BuildData(AddressableAssetSettings settings, BuildTarget target);
+        DataBuildResult BuildData(AddressableCatalog catalog, BuildTarget target);
 
         /// <summary>
         /// Clears all cached data.

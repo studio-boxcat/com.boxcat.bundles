@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -40,7 +39,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             var ctx = (AddressableAssetsBuildContext) m_AaBuildContext;
             Process(
-                ctx.Settings,
+                ctx.Catalog,
                 assetToFiles,
                 out ctx.entries,
                 out ctx.bundleToImmediateBundleDependencies,
@@ -53,13 +52,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// </summary>
         /// <returns>An object that contains organized information about dependencies and catalog locations.</returns>
         static void Process(
-            AddressableAssetSettings settings,
+            AddressableCatalog catalog,
             Dictionary<AssetGUID, List<BundleKey>> assetToFiles,
             out Dictionary<AssetGUID, EntryDef> entries,
             out Dictionary<BundleKey, HashSet<BundleKey>> bundleToImmediateBundleDependencies,
             out Dictionary<BundleKey, HashSet<BundleKey>> bundleToExpandedBundleDependencies)
         {
-            entries = settings.groups.SelectMany(g => g.entries).ToDictionary(
+            entries = catalog.groups.SelectMany(g => g.entries).ToDictionary(
                 e => e.guid,
                 e =>
                 {

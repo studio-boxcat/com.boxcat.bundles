@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -195,11 +194,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Generate input definitions and entries for AssetBundleBuild
         /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
-        protected void CalculateInputDefinitions(AddressableAssetSettings settings)
+        /// <param name="catalog">The current Addressables catalog object</param>
+        protected void CalculateInputDefinitions(AddressableCatalog catalog)
         {
             m_AllBundleInputDefs = BuildScriptPackedMode.GenerateBundleBuilds(
-                settings.groups, new Dictionary<BundleKey, AddressableAssetGroup>());
+                catalog.groups, new Dictionary<BundleKey, AddressableAssetGroup>());
         }
 
         /// <summary>
@@ -235,10 +234,10 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Calculate built in resources and corresponding bundle dependencies
         /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
+        /// <param name="catalog">The current Addressables catalog object</param>
         /// <param name="builtInResourcesPaths">Array of resource paths</param>
         /// <returns>List of rule results after calculating resource and bundle dependency combined</returns>
-        protected List<AnalyzeResult> CalculateBuiltInResourceDependenciesToBundleDependecies(AddressableAssetSettings settings, string[] builtInResourcesPaths)
+        protected List<AnalyzeResult> CalculateBuiltInResourceDependenciesToBundleDependecies(AddressableCatalog catalog, string[] builtInResourcesPaths)
         {
             List<AnalyzeResult> results = new List<AnalyzeResult>();
 
@@ -253,7 +252,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             try
             {
                 // bulk of work and progress bars displayed in these methods
-                var buildSuccess = BuildAndGetResourceDependencies(settings, builtInResourcesPaths);
+                var buildSuccess = BuildAndGetResourceDependencies(catalog, builtInResourcesPaths);
                 if (buildSuccess != ReturnCode.Success)
                 {
                     if (buildSuccess == ReturnCode.SuccessNotRun)
@@ -297,16 +296,16 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Calculates and gathers dependencies for built in data.
         /// </summary>
-        /// <param name="settings">The AddressableAssetSettings to pull data from.</param>
+        /// <param name="catalog">The AddressableAssetSettings to pull data from.</param>
         /// <param name="builtInResourcesPaths">The paths that lead to all the built in Resource locations</param>
         /// <returns>A ReturnCode indicating various levels of success or failure.</returns>
-        protected ReturnCode BuildAndGetResourceDependencies(AddressableAssetSettings settings, string[] builtInResourcesPaths)
+        protected ReturnCode BuildAndGetResourceDependencies(AddressableCatalog catalog, string[] builtInResourcesPaths)
         {
             BuiltInResourcesToDependenciesMap(builtInResourcesPaths);
             if (m_ResourcesToDependencies == null || m_ResourcesToDependencies.Count == 0)
                 return ReturnCode.SuccessNotRun;
 
-            CalculateInputDefinitions(settings);
+            CalculateInputDefinitions(catalog);
             if (m_AllBundleInputDefs == null || m_AllBundleInputDefs.Count == 0)
                 return ReturnCode.SuccessNotRun;
 
@@ -314,7 +313,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 "Calculating dependencies between Built-in resources and Addressables", 0.5f);
 
             ReturnCode exitCode = ReturnCode.Error;
-            var context = new AddressableAssetsBuildContext(settings);
+            var context = new AddressableAssetsBuildContext(catalog);
             exitCode = RefreshBuild(context);
             if (exitCode < ReturnCode.Success)
             {
@@ -403,9 +402,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// Clear analysis and calculate built in content and corresponding bundle dependencies
         /// </summary>
-        /// <param name="settings">The current Addressables settings object</param>
+        /// <param name="catalog">The current Addressables catalog object</param>
         /// <returns>List of results from analysis</returns>
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
+        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
         {
             ClearAnalysis();
             List<AnalyzeResult> results = new List<AnalyzeResult>();
@@ -423,7 +422,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 // bulk of work and progress bars displayed in these methods
                 var resourcePaths = GetResourcePaths();
 
-                var buildSuccess = BuildAndGetResourceDependencies(settings, resourcePaths);
+                var buildSuccess = BuildAndGetResourceDependencies(catalog, resourcePaths);
                 if (buildSuccess == ReturnCode.SuccessNotRun)
                 {
                     results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });

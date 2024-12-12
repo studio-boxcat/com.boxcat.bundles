@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -25,16 +24,16 @@ namespace UnityEditor.AddressableAssets.GUI
         SearchField m_SearchField;
         const int k_SearchHeight = 20;
 
-        AddressableAssetSettings m_Settings;
+        AddressableCatalog m_Catalog;
 
-        internal AddressableAssetSettings settings
+        internal AddressableCatalog Catalog
         {
             get
             {
-                if (m_Settings == null) m_Settings = AddressableDefaultSettings.Settings;
-                return m_Settings;
+                if (m_Catalog == null) m_Catalog = AddressableCatalog.Default;
+                return m_Catalog;
             }
-            set => m_Settings = value;
+            set => m_Catalog = value;
         }
 
         bool m_ResizingVerticalSplitter;
@@ -134,21 +133,21 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        void OnSettingsModification(AddressableAssetSettings s, AddressableAssetSettings.ModificationEvent e, object o)
+        void OnSettingsModification(AddressableCatalog s, AddressableCatalog.ModificationEvent e, object o)
         {
             if (m_EntryTree == null)
                 return;
 
             switch (e)
             {
-                case AddressableAssetSettings.ModificationEvent.GroupAdded:
-                case AddressableAssetSettings.ModificationEvent.GroupRemoved:
-                case AddressableAssetSettings.ModificationEvent.EntryAdded:
-                case AddressableAssetSettings.ModificationEvent.EntryMoved:
-                case AddressableAssetSettings.ModificationEvent.EntryRemoved:
-                case AddressableAssetSettings.ModificationEvent.GroupRenamed:
-                case AddressableAssetSettings.ModificationEvent.EntryModified:
-                case AddressableAssetSettings.ModificationEvent.BatchModification:
+                case AddressableCatalog.ModificationEvent.GroupAdded:
+                case AddressableCatalog.ModificationEvent.GroupRemoved:
+                case AddressableCatalog.ModificationEvent.EntryAdded:
+                case AddressableCatalog.ModificationEvent.EntryMoved:
+                case AddressableCatalog.ModificationEvent.EntryRemoved:
+                case AddressableCatalog.ModificationEvent.GroupRenamed:
+                case AddressableCatalog.ModificationEvent.EntryModified:
+                case AddressableCatalog.ModificationEvent.BatchModification:
                     m_EntryTree.Reload();
                     if (window != null)
                         window.Repaint();
@@ -216,8 +215,8 @@ namespace UnityEditor.AddressableAssets.GUI
                         menu.AddItem(new GUIContent("Settings"), false, () =>
                         {
                             EditorApplication.ExecuteMenuItem("Window/General/Inspector");
-                            EditorGUIUtility.PingObject(AddressableDefaultSettings.Settings);
-                            Selection.activeObject = AddressableDefaultSettings.Settings;
+                            EditorGUIUtility.PingObject(AddressableCatalog.Default);
+                            Selection.activeObject = AddressableCatalog.Default;
                         });
 
                         menu.AddItem(new GUIContent("Analyze"), false, AnalyzeWindow.ShowWindow);
@@ -263,36 +262,36 @@ namespace UnityEditor.AddressableAssets.GUI
 
         public void OnEnable()
         {
-            if (AddressableDefaultSettings.Settings == null)
+            if (AddressableCatalog.Default == null)
                 return;
             if (!m_ModificationRegistered)
             {
-                AddressableDefaultSettings.Settings.OnModification += OnSettingsModification;
+                AddressableCatalog.Default.OnModification += OnSettingsModification;
                 m_ModificationRegistered = true;
             }
         }
 
         public void OnDisable()
         {
-            if (AddressableDefaultSettings.Settings == null)
+            if (AddressableCatalog.Default == null)
                 return;
             if (m_ModificationRegistered)
             {
-                AddressableDefaultSettings.Settings.OnModification -= OnSettingsModification;
+                AddressableCatalog.Default.OnModification -= OnSettingsModification;
                 m_ModificationRegistered = false;
             }
         }
 
         public bool OnGUI(Rect pos)
         {
-            if (settings == null)
+            if (Catalog == null)
                 return false;
 
             if (!m_ModificationRegistered)
             {
                 m_ModificationRegistered = true;
-                settings.OnModification -= OnSettingsModification; //just in case...
-                settings.OnModification += OnSettingsModification;
+                Catalog.OnModification -= OnSettingsModification; //just in case...
+                Catalog.OnModification += OnSettingsModification;
             }
 
             if (m_EntryTree == null)

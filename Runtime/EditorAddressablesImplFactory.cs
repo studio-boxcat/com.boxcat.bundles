@@ -24,7 +24,7 @@ namespace UnityEngine.AddressableAssets
         }
 
         internal static void UseCatalog() => _argument = "CATALOG";
-        internal static void UseAssetDatabase(Object settings) => _argument = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(settings));
+        internal static void UseAssetDatabase(Object catalog) => _argument = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(catalog));
 
         [CanBeNull]
         internal static IAddressablesImpl Create()
@@ -42,7 +42,7 @@ namespace UnityEngine.AddressableAssets
                 var method = TypeCache.GetMethodsWithAttribute<EditorAddressablesImplFactoryAttribute>()[0];
                 var argumentObj = string.IsNullOrEmpty(guid) is false
                     ? AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid))
-                    : null; // Use default settings asset.
+                    : null; // Use default catalog asset.
                 return (IAddressablesImpl) method.Invoke(null, new object[] { argumentObj });
             }
         }

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.AnalyzeRules;
 using UnityEditor.AddressableAssets.GUI;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Util;
@@ -49,7 +48,7 @@ namespace UnityEditor.AddressableAssets.Build
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
         internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
-        internal static AddressableAssetSettings Settings => AddressableDefaultSettings.Settings;
+        internal static AddressableCatalog Catalog => AddressableCatalog.Default;
 
         internal static List<AnalyzeRule> Rules { get; } = new List<AnalyzeRule>();
 
@@ -164,7 +163,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (!AnalyzeData.Data.ContainsKey(rule.ruleName))
                 AnalyzeData.Data.Add(rule.ruleName, new List<AnalyzeRule.AnalyzeResult>());
 
-            AnalyzeData.Data[rule.ruleName] = rule.RefreshAnalysis(Settings);
+            AnalyzeData.Data[rule.ruleName] = rule.RefreshAnalysis(Catalog);
 
             return AnalyzeData.Data[rule.ruleName];
         }

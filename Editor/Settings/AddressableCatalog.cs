@@ -6,27 +6,27 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets.Settings
+namespace UnityEditor.AddressableAssets
 {
     /// <summary>
     /// Contains editor data for the addressables system.
     /// </summary>
-    public class AddressableAssetSettings : ScriptableObject, ISelfValidator
+    public partial class AddressableCatalog : ScriptableObject, ISelfValidator
     {
         class Cache<T1, T2>
         {
-            private readonly AddressableAssetSettings m_Settings;
+            private readonly AddressableCatalog _m_Catalog;
             private readonly Dictionary<T1, T2> m_Data = new();
             private int m_Version;
 
-            public Cache(AddressableAssetSettings settings)
+            public Cache(AddressableCatalog catalog)
             {
-                m_Settings = settings;
+                _m_Catalog = catalog;
             }
 
             public bool TryGetCached(T1 key, out T2 result)
             {
-                if (m_Version != m_Settings.version)
+                if (m_Version != _m_Catalog.version)
                 {
                     result = default;
                     return false;
@@ -37,10 +37,10 @@ namespace UnityEditor.AddressableAssets.Settings
 
             public void Add(T1 key, T2 value)
             {
-                if (m_Version != m_Settings.version)
+                if (m_Version != _m_Catalog.version)
                 {
                     m_Data.Clear();
-                    m_Version = m_Settings.version;
+                    m_Version = _m_Catalog.version;
                 }
 
                 m_Data.Add(key, value);
@@ -53,17 +53,17 @@ namespace UnityEditor.AddressableAssets.Settings
         public enum ModificationEvent
         {
             /// <summary>
-            /// Use to indicate that a group was added to the settings object.
+            /// Use to indicate that a group was added to the catalog object.
             /// </summary>
             GroupAdded,
 
             /// <summary>
-            /// Use to indicate that a group was removed from the the settings object.
+            /// Use to indicate that a group was removed from the the catalog object.
             /// </summary>
             GroupRemoved,
 
             /// <summary>
-            /// Use to indicate that a group in the settings object was renamed.
+            /// Use to indicate that a group in the catalog object was renamed.
             /// </summary>
             GroupRenamed,
 
@@ -101,14 +101,14 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Event for handling settings changes.  The object passed depends on the event type.
+        /// Event for handling catalog changes.  The object passed depends on the event type.
         /// </summary>
-        public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }
+        public Action<AddressableCatalog, ModificationEvent, object> OnModification { get; set; }
 
         int m_Version;
 
         /// <summary>
-        /// Hash of the current settings.  This value is recomputed if anything changes.
+        /// Hash of the current catalog.  This value is recomputed if anything changes.
         /// </summary>
         public int version => m_Version;
 
@@ -272,13 +272,13 @@ namespace UnityEditor.AddressableAssets.Settings
             var path = AssetDatabase.GenerateUniqueAssetPath(root + "/New Group.asset");
             var groupName = Path.GetFileNameWithoutExtension(path);
 
-            // Create the new group and add it to the settings.
+            // Create the new group and add it to the catalog.
             var group = CreateInstance<AddressableAssetGroup>();
             AssetDatabase.CreateAsset(group, path);
             group.SetUp(this, groupName);
             groups.Add(group);
 
-            // Mark the settings as dirty and post the event.
+            // Mark the catalog as dirty and post the event.
             SetDirty(ModificationEvent.GroupAdded, group, postEvent, true);
             return group;
         }
@@ -311,7 +311,7 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// The folder of the settings asset.
+        /// The folder of the catalog asset.
         /// </summary>
         public string ResolveConfigFolder()
         {
@@ -325,15 +325,15 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="modificationEvent">The event type that is changed.</param>
         /// <param name="eventData">The object data that corresponds to the event.</param>
         /// <param name="postEvent">If true, the event is propagated to callbacks.</param>
-        /// <param name="settingsModified">If true, the settings asset will be marked as dirty.</param>
-        public void SetDirty(ModificationEvent modificationEvent, object eventData, bool postEvent, bool settingsModified = false)
+        /// <param name="catalogModified">If true, the catalog asset will be marked as dirty.</param>
+        public void SetDirty(ModificationEvent modificationEvent, object eventData, bool postEvent, bool catalogModified = false)
         {
             Assert.IsNotNull(this, "Object is destroyed.");
 
             if (postEvent)
                 OnModification?.Invoke(this, modificationEvent, eventData);
 
-            if (settingsModified)
+            if (catalogModified)
                 EditorUtility.SetDirty(this);
 
             m_Version++;

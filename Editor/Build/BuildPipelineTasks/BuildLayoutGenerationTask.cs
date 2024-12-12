@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
@@ -623,7 +622,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             BuildLayout layout = new BuildLayout();
             layout.BuildStart = aaContext.buildStartTime;
 
-            AddressableAssetSettings aaSettings = aaContext.Settings;
+            AddressableCatalog aaCatalog = aaContext.Catalog;
 
             L.I("Generate Basic Information");
             SetLayoutMetaData(layout);
@@ -631,7 +630,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Map from GUID to AddrssableAssetEntry
             lookup.GuidToEntry = aaContext.entries.ToDictionary(
                 kvp => (AssetId) kvp.Key,
-                kvp => aaSettings.FindAssetEntry(kvp.Value.GUID));
+                kvp => aaCatalog.FindAssetEntry(kvp.Value.GUID));
 
             // create groups
             foreach (var (bundle, group) in aaContext.bundleToAssetGroup)
@@ -671,7 +670,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // bundleToAssetGroup doesn't contain the builtin bundles. The builtin content is built using values from the default group
             else
             {
-                var defaultGroup = aaContext.Settings.DefaultGroup;
+                var defaultGroup = aaContext.Catalog.DefaultGroup;
                 b.Group = lookup.GroupLookup.Values.Single(g => g.Name == defaultGroup.Name);
                 layout.BuiltInBundles.Add(b);
             }
@@ -913,7 +912,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         public static void GenerateErrorReport(string error, AddressableAssetsBuildContext aaContext)
         {
             Assert.IsNotNull(aaContext);
-            Assert.IsNotNull(aaContext.Settings);
+            Assert.IsNotNull(aaContext.Catalog);
 
             var layout = new BuildLayout();
             layout.BuildStart = aaContext.buildStartTime;

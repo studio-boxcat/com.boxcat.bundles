@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
@@ -94,9 +93,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <summary>
         /// This method runs the actual analysis for the rule.
         /// </summary>
-        /// <param name="settings">The settings object to analyze</param>
+        /// <param name="catalog">The catalog object to analyze</param>
         /// <returns>A list of resulting information (warnings, errors, or info)</returns>
-        public virtual List<AnalyzeResult> RefreshAnalysis(AddressableAssetSettings settings)
+        public virtual List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
         {
             return new List<AnalyzeResult>();
         }

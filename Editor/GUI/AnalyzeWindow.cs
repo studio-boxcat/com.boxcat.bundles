@@ -1,4 +1,3 @@
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -20,7 +19,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        private AddressableAssetSettings m_Settings;
+        private AddressableCatalog _m_Catalog;
 
         [SerializeField]
         private AnalyzeRuleGUI m_AnalyzeEditor;
@@ -30,8 +29,8 @@ namespace UnityEditor.AddressableAssets.GUI
         [MenuItem("Window/Asset Management/Addressables/Analyze", priority = 2052)]
         internal static void ShowWindow()
         {
-            AddressableAssetSettings settings = AddressableDefaultSettings.Settings;
-            if (settings == null)
+            AddressableCatalog catalog = AddressableCatalog.Default;
+            if (catalog == null)
             {
                 EditorUtility.DisplayDialog("Error",
                     "Attempting to open Addressables Analyze window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
@@ -49,8 +48,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnGUI()
         {
-            AddressableAssetSettings settings = AddressableDefaultSettings.Settings;
-            if (settings == null)
+            AddressableCatalog catalog = AddressableCatalog.Default;
+            if (catalog == null)
                 return;
 
             GUILayout.BeginArea(displayAreaRect);

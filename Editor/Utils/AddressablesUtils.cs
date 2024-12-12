@@ -1,5 +1,4 @@
 using System.Linq;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets

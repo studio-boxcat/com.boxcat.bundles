@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Interfaces;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -11,9 +10,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     class AddressableAssetsBuildContext : IContextObject
     {
         /// <summary>
-        /// The settings object to use.
+        /// The catalog object to use.
         /// </summary>
-        public readonly AddressableAssetSettings Settings;
+        public readonly AddressableCatalog Catalog;
 
         /// <summary>
         /// The time the build started
@@ -38,9 +37,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public Dictionary<BundleKey, HashSet<BundleKey>> bundleToExpandedBundleDependencies;
 
 
-        public AddressableAssetsBuildContext(AddressableAssetSettings settings)
+        public AddressableAssetsBuildContext(AddressableCatalog catalog)
         {
-            Settings = settings;
+            Catalog = catalog;
         }
     }
 }
