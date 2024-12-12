@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using Sirenix.OdinInspector.Editor;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Serialization;
 using Assert = UnityEngine.Assertions.Assert;
 
 namespace UnityEditor.AddressableAssets.Settings
@@ -49,8 +49,9 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        [FormerlySerializedAs("m_SerializeEntries")]
-        [SerializeField, LabelText("Entries"), TableList(IsReadOnly = true), PropertyOrder(2)]
+        [SerializeField, LabelText("Entries"), PropertyOrder(2)]
+        [TableList(AlwaysExpanded = true, ScrollViewHeight = 400)]
+        [OnCollectionChanged(After = nameof(Entries_OnCollectionChanged_After))]
         List<AddressableAssetEntry> m_Entries = new();
 
         bool m_EntriesInitialized;
@@ -141,8 +142,8 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             Assert.AreNotEqual(typeof(DefaultAsset), e.MainAssetType, "Entry is a Folder.");
             e.parentGroup = this;
-            m_EntryMap?.Add(e.guid, e);
             m_Entries.Add(e);
+            m_EntryMap?.Add(e.guid, e);
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, e, postEvent, true);
         }
 
@@ -154,8 +155,8 @@ namespace UnityEditor.AddressableAssets.Settings
         public void RemoveAssetEntry(AddressableAssetEntry entry, bool postEvent = true)
         {
             entry.InternalEvict();
-            m_EntryMap?.Remove(entry.guid);
             m_Entries.Remove(entry);
+            m_EntryMap?.Remove(entry.guid);
             SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, true);
         }
 
@@ -169,9 +170,50 @@ namespace UnityEditor.AddressableAssets.Settings
         public void SetDirty(AddressableAssetSettings.ModificationEvent modificationEvent, object eventData, bool postEvent, bool groupModified = false)
         {
             Assert.IsNotNull(this, "AddressableAssetGroup is destroyed.");
-            if (Settings == null) return;
             if (groupModified) EditorUtility.SetDirty(this);
             Settings.SetDirty(modificationEvent, eventData, postEvent, false);
+        }
+
+        void Entries_OnCollectionChanged_After(CollectionChangeInfo info)
+        {
+            var entry = (AddressableAssetEntry) info.Value;
+            AddressableAssetSettings.ModificationEvent e;
+
+            switch (info.ChangeType)
+            {
+                case CollectionChangeType.Add or CollectionChangeType.Insert:
+                    entry.parentGroup = this;
+                    e = AddressableAssetSettings.ModificationEvent.EntryAdded;
+                    break;
+                case CollectionChangeType.RemoveIndex or CollectionChangeType.Clear:
+                    entry.InternalEvict();
+                    e = AddressableAssetSettings.ModificationEvent.EntryRemoved;
+                    break;
+                default:
+                    throw new NotSupportedException($"Unhandled CollectionChangeType: {info.ChangeType}");
+            }
+
+            SetDirty(e, entry, true, true);
+        }
+
+        [Button, PropertyOrder(100)]
+        internal void SortEntries()
+        {
+            m_Entries.Sort((x, y) =>
+            {
+                // any empty address should be at the end
+                var emptyX = string.IsNullOrEmpty(x.address);
+                var emptyY = string.IsNullOrEmpty(y.address);
+                if (emptyX && !emptyY) return 1;
+                if (emptyY && !emptyX) return -1;
+
+                // Then sort by asset path
+                var pathX = x.ResolveAssetPath();
+                var pathY = y.ResolveAssetPath();
+                return string.Compare(pathX, pathY, StringComparison.Ordinal);
+            });
+
+            SetDirty(AddressableAssetSettings.ModificationEvent.GroupModified, this, true, true);
         }
     }
 }

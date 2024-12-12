@@ -1,10 +1,11 @@
-#if UNITY_EDITOR
 using System;
+using UnityEngine;
+using UnityEngine.AddressableAssets.AsyncOperations;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;
 
-namespace UnityEngine.AddressableAssets.AsyncOperations
+namespace UnityEditor.AddressableAssets
 {
     class EditorSceneOp : IAssetOp<Scene>
     {
@@ -12,14 +13,10 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
         Scene _scene;
         Action<Scene> _onComplete;
 
-        public EditorSceneOp(string path)
+        public EditorSceneOp(AssetGUID guid)
         {
-            if (!path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) && !path.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
-                path = "Assets/" + path;
-            if (path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase) == -1)
-                path += ".unity";
-
-            _op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
+            var path = AssetDatabase.GUIDToAssetPath(guid.ToString());
+            _op = SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
             _op.completed += OnComplete;
             var scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             AsyncOpPayloads.SetScene(_op, scene);
@@ -100,4 +97,3 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             => AddOnComplete(obj => onComplete(this, obj, payload));
     }
 }
-#endif

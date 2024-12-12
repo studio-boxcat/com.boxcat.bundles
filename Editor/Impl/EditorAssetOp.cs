@@ -1,13 +1,13 @@
 #if UNITY_EDITOR
 using System;
 using System.Threading.Tasks;
-using UnityEditor;
+using UnityEngine.AddressableAssets.AsyncOperations;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets.AsyncOperations
+namespace UnityEditor.AddressableAssets
 {
-    class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : Object
+    class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : UnityEngine.Object
     {
         readonly string _path;
         readonly DateTime _loadTime;
@@ -23,7 +23,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             if (loadDelay == 0)
             {
                 LoadImmediate();
-                Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
+                Assert.IsNotNull(_result, $"Failed to load asset: path={path}");
                 return;
             }
 
@@ -75,7 +75,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             }
             catch (Exception e)
             {
-                L.E("[EditorAssetOp] Failed to load asset at path: " + _path);
+                L.E("[EditorAssetOp] Failed to load asset: path=" + _path);
                 L.E(e);
                 throw;
             }
@@ -89,7 +89,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
         {
             if (TryGetResult(out var result))
             {
-                Assert.IsNotNull(result, $"Failed to load asset at path: {_path}");
+                Assert.IsNotNull(result, $"Failed to load asset: path={_path}");
                 onComplete.SafeInvoke(result);
                 return;
             }
@@ -105,9 +105,9 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
 
         static float GetDelay()
         {
-            var noDelay = Random.value < 0.05f; // 5% chance of no delay.
+            var noDelay = UnityEngine.Random.value < 0.05f; // 5% chance of no delay.
             if (noDelay) return 0f;
-            var loadDelay = Random.Range(0, 0.3f); // 0s - 0.3s delay.
+            var loadDelay = UnityEngine.Random.Range(0, 0.3f); // 0s - 0.3s delay.
             return loadDelay;
         }
     }

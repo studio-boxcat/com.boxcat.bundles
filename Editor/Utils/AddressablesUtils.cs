@@ -20,5 +20,26 @@ namespace UnityEditor.AddressableAssets
                 return false;
             }
         }
+
+        internal static T Load<T>(AssetGUID guid) where T : Object
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid.Value);
+            return AssetDatabase.LoadAssetAtPath<T>(path);
+        }
+
+        internal static string ResolveAssetPath(this AddressableAssetEntry entry)
+        {
+            return AssetDatabase.GUIDToAssetPath(entry.guid.Value);
+        }
+
+        internal static bool StartsWithOrdinal(this string str1, string str2)
+        {
+            return str1.StartsWith(str2, System.StringComparison.Ordinal);
+        }
+
+        internal static bool EndsWithOfOrdinal(this string str, string value)
+        {
+            return str.EndsWith(value, System.StringComparison.Ordinal);
+        }
     }
 }

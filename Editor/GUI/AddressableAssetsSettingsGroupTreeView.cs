@@ -162,18 +162,6 @@ namespace UnityEditor.AddressableAssets.GUI
                     children.Add(c);
             }
 
-            kids.Sort((x, y) =>
-            {
-                var a = x.entry;
-                var b = y.entry;
-                // any empty address should be at the end
-                if (string.IsNullOrEmpty(a.address) && !string.IsNullOrEmpty(b.address))
-                    return 1;
-                if (string.IsNullOrEmpty(b.address) && !string.IsNullOrEmpty(a.address))
-                    return -1;
-                // Then sort by asset path
-                return string.Compare(a.AssetPath, b.AssetPath, StringComparison.Ordinal);
-            });
             foreach (var kid in kids)
                 children.Add(kid);
 
@@ -197,7 +185,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 return true;
             if (aeItem.entry == null)
                 return false;
-            if (aeItem.entry.AssetPath.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (aeItem.assetPath.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
                 return true;
 
             return false;
@@ -283,7 +271,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 case ColumnId.Path:
                     if (item.entry != null && Event.current.type == EventType.Repaint)
                     {
-                        var path = item.entry.AssetPath;
+                        var path = item.assetPath;
                         if (string.IsNullOrEmpty(path))
                             path = "Missing File";
                         m_LabelStyle.Draw(cellRect, path, false, false, args.selected, args.focused);
@@ -424,7 +412,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 Object o = null;
                 if (item.entry != null)
-                    o = AssetDatabase.LoadAssetAtPath<Object>(item.entry.AssetPath);
+                    o = item.entry.MainAsset;
                 else if (item.group != null)
                     o = item.group;
 
@@ -489,12 +477,8 @@ namespace UnityEditor.AddressableAssets.GUI
                 var group = selectedNodes.First().group;
                 if (!group.Default)
                     menu.AddItem(new GUIContent("Remove Group(s)"), false, RemoveGroup, selectedNodes);
-                if (selectedNodes.Count == 1)
-                {
-                    if (!group.Default)
-                        menu.AddItem(new GUIContent("Set as Default"), false, SetGroupAsDefault, selectedNodes);
+                if (selectedNodes.Count is 1)
                     menu.AddItem(new GUIContent("Inspect Group Settings"), false, GoToGroupAsset, selectedNodes);
-                }
             }
             else if (isEntry)
             {
@@ -527,18 +511,6 @@ namespace UnityEditor.AddressableAssets.GUI
         internal void CreateNewGroup()
         {
             m_Editor.settings.CreateGroup(false);
-            Reload();
-        }
-
-        internal void SetGroupAsDefault(object context)
-        {
-            List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
-            if (selectedNodes == null || selectedNodes.Count == 0)
-                return;
-            var group = selectedNodes.First().group;
-            if (group == null)
-                return;
-            m_Editor.settings.DefaultGroup = group;
             Reload();
         }
 
@@ -874,6 +846,7 @@ namespace UnityEditor.AddressableAssets.GUI
     {
         public AddressableAssetEntry entry;
         public AddressableAssetGroup group;
+        public string assetPath;
         public Texture2D assetIcon;
         public bool isRenaming;
 
@@ -882,7 +855,8 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             entry = e;
             group = null;
-            assetIcon = entry == null ? null : AssetDatabase.GetCachedIcon(e.AssetPath) as Texture2D;
+            assetPath = e is not null ? e.ResolveAssetPath() : "";
+            assetIcon = assetPath is not "" ? AssetDatabase.GetCachedIcon(assetPath) as Texture2D : null;
             isRenaming = false;
         }
 

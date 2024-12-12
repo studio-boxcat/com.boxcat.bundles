@@ -200,7 +200,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 return new AssetBundleBuild
                 {
                     assetBundleName = BundleKey.Create(group.Name, suffix).GetBuildName(),
-                    assetNames = assets.Select(e => e.AssetPath).ToArray(),
+                    assetNames = assets.Select(e => e.ResolveAssetPath()).ToArray(),
                     addressableNames = assets.Select(e => AddressUtils.Hash(e.address).Name()).ToArray()
                 };
             }

@@ -32,15 +32,15 @@ namespace UnityEditor.AddressableAssets
         }
 
 
-        readonly PathMap _pathMap;
+        readonly GuidMap _guidMap;
         readonly AddressableAssetSettings _settings;
         bool _dirty;
 
 
         public EditorAddressablesImpl(AddressableAssetSettings settings)
         {
-            _pathMap = new PathMap();
-            _pathMap.RebuildInternalData(settings.groups);
+            _guidMap = new GuidMap();
+            _guidMap.RebuildInternalData(settings.groups);
             _settings = settings;
             _settings.OnModification += Settings_OnModification;
         }
@@ -48,24 +48,25 @@ namespace UnityEditor.AddressableAssets
         public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object
         {
             RebuildInternalData();
-            return new EditorAssetOp<TObject>(_pathMap[address]);
+            var path = AssetDatabase.GUIDToAssetPath(_guidMap[address].Value);
+            return new EditorAssetOp<TObject>(path);
         }
 
         public TObject LoadAsset<TObject>(string address) where TObject : Object
         {
-            return AssetDatabase.LoadAssetAtPath<TObject>(_pathMap[address]);
+            return AddressablesUtils.Load<TObject>(_guidMap[address]);
         }
 
         public IAssetOp<Scene> LoadSceneAsync(string address)
         {
             RebuildInternalData();
-            return new EditorSceneOp(_pathMap[address]);
+            return new EditorSceneOp(_guidMap[address]);
         }
 
         void RebuildInternalData()
         {
             if (_dirty is false) return;
-            _pathMap.RebuildInternalData(_settings.groups);
+            _guidMap.RebuildInternalData(_settings.groups);
             _dirty = false;
         }
 
@@ -85,13 +86,13 @@ namespace UnityEditor.AddressableAssets
             }
         }
 
-        class PathMap
+        class GuidMap
         {
             readonly Dictionary<string, AddressableAssetEntry> _addressToEntry = new();
 
-            public string this[string address] => Map(address);
+            public AssetGUID this[string address] => Map(address);
 
-            string Map(string address)
+            AssetGUID Map(string address)
             {
                 Assert.IsNotNull(address, "Address cannot be null");
                 Assert.IsFalse(string.IsNullOrEmpty(address), "Address cannot be empty");
@@ -100,7 +101,7 @@ namespace UnityEditor.AddressableAssets
                 Assert.IsTrue(found, "Address not found: " + address);
                 Assert.AreEqual(address, e.address, $"Address mismatch: {address} != {e.address}");
 
-                return e.AssetPath;
+                return e.guid;
             }
 
             public void RebuildInternalData(List<AddressableAssetGroup> groups)

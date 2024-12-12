@@ -17,8 +17,9 @@ namespace UnityEditor.AddressableAssets.Settings
         string m_GUID;
         public AssetGUID guid => (AssetGUID) m_GUID;
 
-        [SerializeField, DisplayAsString]
+        [SerializeField, HideInInspector]
         string m_Address;
+        [ShowInInspector, DelayedProperty]
         public string address
         {
             get => m_Address;
@@ -27,7 +28,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
         [NonSerialized]
         AddressableAssetGroup m_ParentGroup;
-
         /// <summary>
         /// The asset group that this entry belongs to.  An entry can only belong to a single group at a time.
         /// </summary>
@@ -69,8 +69,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
             m_ParentGroup = null;
-            AddressableAssetEntryTracker.Untrack(this);
-            Assert.IsNull(m_cachedAssetPath, "Failed to untrack asset path: " + guid);
         }
 
         internal void SetDirty(AddressableAssetSettings.ModificationEvent e, object o, bool postEvent)
@@ -78,26 +76,6 @@ namespace UnityEditor.AddressableAssets.Settings
             Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
             m_ParentGroup.SetDirty(e, o, postEvent, true);
         }
-
-        [NonSerialized]
-        string m_cachedAssetPath;
-
-        /// <summary>
-        /// The path of the asset.
-        /// </summary>
-        public string AssetPath
-        {
-            get
-            {
-                if (m_cachedAssetPath is not null)
-                    return m_cachedAssetPath;
-                AddressableAssetEntryTracker.Track(this);
-                Assert.IsNotNull(m_cachedAssetPath, "Failed to track asset path: " + guid);
-                return m_cachedAssetPath;
-            }
-        }
-
-        internal void ResetAssetPath(string path) => m_cachedAssetPath = path;
 
         private Object m_MainAsset;
 
@@ -109,12 +87,16 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get
             {
-                if (m_MainAsset != null)
-                    return m_MainAsset;
-                m_MainAsset = AssetDatabase.LoadAssetAtPath<Object>(AssetPath);
-                if (m_MainAsset is null)
-                    L.E("Failed to load asset: " + guid);
+                if (m_MainAsset) return m_MainAsset;
+                m_MainAsset = AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(m_GUID));
+                if (m_MainAsset is null) L.E("Failed to load asset: " + guid);
                 return m_MainAsset;
+            }
+
+            set
+            {
+                m_MainAsset = value;
+                SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, true);
             }
         }
 

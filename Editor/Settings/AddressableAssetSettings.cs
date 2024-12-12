@@ -5,7 +5,6 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -106,8 +105,6 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }
 
-        [SerializeField] AddressableAssetGroup m_DefaultGroup;
-
         int m_Version;
 
         /// <summary>
@@ -115,7 +112,8 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public int version => m_Version;
 
-        [SerializeField]
+        [SerializeField, InlineEditor]
+        [ListDrawerSettings(ShowFoldout = false)]
         List<AddressableAssetGroup> m_GroupAssets = new();
 
         /// <summary>
@@ -148,31 +146,6 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Create a new AddressableAssetSettings object.
-        /// </summary>
-        /// <param name="configFolder">The folder to store the settings object.</param>
-        /// <param name="configName">The name of the settings object.</param>
-        /// <returns></returns>
-        public static AddressableAssetSettings Create(string configFolder, string configName)
-        {
-            var path = configFolder + "/" + configName + ".asset";
-            var aa = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(path);
-            if (aa != null) return aa;
-
-            aa = CreateInstance<AddressableAssetSettings>();
-            aa.name = configName;
-            // TODO: Uncomment after initial opt-in testing period
-            //aa.ContiguousBundles = true;
-
-            Directory.CreateDirectory(configFolder);
-            AssetDatabase.CreateAsset(aa, path);
-            aa = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(path);
-            AssetDatabase.SaveAssets();
-
-            return aa;
-        }
-
-        /// <summary>
         /// Find asset group by functor.
         /// </summary>
         /// <param name="func">The functor to call on each group.  The first group that evaluates to true is returned.</param>
@@ -195,25 +168,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The default group.  This group is used when marking assets as addressable via the inspector.
         /// </summary>
-        public AddressableAssetGroup DefaultGroup
-        {
-            get
-            {
-                if (m_DefaultGroup == null)
-                    m_DefaultGroup = m_GroupAssets[0];
-                return m_DefaultGroup;
-            }
-            set
-            {
-                if (value == null)
-                    L.E("Unable to set null as the Default Group.  Default Groups must not be ReadOnly.");
-                else if (m_DefaultGroup != value)
-                {
-                    m_DefaultGroup = value;
-                    SetDirty(ModificationEvent.BatchModification, null, false, true);
-                }
-            }
-        }
+        public AddressableAssetGroup DefaultGroup => m_GroupAssets[0];
 
         private Cache<AssetGUID, AddressableAssetEntry> m_FindAssetEntryCache = null;
 
@@ -419,6 +374,13 @@ namespace UnityEditor.AddressableAssets.Settings
                         result.AddError("A scene from the EditorBuildScenes list has been marked as addressable: " + e.address);
                 }
             }
+        }
+
+        [Button, PropertyOrder(100)]
+        void SortAllEntries()
+        {
+            foreach (var group in groups)
+                group.SortEntries();
         }
     }
 }
