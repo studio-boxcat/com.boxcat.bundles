@@ -5,7 +5,6 @@ using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Serialization;
 using Assert = UnityEngine.Assertions.Assert;
 
 namespace UnityEditor.AddressableAssets
@@ -32,10 +31,9 @@ namespace UnityEditor.AddressableAssets
     [Serializable]
     public class AddressableAssetGroup : ScriptableObject
     {
-        [FormerlySerializedAs("m_Settings")]
         [SerializeField, ReadOnly, PropertyOrder(0)]
-        AddressableCatalog _m_Catalog;
-        public AddressableCatalog Catalog => _m_Catalog;
+        AddressableCatalog m_Catalog;
+        public AddressableCatalog Catalog => m_Catalog;
 
         [SerializeField, HideInInspector]
         BundlePackingMode m_BundleMode;
@@ -126,7 +124,7 @@ namespace UnityEditor.AddressableAssets
 
         internal void SetUp(AddressableCatalog catalog, string groupName)
         {
-            _m_Catalog = catalog;
+            m_Catalog = catalog;
             name = groupName;
         }
 
