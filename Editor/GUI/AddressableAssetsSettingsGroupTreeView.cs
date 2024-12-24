@@ -380,7 +380,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 Assert.IsNotNull(args.newName, "args.newName is null");
                 if (item.entry != null)
                 {
-                    item.entry.address = args.newName;
+                    item.entry.SetAddress(args.newName);
                 }
                 else if (item.group != null)
                 {

@@ -2,7 +2,6 @@ using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Util;
-using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
@@ -23,7 +22,7 @@ namespace UnityEditor.AddressableAssets
         public string address
         {
             get => m_Address;
-            set => SetAddress(value);
+            private set => SetAddress(value);
         }
 
         [NonSerialized]
@@ -67,14 +66,14 @@ namespace UnityEditor.AddressableAssets
 
         internal void InternalEvict()
         {
-            Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
-            m_ParentGroup = null;
+            if (!m_ParentGroup) L.E("Entry is already evicted.");
+            else m_ParentGroup = null;
         }
 
         internal void SetDirty(AddressableCatalog.ModificationEvent e, object o, bool postEvent)
         {
-            Assert.IsNotNull(m_ParentGroup, "Entry is already evicted.");
-            m_ParentGroup.SetDirty(e, o, postEvent, true);
+            if (!m_ParentGroup) L.E("No parent group set.");
+            else m_ParentGroup.SetDirty(e, o, postEvent, true);
         }
 
         private Object m_MainAsset;
@@ -88,14 +87,22 @@ namespace UnityEditor.AddressableAssets
             get
             {
                 if (m_MainAsset) return m_MainAsset;
+                if (string.IsNullOrEmpty(m_GUID)) return null;
                 m_MainAsset = AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(m_GUID));
                 if (m_MainAsset is null) L.E("Failed to load asset: " + guid);
                 return m_MainAsset;
             }
 
-            set
+            private set
             {
                 m_MainAsset = value;
+
+                if (value)
+                {
+                    m_GUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
+                    if (string.IsNullOrEmpty(m_Address)) m_Address = value.name; // if address is not set, default to asset name
+                }
+
                 SetDirty(AddressableCatalog.ModificationEvent.EntryModified, this, true);
             }
         }
