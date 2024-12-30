@@ -244,13 +244,4 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             base.ClearAnalysis();
         }
     }
-
-    [InitializeOnLoad]
-    class RegisterCheckBundleDupeDependencies
-    {
-        static RegisterCheckBundleDupeDependencies()
-        {
-            AnalyzeSystem.RegisterNewRule<CheckBundleDupeDependencies>();
-        }
-    }
 }

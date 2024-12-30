@@ -32,14 +32,4 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             return resourcePaths.ToArray();
         }
     }
-
-
-    [InitializeOnLoad]
-    class RegisterCheckResourcesDupeDependencies
-    {
-        static RegisterCheckResourcesDupeDependencies()
-        {
-            AnalyzeSystem.RegisterNewRule<CheckResourcesDupeDependencies>();
-        }
-    }
 }

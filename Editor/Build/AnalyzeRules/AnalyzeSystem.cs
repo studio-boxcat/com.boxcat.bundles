@@ -16,41 +16,27 @@ namespace UnityEditor.AddressableAssets.Build
     [Serializable]
     static class AnalyzeSystem
     {
-        /// <summary>
-        /// Method used to register any custom AnalyzeRules with the AnalyzeSystem.  This replaces calling into the AnalyzeWindow
-        ///  directly to remove logic from the GUI.  The recommended pattern is to create
-        /// your rules like so:
-        /// <code>
-        ///   class MyRule : AnalyzeRule {}
-        ///   [InitializeOnLoad]
-        ///   class RegisterMyRule
-        ///   {
-        ///       static RegisterMyRule()
-        ///       {
-        ///           AnalyzeSystem.RegisterNewRule&lt;MyRule&gt;();
-        ///       }
-        ///   }
-        /// </code>
-        /// </summary>
-        /// <typeparam name="TRule">The rule type.</typeparam>
-        public static void RegisterNewRule<TRule>() where TRule : AnalyzeRule, new()
-        {
-            foreach (var rule in Rules)
-            {
-                if (rule.GetType().Equals(typeof(TRule)))
-                    return;
-            }
-
-            Rules.Add(new TRule());
-        }
-
         internal const string AnalyzeRuleDataFolder = PathConfig.LibraryPath + "/AnalyzeData";
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
         internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
         internal static AddressableCatalog Catalog => AddressableCatalog.Default;
 
-        internal static List<AnalyzeRule> Rules { get; } = new List<AnalyzeRule>();
+        private static AnalyzeRule[] m_Rules;
+        internal static AnalyzeRule[] Rules
+        {
+            get
+            {
+                if (m_Rules is not null) return m_Rules;
+                return m_Rules = new AnalyzeRule[]
+                {
+                    new CheckBundleDupeDependencies(),
+                    new CheckSceneDupeDependencies(),
+                    new CheckResourcesDupeDependencies(),
+                    new BuildBundleLayout(),
+                };
+            }
+        }
 
         [SerializeField]
         private static AddressablesAnalyzeResultData m_AnalyzeData;

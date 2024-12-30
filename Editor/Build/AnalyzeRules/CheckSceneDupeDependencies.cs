@@ -39,13 +39,4 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             return scenes.ToArray();
         }
     }
-
-    [InitializeOnLoad]
-    class RegisterCheckSceneDupeDependencies
-    {
-        static RegisterCheckSceneDupeDependencies()
-        {
-            AnalyzeSystem.RegisterNewRule<CheckSceneDupeDependencies>();
-        }
-    }
 }

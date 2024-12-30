@@ -67,15 +67,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             base.ClearAnalysis();
         }
 
-        [InitializeOnLoad]
-        class RegisterBuildBundleLayout
-        {
-            static RegisterBuildBundleLayout()
-            {
-                AnalyzeSystem.RegisterNewRule<BuildBundleLayout>();
-            }
-        }
-
         static List<BuildBundleLayoutResultData> BuildResult(
             List<AssetBundleBuild> buildInput, IBundleWriteData buildOutput)
         {
