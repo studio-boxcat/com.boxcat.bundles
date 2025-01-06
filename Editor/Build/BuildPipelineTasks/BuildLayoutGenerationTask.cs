@@ -18,9 +18,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
     /// <summary>
     /// The BuildTask used to generate the bundle layout.
     /// </summary>
-    class BuildLayoutGenerationTask : IBuildTask
+    internal class BuildLayoutGenerationTask : IBuildTask
     {
-        const bool k_PrettyPrint = false;
+        private const bool k_PrettyPrint = false;
 
         internal static Action<string, BuildLayout> s_LayoutCompleteCallback;
 
@@ -31,45 +31,45 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
-        AddressableAssetsBuildContext m_AaBuildContext;
+        private AddressableAssetsBuildContext m_AaBuildContext;
 
         [InjectContext(ContextUsage.In)]
-        IBuildParameters m_Parameters;
+        private IBuildParameters m_Parameters;
 
         [InjectContext]
-        IBundleWriteData m_WriteData;
+        private IBundleWriteData m_WriteData;
 
         [InjectContext]
-        IBuildResults m_Results;
+        private IBuildResults m_Results;
 
         [InjectContext(ContextUsage.In)]
-        IDependencyData m_DependencyData;
+        private IDependencyData m_DependencyData;
 
         [InjectContext(ContextUsage.In)]
-        IObjectDependencyData m_ObjectDependencyData;
+        private IObjectDependencyData m_ObjectDependencyData;
 
         [InjectContext(ContextUsage.In)]
-        IBundleBuildResults m_BuildBundleResults;
+        private IBundleBuildResults m_BuildBundleResults;
 #pragma warning restore 649
 
-        static string GetLayoutFilePathForFormat()
+        private static string GetLayoutFilePathForFormat()
         {
             return $"{PathConfig.LibraryPath}buildlayout.txt";
         }
 
-        static string TimeStampedReportPath(DateTime now)
+        private static string TimeStampedReportPath(DateTime now)
         {
             var timestamp = $"{now.Year:D4}.{now.Month:D2}.{now.Day:D2}.{now.Hour:D2}.{now.Minute:D2}.{now.Second:D2}";
             return $"{PathConfig.BuildReportPath}buildlayout_{timestamp}.json";
         }
 
-        static AssetBucket GetOrCreate(Dictionary<AssetId, AssetBucket> buckets, AssetId asset)
+        private static AssetBucket GetOrCreate(Dictionary<AssetId, AssetBucket> buckets, AssetId asset)
         {
             return buckets.TryGetValue(asset, out var bucket) ? bucket
                 : buckets[asset] = new AssetBucket(asset);
         }
 
-        class AssetBucket
+        private class AssetBucket
         {
             public AssetId guid;
             public bool isFilePathBucket => guid.IsPath;
@@ -104,13 +104,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
         }
 
-        static AssetType GetSceneObjectType(string name)
+        private static AssetType GetSceneObjectType(string name)
         {
             return Enum.TryParse<AssetType>(name, true, out var rst)
                 ? rst : AssetType.SceneObject;
         }
 
-        static ulong GetFileSizeFromPath(string path, out bool success)
+        private static ulong GetFileSizeFromPath(string path, out bool success)
         {
             var fileInfo = new FileInfo(path);
             if (fileInfo.Exists)
@@ -659,7 +659,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return layout;
         }
 
-        void CorrelateBundleToAssetGroup(BuildLayout layout, BuildLayout.Bundle b, LayoutLookupTables lookup, AddressableAssetsBuildContext aaContext)
+        private void CorrelateBundleToAssetGroup(BuildLayout layout, BuildLayout.Bundle b, LayoutLookupTables lookup, AddressableAssetsBuildContext aaContext)
         {
             if (aaContext.bundleToAssetGroup.TryGetValue(b.Key, out _))
             {
@@ -681,7 +681,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 L.W($"AssetBundle {b.Key} from Addressable Group \"{b.Group.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
         }
 
-        void PostProcessBundleData(LayoutLookupTables lookup)
+        private void PostProcessBundleData(LayoutLookupTables lookup)
         {
             var rootBundles = new HashSet<BuildLayout.Bundle>(lookup.Bundles.Values);
             foreach (var b in lookup.Bundles.Values)
@@ -761,7 +761,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
         }
 
-        void ApplyAddressablesInformationToExplicitAssets(BuildLayout layout, LayoutLookupTables lookup)
+        private void ApplyAddressablesInformationToExplicitAssets(BuildLayout layout, LayoutLookupTables lookup)
         {
             foreach (var bundle in BuildLayoutHelpers.EnumerateBundles(layout))
             {
@@ -802,7 +802,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
         }
 
-        void GenerateBundleDependencyAndEfficiencyInformation(BuildLayout.Bundle b, HashSet<BuildLayout.Bundle> rootBundles)
+        private void GenerateBundleDependencyAndEfficiencyInformation(BuildLayout.Bundle b, HashSet<BuildLayout.Bundle> rootBundles)
         {
             b.ExpandedDependencyFileSize = 0;
             b.DependencyFileSize = 0;
@@ -822,7 +822,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             b.SerializeBundleToBundleDependency();
         }
 
-        void AddImplicitAssetsToLayout(LayoutLookupTables lookup, BuildLayout layout)
+        private void AddImplicitAssetsToLayout(LayoutLookupTables lookup, BuildLayout layout)
         {
             foreach (var pair in lookup.UsedImplicits)
             {

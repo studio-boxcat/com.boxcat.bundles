@@ -26,7 +26,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             IsPath = false;
         }
 
-        AssetId(string path)
+        private AssetId(string path)
         {
             Value = path;
             IsPath = true;

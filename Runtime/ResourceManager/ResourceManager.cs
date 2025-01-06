@@ -8,13 +8,13 @@ namespace UnityEngine.AddressableAssets
     /// <summary>
     /// Entry point for ResourceManager API
     /// </summary>
-    class AddressablesImpl : IAddressablesImpl
+    internal class AddressablesImpl : IAddressablesImpl
     {
-        readonly ResourceCatalog _catalog;
-        readonly AssetBundleLoader _loader;
-        readonly BundledAssetProvider _bundledAssetProvider = new();
-        readonly SceneProvider _sceneProvider = new();
-        readonly List<AssetOpBlock> _opBlockPool = new();
+        private readonly ResourceCatalog _catalog;
+        private readonly AssetBundleLoader _loader;
+        private readonly BundledAssetProvider _bundledAssetProvider = new();
+        private readonly SceneProvider _sceneProvider = new();
+        private readonly List<AssetOpBlock> _opBlockPool = new();
 
 
         public AddressablesImpl(ResourceCatalog catalog)
@@ -44,7 +44,7 @@ namespace UnityEngine.AddressableAssets
             return new AssetOp<Scene>(b);
         }
 
-        AssetOpBlock GetOpBlock(string address, IResourceProvider provider)
+        private AssetOpBlock GetOpBlock(string address, IResourceProvider provider)
         {
             var count = _opBlockPool.Count;
 

@@ -4,7 +4,7 @@ using UnityEngine.Networking;
 
 namespace UnityEngine.AddressableAssets.Util
 {
-    static class ExtensionMethods
+    internal static class ExtensionMethods
     {
         public static void SafeInvoke<T>(this Action<T> callback, T arg)
         {

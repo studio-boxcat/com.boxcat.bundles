@@ -6,9 +6,9 @@ using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
-    class AssetBundleLoader
+    internal class AssetBundleLoader
     {
-        class AssetBundleResolveContext
+        private class AssetBundleResolveContext
         {
             // If context reference equal to this, it means the asset bundle is fully resolved.
             public static readonly AssetBundleResolveContext Done = new();
@@ -18,12 +18,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             public List<(Action<AssetBundle, object>, object)> Callbacks;
         }
 
-        readonly AssetBundle[] _bundles;
-        readonly AssetBundleResolveContext[] _contexts;
-        readonly Dictionary<AssetBundleId, (AssetBundleCreateRequest Request, List<AssetBundleResolveContext> Requesters)> _requests = new();
-        readonly Dictionary<AssetBundleCreateRequest, AssetBundleId> _reqToBundle = new();
-        readonly List<AssetBundleResolveContext> _contextPool = new();
-        readonly List<List<AssetBundleResolveContext>> _contextListPool = new();
+        private readonly AssetBundle[] _bundles;
+        private readonly AssetBundleResolveContext[] _contexts;
+        private readonly Dictionary<AssetBundleId, (AssetBundleCreateRequest Request, List<AssetBundleResolveContext> Requesters)> _requests = new();
+        private readonly Dictionary<AssetBundleCreateRequest, AssetBundleId> _reqToBundle = new();
+        private readonly List<AssetBundleResolveContext> _contextPool = new();
+        private readonly List<List<AssetBundleResolveContext>> _contextListPool = new();
 
 
         public AssetBundleLoader(int bundleCount)
@@ -177,7 +177,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             }
         }
 
-        void LoadAssetBundle(AssetBundleId bundleId, AssetBundleResolveContext ctx)
+        private void LoadAssetBundle(AssetBundleId bundleId, AssetBundleResolveContext ctx)
         {
             Assert.AreNotEqual(AssetBundleResolveContext.Done, ctx, "Invalid context");
 
@@ -259,9 +259,9 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             Assert.IsFalse(_requests.Values.Any(x => x.Requesters.Contains(ctx)), "AssetBundleResolveContext still in the list");
         }
 
-        readonly Action<AsyncOperation> _onLoaded;
+        private readonly Action<AsyncOperation> _onLoaded;
 
-        void OnLoaded(AsyncOperation op)
+        private void OnLoaded(AsyncOperation op)
         {
             Assert.IsTrue(op.isDone, "Operation is not done");
             var req = (AssetBundleCreateRequest) op;
@@ -304,7 +304,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             ReturnRequesters(requesters);
         }
 
-        void OnResolved(AssetBundleResolveContext ctx)
+        private void OnResolved(AssetBundleResolveContext ctx)
         {
             L.I($"[AssetBundleLoader] OnResolved: {ctx.BundleId.Name()}");
 
@@ -342,7 +342,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             ReturnResolveContext(ctx);
         }
 
-        static AssetBundle ReadAssetBundle(AssetBundleId bundleId)
+        private static AssetBundle ReadAssetBundle(AssetBundleId bundleId)
         {
             var path = PathConfig.GetAssetBundleLoadPath(bundleId);
             var bundle = AssetBundle.LoadFromFile(path);
@@ -352,7 +352,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             return bundle;
         }
 
-        static AssetBundleCreateRequest ReadAssetBundleAsync(AssetBundleId bundleId)
+        private static AssetBundleCreateRequest ReadAssetBundleAsync(AssetBundleId bundleId)
         {
             var path = PathConfig.GetAssetBundleLoadPath(bundleId);
             var op = AssetBundle.LoadFromFileAsync(path);
@@ -377,7 +377,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         }
 
 #if DEBUG
-        static readonly List<AssetBundleCreateRequest> _debug_AllRequests = new();
+        private static readonly List<AssetBundleCreateRequest> _debug_AllRequests = new();
 
         public static void Debug_UnloadAllAssetBundles()
         {
@@ -394,7 +394,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         }
 #endif
 
-        AssetBundleResolveContext RentResolveContext(AssetBundleId bundleId)
+        private AssetBundleResolveContext RentResolveContext(AssetBundleId bundleId)
         {
             var count = _contextPool.Count;
             if (count is 0)
@@ -416,14 +416,14 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             return ctx;
         }
 
-        void ReturnResolveContext(AssetBundleResolveContext ctx)
+        private void ReturnResolveContext(AssetBundleResolveContext ctx)
         {
             Assert.AreEqual(0, ctx.Reqs.Count, "AssetBundleResolveContext not reset");
             Assert.AreEqual(0, ctx.Callbacks.Count, "AssetBundleResolveContext not reset");
             _contextPool.Add(ctx);
         }
 
-        List<AssetBundleResolveContext> RentRequesters()
+        private List<AssetBundleResolveContext> RentRequesters()
         {
             var count = _contextListPool.Count;
             if (count is 0) return new List<AssetBundleResolveContext>();
@@ -434,7 +434,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             return list;
         }
 
-        void ReturnRequesters(List<AssetBundleResolveContext> list)
+        private void ReturnRequesters(List<AssetBundleResolveContext> list)
         {
             Assert.AreEqual(0, list.Count, "Requesters list not reset");
             _contextListPool.Add(list);

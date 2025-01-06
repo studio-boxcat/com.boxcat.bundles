@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    class AssetSettingsAnalyzeTreeView : TreeView
+    internal class AssetSettingsAnalyzeTreeView : TreeView
     {
         private int m_CurrentDepth;
 
@@ -122,7 +122,7 @@ namespace UnityEditor.AddressableAssets.GUI
             UpdateSelections(selectedIds);
         }
 
-        void UpdateSelections(IList<int> selectedIds)
+        private void UpdateSelections(IList<int> selectedIds)
         {
             var allSelectedRuleContainers = (from id in selectedIds
                 let ruleContainer = FindItem(id, rootItem) as AnalyzeRuleContainerTreeViewItem
@@ -241,7 +241,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private readonly Dictionary<int, AnalyzeResultsTreeViewItem> hashToAnalyzeResults = new Dictionary<int, AnalyzeResultsTreeViewItem>();
 
-        void BuildResults(TreeViewItem root, List<AnalyzeRule.AnalyzeResult> ruleResults)
+        private void BuildResults(TreeViewItem root, List<AnalyzeRule.AnalyzeResult> ruleResults)
         {
             hashToAnalyzeResults.Clear();
             int updateFrequency = Mathf.Max(ruleResults.Count / 10, 1);
@@ -316,32 +316,32 @@ namespace UnityEditor.AddressableAssets.GUI
             base.RowGUI(args);
         }
 
-        Texture2D m_ErrorIcon;
-        Texture2D m_WarningIcon;
-        Texture2D m_InfoIcon;
+        private Texture2D m_ErrorIcon;
+        private Texture2D m_WarningIcon;
+        private Texture2D m_InfoIcon;
 
-        Texture2D GetErrorIcon()
+        private Texture2D GetErrorIcon()
         {
             if (m_ErrorIcon == null)
                 FindMessageIcons();
             return m_ErrorIcon;
         }
 
-        Texture2D GetWarningIcon()
+        private Texture2D GetWarningIcon()
         {
             if (m_WarningIcon == null)
                 FindMessageIcons();
             return m_WarningIcon;
         }
 
-        Texture2D GetInfoIcon()
+        private Texture2D GetInfoIcon()
         {
             if (m_InfoIcon == null)
                 FindMessageIcons();
             return m_InfoIcon;
         }
 
-        void FindMessageIcons()
+        private void FindMessageIcons()
         {
             m_ErrorIcon = EditorGUIUtility.FindTexture("console.errorIcon");
             m_WarningIcon = EditorGUIUtility.FindTexture("console.warnicon");
@@ -349,7 +349,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
     }
 
-    class AnalyzeTreeViewItemBase : TreeViewItem
+    internal class AnalyzeTreeViewItemBase : TreeViewItem
     {
         private string baseDisplayName;
         private string currentDisplayName;
@@ -387,7 +387,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
     }
 
-    class AnalyzeResultsTreeViewItem : AnalyzeTreeViewItemBase
+    internal class AnalyzeResultsTreeViewItem : AnalyzeTreeViewItemBase
     {
         public MessageType severity { get; set; }
         public HashSet<AnalyzeRule.AnalyzeResult> results { get; }
@@ -438,7 +438,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        static UnityEngine.Object GetResultObject(string resultName)
+        private static UnityEngine.Object GetResultObject(string resultName)
         {
             int li = resultName.LastIndexOf(AnalyzeRule.kDelimiter);
             if (li >= 0)
@@ -471,7 +471,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
     }
 
-    class AnalyzeRuleContainerTreeViewItem : AnalyzeTreeViewItemBase
+    internal class AnalyzeRuleContainerTreeViewItem : AnalyzeTreeViewItemBase
     {
         internal AnalyzeRule analyzeRule;
 

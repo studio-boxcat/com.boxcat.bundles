@@ -20,10 +20,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
-        AddressableAssetsBuildContext m_AaBuildContext;
+        private AddressableAssetsBuildContext m_AaBuildContext;
 
         [InjectContext]
-        IBundleWriteData m_WriteData;
+        private IBundleWriteData m_WriteData;
 #pragma warning restore 649
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// Processes the Input data from the build and returns an organized struct of information, including dependencies and catalog loctions.
         /// </summary>
         /// <returns>An object that contains organized information about dependencies and catalog locations.</returns>
-        static void Process(
+        private static void Process(
             AddressableCatalog catalog,
             Dictionary<AssetGUID, List<BundleKey>> assetToFiles,
             out Dictionary<AssetGUID, EntryDef> entries,

@@ -6,8 +6,8 @@ namespace UnityEngine.AddressableAssets.Util
 {
     public static class AsyncOpPayloads
     {
-        static readonly Dictionary<int, object> _objData = new();
-        static readonly Dictionary<int, Scene> _sceneData = new();
+        private static readonly Dictionary<int, object> _objData = new();
+        private static readonly Dictionary<int, Scene> _sceneData = new();
 
         public static void SetData(AsyncOperation op, object payload)
         {

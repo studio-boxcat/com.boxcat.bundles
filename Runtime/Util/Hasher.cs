@@ -23,9 +23,9 @@ namespace UnityEngine.AddressableAssets.Util
         }
 
 #if DEBUG
-        static readonly Dictionary<uint, string> _debug_HashToStr = new();
+        private static readonly Dictionary<uint, string> _debug_HashToStr = new();
 
-        static void Debug_AddReverseHash(uint hash, string str)
+        private static void Debug_AddReverseHash(uint hash, string str)
         {
             if (_debug_HashToStr.TryGetValue(hash, out var existing))
             {

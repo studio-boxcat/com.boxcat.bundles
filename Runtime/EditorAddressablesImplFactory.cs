@@ -13,7 +13,7 @@ namespace UnityEngine.AddressableAssets
     public static class EditorAddressablesImplFactory
     {
         // To keep state after compilation, use SessionState instead of static bool.
-        static string _argument
+        private static string _argument
         {
             get => SessionState.GetString("EditorAddressablesImplFactory_Argument", "");
             set

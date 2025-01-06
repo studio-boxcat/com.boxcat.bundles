@@ -12,13 +12,13 @@ namespace UnityEditor.AddressableAssets.GUI
 
     internal class AddressableAssetEntryTreeView : TreeView
     {
-        AddressableAssetsSettingsGroupEditor m_Editor;
+        private AddressableAssetsSettingsGroupEditor m_Editor;
         internal string customSearchString = string.Empty;
-        string m_FirstSelectedGroup;
+        private string m_FirstSelectedGroup;
         private readonly Dictionary<AssetEntryTreeViewItem, bool> m_SearchedEntries = new();
         private bool m_ForceSelectionClear = false;
 
-        enum ColumnId
+        private enum ColumnId
         {
             Id,
             Type,
@@ -36,7 +36,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal TreeViewItem Root => rootItem;
 
-        void OnScenesChanged()
+        private void OnScenesChanged()
         {
             if (m_Editor.Catalog == null)
                 return;
@@ -133,7 +133,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return items;
         }
 
-        void SortChildren(TreeViewItem root)
+        private void SortChildren(TreeViewItem root)
         {
             if (!root.hasChildren)
                 return;
@@ -145,7 +145,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        void SortHierarchical(IList<TreeViewItem> children)
+        private void SortHierarchical(IList<TreeViewItem> children)
         {
             if (children == null)
                 return;
@@ -190,7 +190,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return false;
         }
 
-        void AddGroupChildrenBuild(AddressableAssetGroup group, TreeViewItem root)
+        private void AddGroupChildrenBuild(AddressableAssetGroup group, TreeViewItem root)
         {
             Assert.IsNotNull(group);
             var groupItem = new AssetEntryTreeViewItem(group, 0);
@@ -232,7 +232,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        GUIStyle m_LabelStyle;
+        private GUIStyle m_LabelStyle;
 
         protected override void RowGUI(RowGUIArgs args)
         {
@@ -257,7 +257,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        void CellGUI(Rect cellRect, AssetEntryTreeViewItem item, int column, ref RowGUIArgs args)
+        private void CellGUI(Rect cellRect, AssetEntryTreeViewItem item, int column, ref RowGUIArgs args)
         {
             CenterRectUsingSingleLineHeight(ref cellRect);
 
@@ -288,7 +288,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return new MultiColumnHeaderState(GetColumns());
         }
 
-        static MultiColumnHeaderState.Column[] GetColumns()
+        private static MultiColumnHeaderState.Column[] GetColumns()
         {
             var retVal = new[]
             {
@@ -347,7 +347,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return !string.IsNullOrEmpty(CheckForRename(item, true));
         }
 
-        AssetEntryTreeViewItem FindItemInVisibleRows(int id)
+        private AssetEntryTreeViewItem FindItemInVisibleRows(int id)
         {
             var rows = GetRows();
             foreach (var r in rows)
@@ -423,7 +423,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        bool m_ContextOnItem;
+        private bool m_ContextOnItem;
 
         protected override void ContextClicked()
         {
@@ -496,7 +496,7 @@ namespace UnityEditor.AddressableAssets.GUI
             menu.ShowAsContext();
         }
 
-        static void GoToGroupAsset(object context)
+        private static void GoToGroupAsset(object context)
         {
             if (context is not List<AssetEntryTreeViewItem> selectedNodes || selectedNodes.Count == 0)
                 return;
@@ -669,7 +669,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return visualMode;
         }
 
-        DragAndDropVisualMode HandleDragAndDropItems(AssetEntryTreeViewItem target, DragAndDropArgs args)
+        private DragAndDropVisualMode HandleDragAndDropItems(AssetEntryTreeViewItem target, DragAndDropArgs args)
         {
             DragAndDropVisualMode visualMode = DragAndDropVisualMode.None;
 
@@ -743,7 +743,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return visualMode;
         }
 
-        DragAndDropVisualMode HandleDragAndDropPaths(AssetEntryTreeViewItem target, DragAndDropArgs args)
+        private DragAndDropVisualMode HandleDragAndDropPaths(AssetEntryTreeViewItem target, DragAndDropArgs args)
         {
             var containsGroup = false;
             foreach (var path in DragAndDrop.paths)
@@ -841,7 +841,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
     }
 
-    class AssetEntryTreeViewItem : TreeViewItem
+    internal class AssetEntryTreeViewItem : TreeViewItem
     {
         public AddressableAssetEntry entry;
         public AddressableAssetGroup group;

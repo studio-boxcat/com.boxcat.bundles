@@ -12,7 +12,7 @@ namespace UnityEditor.AddressableAssets
     /// <summary>
     /// Defines how bundles are created.
     /// </summary>
-    enum BundlePackingMode
+    internal enum BundlePackingMode
     {
         /// <summary>
         /// Creates a bundle for all non-scene entries and another for all scenes entries.
@@ -32,11 +32,11 @@ namespace UnityEditor.AddressableAssets
     public class AddressableAssetGroup : ScriptableObject
     {
         [SerializeField, ReadOnly, PropertyOrder(0)]
-        AddressableCatalog m_Catalog;
+        private AddressableCatalog m_Catalog;
         public AddressableCatalog Catalog => m_Catalog;
 
         [SerializeField, HideInInspector]
-        BundlePackingMode m_BundleMode;
+        private BundlePackingMode m_BundleMode;
         [ShowInInspector, PropertyOrder(1)]
         internal BundlePackingMode BundleMode
         {
@@ -52,9 +52,9 @@ namespace UnityEditor.AddressableAssets
         [SerializeField, LabelText("Entries"), PropertyOrder(2)]
         [TableList(AlwaysExpanded = true, ScrollViewHeight = 400)]
         [OnCollectionChanged(After = nameof(Entries_OnCollectionChanged_After))]
-        List<AddressableAssetEntry> m_Entries = new();
+        private List<AddressableAssetEntry> m_Entries = new();
 
-        bool m_EntriesInitialized;
+        private bool m_EntriesInitialized;
 
         public List<AddressableAssetEntry> entries
         {
@@ -69,7 +69,7 @@ namespace UnityEditor.AddressableAssets
         }
 
         [CanBeNull]
-        Dictionary<AssetGUID, AddressableAssetEntry> m_EntryMap;
+        private Dictionary<AssetGUID, AddressableAssetEntry> m_EntryMap;
 
         /// <summary>
         /// The group name.
@@ -174,7 +174,7 @@ namespace UnityEditor.AddressableAssets
             Catalog.SetDirty(modificationEvent, eventData, postEvent, false);
         }
 
-        void Entries_OnCollectionChanged_After(CollectionChangeInfo info)
+        private void Entries_OnCollectionChanged_After(CollectionChangeInfo info)
         {
             var entry = (AddressableAssetEntry) info.Value;
             AddressableCatalog.ModificationEvent e;

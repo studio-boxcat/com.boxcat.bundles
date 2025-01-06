@@ -15,7 +15,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// <summary>
     /// Base class for handling analyzing bundle rules tasks and checking dependencies
     /// </summary>
-    class BundleRuleBase : AnalyzeRule
+    internal class BundleRuleBase : AnalyzeRule
     {
         [NonSerialized]
         internal Dictionary<string, List<GUID>> m_ResourcesToDependencies = new();

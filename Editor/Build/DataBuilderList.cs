@@ -7,9 +7,9 @@ namespace UnityEditor.AddressableAssets.Build
     {
         public static IDataBuilder Builder => _builder_PackedMode;
 
-        const string _prefKey_AssetDatabase = "AddressableAssets:DataBuilderList:AssetDatabase";
+        private const string _prefKey_AssetDatabase = "AddressableAssets:DataBuilderList:AssetDatabase";
 
-        static IDataBuilder _editorCache;
+        private static IDataBuilder _editorCache;
         public static IDataBuilder Editor
         {
             get
@@ -20,9 +20,9 @@ namespace UnityEditor.AddressableAssets.Build
             }
         }
 
-        static readonly IDataBuilder _builder_PackedMode = new BuildScriptPackedMode();
-        static readonly IDataBuilder _builder_FastMode = new BuildScriptFastMode();
-        static readonly IDataBuilder _builder_PackedPlayMode = new BuildScriptPackedPlayMode();
+        private static readonly IDataBuilder _builder_PackedMode = new BuildScriptPackedMode();
+        private static readonly IDataBuilder _builder_FastMode = new BuildScriptFastMode();
+        private static readonly IDataBuilder _builder_PackedPlayMode = new BuildScriptPackedPlayMode();
 
 
         public static void UseAssetDatabaseForEditor(bool value)

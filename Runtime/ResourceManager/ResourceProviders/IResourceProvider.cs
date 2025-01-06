@@ -1,6 +1,6 @@
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
-    interface IResourceProvider
+    internal interface IResourceProvider
     {
         AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address);
         object GetResult(AsyncOperation op);

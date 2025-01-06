@@ -5,9 +5,9 @@ namespace UnityEditor.AddressableAssets
 {
     public partial class AddressableCatalog
     {
-        const string _key = "JvdB2Lb8";
+        private const string _key = "JvdB2Lb8";
 
-        static AddressableCatalog _default;
+        private static AddressableCatalog _default;
 
         public static AddressableCatalog Default
         {

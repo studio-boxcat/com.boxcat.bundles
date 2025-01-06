@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets
             return path.Contains("/Resources/", StringComparison.Ordinal);
         }
 
-        static readonly string[] _excludedExtensions = { ".cs", ".js", ".boo", ".exe", ".dll", ".meta", ".preset", ".asmdef" };
+        private static readonly string[] _excludedExtensions = { ".cs", ".js", ".boo", ".exe", ".dll", ".meta", ".preset", ".asmdef" };
 
         internal static bool IsPathValidForEntry(string path)
         {

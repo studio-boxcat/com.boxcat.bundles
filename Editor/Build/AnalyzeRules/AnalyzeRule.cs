@@ -9,7 +9,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     ///  a rule with the GUI window.
     /// </summary>
     [Serializable]
-    class AnalyzeRule
+    internal class AnalyzeRule
     {
         internal struct CustomContextMenu
         {
@@ -52,7 +52,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         public class AnalyzeResult
         {
             [SerializeField]
-            string m_ResultName;
+            private string m_ResultName;
 
             /// <summary>
             /// Name of result data.  This name uses AnalyzeRule.kDelimiter to signify breaks in the tree display.
@@ -64,7 +64,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             }
 
             [SerializeField]
-            MessageType m_Severity = MessageType.None;
+            private MessageType m_Severity = MessageType.None;
 
             /// <summary>
             /// Severity of rule result

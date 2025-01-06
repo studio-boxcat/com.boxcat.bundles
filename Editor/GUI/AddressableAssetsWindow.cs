@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    class AddressableAssetsWindow : EditorWindow
+    internal class AddressableAssetsWindow : EditorWindow
     {
         [SerializeField]
         internal AddressableAssetsSettingsGroupEditor m_GroupEditor;

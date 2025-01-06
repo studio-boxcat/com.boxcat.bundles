@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 {
-    class BuildBundleLayout : BundleRuleBase
+    internal class BuildBundleLayout : BundleRuleBase
     {
         /// <summary>
         /// Result data for assets included in the bundle layout
@@ -67,7 +67,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             base.ClearAnalysis();
         }
 
-        static List<BuildBundleLayoutResultData> BuildResult(
+        private static List<BuildBundleLayoutResultData> BuildResult(
             List<AssetBundleBuild> buildInput, IBundleWriteData buildOutput)
         {
             var result = new List<BuildBundleLayoutResultData>(buildInput.Count);

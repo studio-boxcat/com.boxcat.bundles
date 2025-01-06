@@ -3,7 +3,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
-    class BundledAssetProvider : IResourceProvider
+    internal class BundledAssetProvider : IResourceProvider
     {
         public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
         {

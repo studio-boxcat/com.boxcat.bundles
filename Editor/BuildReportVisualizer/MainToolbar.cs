@@ -6,12 +6,12 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    class MainToolbar : IAddressableView
+    internal class MainToolbar : IAddressableView
     {
-        BuildReportListView m_ReportsList;
+        private BuildReportListView m_ReportsList;
 
-        bool m_LeftPaneCollapsed = false;
-        bool m_RightPaneCollapse = false;
+        private bool m_LeftPaneCollapsed = false;
+        private bool m_RightPaneCollapse = false;
 
         internal MainToolbar(BuildReportListView reportsList)
         {

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace UnityEditor.AddressableAssets.GUI
 {
     [Serializable]
-    class AnalyzeRuleGUI
+    internal class AnalyzeRuleGUI
     {
         [SerializeField]
         private TreeViewState m_TreeState;

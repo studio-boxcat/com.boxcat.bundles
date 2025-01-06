@@ -60,9 +60,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
 
         internal BuildReportHelperConsumer m_HelperConsumer;
-        DetailsView m_DetailsView;
-        VisualTreeAsset m_TreeViewItem;
-        VisualTreeAsset m_TreeViewNavigableItem;
+        private DetailsView m_DetailsView;
+        private VisualTreeAsset m_TreeViewItem;
+        private VisualTreeAsset m_TreeViewNavigableItem;
 
         internal ContentView(BuildReportHelperConsumer helperConsumer, DetailsView detailsView)
         {
@@ -109,7 +109,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return null;
         }
 
-        readonly Dictionary<string, Type> m_NumericColumnNames = new Dictionary<string, Type>()
+        private readonly Dictionary<string, Type> m_NumericColumnNames = new Dictionary<string, Type>()
         {
             {BuildReportUtility.AssetsContentViewColSizePlusRefs, typeof(ulong)},
             {BuildReportUtility.AssetsContentViewColSizeUncompressed, typeof(ulong)},
@@ -280,12 +280,12 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
     }
 
-    interface IAddressablesBuildReportBundle
+    internal interface IAddressablesBuildReportBundle
     {
         public BuildLayout.Bundle Bundle { get; }
     }
 
-    interface IAddressablesBuildReportAsset
+    internal interface IAddressablesBuildReportAsset
     {
         public BuildLayout.ExplicitAsset ExplicitAsset { get; }
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; }

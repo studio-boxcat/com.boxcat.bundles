@@ -13,7 +13,7 @@ namespace UnityEditor.AddressableAssets
     /// </summary>
     public partial class AddressableCatalog : ScriptableObject, ISelfValidator
     {
-        class Cache<T1, T2>
+        private class Cache<T1, T2>
         {
             private readonly AddressableCatalog _m_Catalog;
             private readonly Dictionary<T1, T2> m_Data = new();
@@ -105,7 +105,7 @@ namespace UnityEditor.AddressableAssets
         /// </summary>
         public Action<AddressableCatalog, ModificationEvent, object> OnModification { get; set; }
 
-        int m_Version;
+        private int m_Version;
 
         /// <summary>
         /// Hash of the current catalog.  This value is recomputed if anything changes.
@@ -114,7 +114,7 @@ namespace UnityEditor.AddressableAssets
 
         [SerializeField, InlineEditor]
         [ListDrawerSettings(ShowFoldout = false)]
-        List<AddressableAssetGroup> m_GroupAssets = new();
+        private List<AddressableAssetGroup> m_GroupAssets = new();
 
         /// <summary>
         /// List of asset groups.
@@ -377,7 +377,7 @@ namespace UnityEditor.AddressableAssets
         }
 
         [Button, PropertyOrder(100)]
-        void SortAllEntries()
+        private void SortAllEntries()
         {
             foreach (var group in groups)
                 group.SortEntries();

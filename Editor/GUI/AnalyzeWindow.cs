@@ -41,12 +41,12 @@ namespace UnityEditor.AddressableAssets.GUI
             instance.Show();
         }
 
-        void OnEnable()
+        private void OnEnable()
         {
             m_AnalyzeEditor ??= new AnalyzeRuleGUI();
         }
 
-        void OnGUI()
+        private void OnGUI()
         {
             AddressableCatalog catalog = AddressableCatalog.Default;
             if (catalog == null)

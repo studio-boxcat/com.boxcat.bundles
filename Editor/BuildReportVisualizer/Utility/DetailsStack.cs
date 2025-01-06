@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static int Count => m_Stack.Count;
         public static Action<DetailsContents> OnPop;
         public static Action<DetailsContents> OnPush;
-        static Stack<DetailsContents> m_Stack = new Stack<DetailsContents>();
+        private static Stack<DetailsContents> m_Stack = new Stack<DetailsContents>();
 
         public static void Push(DetailsContents item)
         {

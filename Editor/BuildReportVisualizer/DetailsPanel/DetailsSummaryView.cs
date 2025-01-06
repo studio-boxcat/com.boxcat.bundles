@@ -6,12 +6,12 @@ using static UnityEditor.AddressableAssets.BuildReportVisualizer.BuildReportWind
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    class DetailsSummaryView
+    internal class DetailsSummaryView
     {
-        BuildReportWindow m_Window;
+        private BuildReportWindow m_Window;
         protected VisualElement m_DetailsSummary;
-        VisualTreeAsset m_DetailsPanelSummaryNavigableItem;
-        VisualTreeAsset m_DetailsPanelSummaryNavigableBundle;
+        private VisualTreeAsset m_DetailsPanelSummaryNavigableItem;
+        private VisualTreeAsset m_DetailsPanelSummaryNavigableBundle;
 
         internal DetailsSummaryView(VisualElement root, BuildReportWindow window)
         {
@@ -50,7 +50,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void DisplayBundleSummary(BuildLayout.Bundle bundle)
+        private void DisplayBundleSummary(BuildLayout.Bundle bundle)
         {
             if (bundle == null)
                 return;
@@ -143,7 +143,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DetailsSummary.Add(CreateHelpTextBox("This asset was pulled into the AssetBundle because one or more Addressable assets have references to it."));
         }
 
-        VisualElement CreateButtonRow(params Button[] buttons)
+        private VisualElement CreateButtonRow(params Button[] buttons)
         {
             VisualElement container = new VisualElement();
             container.style.flexDirection = FlexDirection.Row;
@@ -155,7 +155,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return container;
         }
 
-        VisualElement CreateHelpTextBox(string helpText)
+        private VisualElement CreateHelpTextBox(string helpText)
         {
             Foldout foldout = new Foldout();
             foldout.style.marginTop = new Length(10f, LengthUnit.Pixel);

@@ -392,11 +392,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         internal static class TimeAgo
         {
-            const int k_Second = 1;
-            const int k_Minute = 60 * k_Second;
-            const int k_Hour = 60 * k_Minute;
-            const int k_Day = 24 * k_Hour;
-            const int k_Month = 30 * k_Day;
+            private const int k_Second = 1;
+            private const int k_Minute = 60 * k_Second;
+            private const int k_Hour = 60 * k_Minute;
+            private const int k_Day = 24 * k_Hour;
+            private const int k_Month = 30 * k_Day;
             public static string GetString(DateTime dateTime)
             {
                 var ts = new TimeSpan(DateTime.UtcNow.Ticks - dateTime.ToUniversalTime().Ticks);

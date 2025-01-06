@@ -5,9 +5,9 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.AsyncOperations
 {
-    readonly struct CompleteCallback
+    internal readonly struct CompleteCallback
     {
-        readonly List<(object, object)> _callbacks;
+        private readonly List<(object, object)> _callbacks;
 
 
         public CompleteCallback(List<(object, object)> callbacks)

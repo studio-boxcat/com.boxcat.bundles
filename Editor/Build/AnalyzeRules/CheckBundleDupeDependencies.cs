@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// <summary>
     /// Rule class to check for duplicate bundle dependencies
     /// </summary>
-    class CheckBundleDupeDependencies : BundleRuleBase
+    internal class CheckBundleDupeDependencies : BundleRuleBase
     {
         /// <summary>
         /// Result for checking for duplicates
@@ -71,7 +71,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             return CheckForDuplicateDependencies(catalog);
         }
 
-        void RefreshDisplay()
+        private void RefreshDisplay()
         {
             var savedData = AnalyzeSystem.GetDataForRule<ExtraCheckBundleDupeData>(this);
             if (!savedData.ResultsInverted)
@@ -109,7 +109,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             return customItems;
         }
 
-        void InvertDisplay()
+        private void InvertDisplay()
         {
             List<AnalyzeResult> updatedResults = new List<AnalyzeResult>();
             foreach (var result in AnalyzeSystem.AnalyzeData.Data[ruleName])

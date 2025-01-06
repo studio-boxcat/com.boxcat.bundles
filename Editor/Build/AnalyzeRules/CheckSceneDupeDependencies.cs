@@ -6,7 +6,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// <summary>
     /// Rule class to check scene dependencies for duplicates
     /// </summary>
-    class CheckSceneDupeDependencies : BundleRuleBase
+    internal class CheckSceneDupeDependencies : BundleRuleBase
     {
         /// <inheritdoc />
         public override string ruleName => "Check Scene to Addressable Duplicate Dependencies";

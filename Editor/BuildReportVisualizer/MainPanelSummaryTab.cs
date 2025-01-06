@@ -11,9 +11,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public VisualElement tabRootElement;
         internal ScrollView scrollbarElement;
 
-        BuildReportWindow m_Window;
+        private BuildReportWindow m_Window;
 
-        class SummaryRow
+        private class SummaryRow
         {
             private TextElement m_LabelElement;
             private TextElement m_SizeElement;
@@ -44,7 +44,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        BuildReportHelperConsumer m_HelperConsumer;
+        private BuildReportHelperConsumer m_HelperConsumer;
 
         internal MainPanelSummaryTab(BuildReportWindow window, BuildReportHelperConsumer helperConsumer)
         {

@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    class AssetsViewBuildReportItem : IAddressablesBuildReportItem
+    internal class AssetsViewBuildReportItem : IAddressablesBuildReportItem
     {
         public string Name { get; set; }
 
@@ -87,7 +87,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    class AssetsViewTypeHeader : AssetsViewBuildReportItem
+    internal class AssetsViewTypeHeader : AssetsViewBuildReportItem
     {
         public AssetsViewTypeHeader(string name)
         {
@@ -111,7 +111,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
 
-    class AssetsViewBuildReportBundle : AssetsViewBuildReportItem, IAddressablesBuildReportBundle
+    internal class AssetsViewBuildReportBundle : AssetsViewBuildReportItem, IAddressablesBuildReportBundle
     {
         public AssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
@@ -128,7 +128,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    class AssetsViewBuildReportUnrelatedAssets : AssetsViewBuildReportItem
+    internal class AssetsViewBuildReportUnrelatedAssets : AssetsViewBuildReportItem
     {
         public AssetsViewBuildReportUnrelatedAssets(ulong assetSize, int assetCount)
         {
@@ -139,7 +139,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    class AssetsViewBuildReportAsset : AssetsViewBuildReportItem, IAddressablesBuildReportAsset
+    internal class AssetsViewBuildReportAsset : AssetsViewBuildReportItem, IAddressablesBuildReportAsset
     {
         public List<BuildLayout.ExplicitAsset> InternallyReferencedAssets { get; }
 
@@ -148,7 +148,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public List<BuildLayout.DataFromOtherAsset> ImplicitDependencies { get; }
 
 
-        List<BuildLayout.ExplicitAsset> ReferencingAssets { get; }
+        private List<BuildLayout.ExplicitAsset> ReferencingAssets { get; }
 
 
         public AssetsViewBuildReportAsset(BuildLayout.ExplicitAsset asset)
@@ -191,7 +191,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
 
-    class AssetsContentView : ContentView
+    internal class AssetsContentView : ContentView
     {
         public AssetsContentView(BuildReportHelperConsumer helperConsumer, DetailsView detailsView)
             : base(helperConsumer, detailsView)
@@ -313,7 +313,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return roots;
         }
 
-        List<TreeViewItemData<AssetsViewBuildReportItem>> CreateChildrenOfAsset(AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
+        private List<TreeViewItemData<AssetsViewBuildReportItem>> CreateChildrenOfAsset(AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
         {
             var children = new List<TreeViewItemData<AssetsViewBuildReportItem>>();
 
@@ -324,7 +324,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return children;
         }
 
-        void PopulateInternallyReferencedEntries(List<TreeViewItemData<AssetsViewBuildReportItem>> children, AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
+        private void PopulateInternallyReferencedEntries(List<TreeViewItemData<AssetsViewBuildReportItem>> children, AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
         {
             foreach (var dep in asset.InternallyReferencedAssets)
             {
@@ -334,7 +334,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void PopulateExternallyReferencedEntries(List<TreeViewItemData<AssetsViewBuildReportItem>> children, AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
+        private void PopulateExternallyReferencedEntries(List<TreeViewItemData<AssetsViewBuildReportItem>> children, AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
         {
             Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> bundleToAssetList = new Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>>();
             foreach (var dep in asset.ExternallyReferencedAssets)
@@ -367,7 +367,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void PopulateImplicitEntries(List<TreeViewItemData<AssetsViewBuildReportItem>> children, AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
+        private void PopulateImplicitEntries(List<TreeViewItemData<AssetsViewBuildReportItem>> children, AssetsViewBuildReportAsset asset, ref int id, bool includeAllDependencies)
         {
             foreach (var dep in asset.ImplicitDependencies)
             {

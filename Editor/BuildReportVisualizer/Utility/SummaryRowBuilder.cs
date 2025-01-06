@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal class PotentialIssuesCard
     {
-        VisualElement m_Container;
+        private VisualElement m_Container;
 
         public PotentialIssuesCard(string text, Action viewButtonAction)
         {
@@ -52,8 +52,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
     internal class SummaryRowBuilder
     {
-        Foldout m_Container;
-        VisualElement m_TabRows;
+        private Foldout m_Container;
+        private VisualElement m_TabRows;
         public SummaryRowBuilder(string title)
         {
             m_Container = new Foldout();
@@ -131,7 +131,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return m_Container;
         }
 
-        void RegisterCopyTextToClipboardCallback(Label element)
+        private void RegisterCopyTextToClipboardCallback(Label element)
         {
             element.RegisterCallback<ContextClickEvent>((args) =>
             {

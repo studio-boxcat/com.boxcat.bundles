@@ -14,7 +14,7 @@ namespace UnityEditor.AddressableAssets.Build
     /// Static system to manage Analyze functionality.
     /// </summary>
     [Serializable]
-    static class AnalyzeSystem
+    internal static class AnalyzeSystem
     {
         internal const string AnalyzeRuleDataFolder = PathConfig.LibraryPath + "/AnalyzeData";
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";

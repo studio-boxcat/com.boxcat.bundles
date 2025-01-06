@@ -11,17 +11,17 @@ using UnityEngine.UIElements;
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     [Serializable]
-    class BuildReportListView : IAddressableView
+    internal class BuildReportListView : IAddressableView
     {
-        BuildReportWindow m_Window;
-        ListView m_ListView;
+        private BuildReportWindow m_Window;
+        private ListView m_ListView;
 
-        VisualTreeAsset m_ReportListItemTreeAsset;
+        private VisualTreeAsset m_ReportListItemTreeAsset;
 
         [SerializeField]
-        List<BuildReportListItem> m_BuildReportItems = new List<BuildReportListItem>();
+        private List<BuildReportListItem> m_BuildReportItems = new List<BuildReportListItem>();
 
-        static Dictionary<BuildTarget, string> s_PlatformIconClasses = new Dictionary<BuildTarget, string>();
+        private static Dictionary<BuildTarget, string> s_PlatformIconClasses = new Dictionary<BuildTarget, string>();
 
         [Serializable]
         internal class BuildReportListItem
@@ -78,7 +78,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_ListView.selectionChanged += items => OnItemSelected(items);
         }
 
-        static BuildLayout LoadLayout(string filePath)
+        private static BuildLayout LoadLayout(string filePath)
         {
             if (!File.Exists(filePath))
                 return null;
@@ -95,7 +95,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void CreateItem(VisualElement element, int index)
+        private void CreateItem(VisualElement element, int index)
         {
             BuildReportListItem reportListItem = m_BuildReportItems[index];
             var buildStatusImage = element.Q<Image>(BuildReportUtility.ReportsListItemBuildStatus);
@@ -127,14 +127,14 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }));
         }
 
-        static string GetPlatformIconClass(BuildTarget target)
+        private static string GetPlatformIconClass(BuildTarget target)
         {
             if (!s_PlatformIconClasses.ContainsKey(target))
                 s_PlatformIconClasses[target] = BuildReportUtility.GetIconClassName(target);
             return s_PlatformIconClasses[target];
         }
 
-        void OnItemSelected(IEnumerable<object> items)
+        private void OnItemSelected(IEnumerable<object> items)
         {
             var item = items.First() as BuildReportListItem;
             int index = m_BuildReportItems.IndexOf(item);
@@ -181,7 +181,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void AddReportFromFile(string filePath, ListView listView, bool logWarning, bool shouldRebuild)
+        private void AddReportFromFile(string filePath, ListView listView, bool logWarning, bool shouldRebuild)
         {
             string parsedFilePath = filePath.Replace("\\", "/");
             if (!ProjectConfigData.BuildReportFilePaths.Contains(parsedFilePath))

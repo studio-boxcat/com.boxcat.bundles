@@ -6,9 +6,9 @@ namespace UnityEngine.AddressableAssets
 {
     public readonly struct AssetBundleSpan
     {
-        readonly byte[] _data;
-        readonly ushort _start;
-        readonly ushort _count;
+        private readonly byte[] _data;
+        private readonly ushort _start;
+        private readonly ushort _count;
 
         public AssetBundleSpan(byte[] data, ushort start, ushort count)
         {
@@ -52,7 +52,7 @@ namespace UnityEngine.AddressableAssets
         }
     }
 
-    readonly struct ResourceCatalog
+    internal readonly struct ResourceCatalog
     {
         // AssetBundleCount: ushort
         // ResourceLocationCount: ushort
@@ -63,10 +63,10 @@ namespace UnityEngine.AddressableAssets
         //     AssetBundle: 1 byte
         //     Address: 3 bytes
         // AssetBundleDepData: byte[]
-        readonly byte[] _data;
-        readonly int _bundleCount;
-        readonly int _locStart; // uint*
-        readonly int _locEnd; // uint*
+        private readonly byte[] _data;
+        private readonly int _bundleCount;
+        private readonly int _locStart; // uint*
+        private readonly int _locEnd; // uint*
 
 
         public unsafe ResourceCatalog(byte[] data)

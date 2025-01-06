@@ -7,13 +7,13 @@ using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets
 {
-    class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : UnityEngine.Object
+    internal class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : UnityEngine.Object
     {
-        readonly string _path;
-        readonly DateTime _loadTime;
+        private readonly string _path;
+        private readonly DateTime _loadTime;
 
-        TObject _result;
-        Action<TObject> _onComplete;
+        private TObject _result;
+        private Action<TObject> _onComplete;
 
         public EditorAssetOp(string path)
         {
@@ -63,7 +63,7 @@ namespace UnityEditor.AddressableAssets
             return _result;
         }
 
-        void LoadImmediate()
+        private void LoadImmediate()
         {
             // LoadImmediate will be called twice if the Result property is called before the task is complete.
             if (_result is not null)
@@ -103,7 +103,7 @@ namespace UnityEditor.AddressableAssets
         public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object> onComplete, object payload)
             => AddOnComplete(obj => onComplete(this, obj, payload));
 
-        static float GetDelay()
+        private static float GetDelay()
         {
             var noDelay = UnityEngine.Random.value < 0.05f; // 5% chance of no delay.
             if (noDelay) return 0f;

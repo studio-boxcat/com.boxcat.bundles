@@ -10,12 +10,12 @@ using UnityEngine.SceneManagement;
 namespace UnityEditor.AddressableAssets
 {
     [UsedImplicitly]
-    class EditorAddressablesImpl : IAddressablesImpl
+    internal class EditorAddressablesImpl : IAddressablesImpl
     {
-        static readonly List<EditorAddressablesImpl> _cache = new();
+        private static readonly List<EditorAddressablesImpl> _cache = new();
 
         [EditorAddressablesImplFactory, UsedImplicitly]
-        static EditorAddressablesImpl CreateImpl([CanBeNull] AddressableCatalog catalog)
+        private static EditorAddressablesImpl CreateImpl([CanBeNull] AddressableCatalog catalog)
         {
             // Use default catalog if none provided.
             catalog ??= AddressableCatalog.Default;
@@ -31,9 +31,9 @@ namespace UnityEditor.AddressableAssets
         }
 
 
-        readonly GuidMap _guidMap;
-        readonly AddressableCatalog _catalog;
-        bool _dirty;
+        private readonly GuidMap _guidMap;
+        private readonly AddressableCatalog _catalog;
+        private bool _dirty;
 
 
         public EditorAddressablesImpl(AddressableCatalog catalog)
@@ -62,14 +62,14 @@ namespace UnityEditor.AddressableAssets
             return new EditorSceneOp(_guidMap[address]);
         }
 
-        void RebuildInternalData()
+        private void RebuildInternalData()
         {
             if (_dirty is false) return;
             _guidMap.RebuildInternalData(_catalog.groups);
             _dirty = false;
         }
 
-        void Settings_OnModification(AddressableCatalog catalog, AddressableCatalog.ModificationEvent evt, object arg3)
+        private void Settings_OnModification(AddressableCatalog catalog, AddressableCatalog.ModificationEvent evt, object arg3)
         {
             switch (evt)
             {
@@ -85,13 +85,13 @@ namespace UnityEditor.AddressableAssets
             }
         }
 
-        class GuidMap
+        private class GuidMap
         {
-            readonly Dictionary<string, AddressableAssetEntry> _addressToEntry = new();
+            private readonly Dictionary<string, AddressableAssetEntry> _addressToEntry = new();
 
             public AssetGUID this[string address] => Map(address);
 
-            AssetGUID Map(string address)
+            private AssetGUID Map(string address)
             {
                 Assert.IsNotNull(address, "Address cannot be null");
                 Assert.IsFalse(string.IsNullOrEmpty(address), "Address cannot be empty");

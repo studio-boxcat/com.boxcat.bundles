@@ -8,25 +8,25 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    class DetailsContentView
+    internal class DetailsContentView
     {
         protected VisualTreeAsset m_DetailsContentDrillableListItem;
         protected List<DetailsListItem> m_ContentItems;
 
         protected Label m_ActiveContentsName;
         protected ListView m_ContentItemsListView;
-        BuildReportWindow m_Window;
+        private BuildReportWindow m_Window;
         protected VisualElement m_ContentsPane;
         protected Image m_ActiveContentIcon;
-        VisualElement m_Toolbar;
-        ContextualMenuManipulator contextMenuManipulator;
+        private VisualElement m_Toolbar;
+        private ContextualMenuManipulator contextMenuManipulator;
 
-        const float m_ItemHeight = 24f;
+        private const float m_ItemHeight = 24f;
 
-        RibbonButton m_RefToButton;
-        RibbonButton m_RefByButton;
+        private RibbonButton m_RefToButton;
+        private RibbonButton m_RefByButton;
 
-        Button m_BackButton;
+        private Button m_BackButton;
 
         protected Dictionary<VisualElement, List<Action>> m_ButtonCallBackTracker = new Dictionary<VisualElement, List<Action>>();
 
@@ -123,8 +123,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_ContentItemsListView.RefreshItems();
         }
 
-        DetailsContents m_ActiveContents;
-        void DisplayContents(DetailsContents contents)
+        private DetailsContents m_ActiveContents;
+        private void DisplayContents(DetailsContents contents)
         {
             ClearContents();
 
@@ -201,7 +201,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
 
 
-        DetailsContents GetContents(BuildLayout.Bundle bundle, DetailsViewTab tab)
+        private DetailsContents GetContents(BuildLayout.Bundle bundle, DetailsViewTab tab)
         {
             DetailsContents value = new DetailsContents(bundle.Name, BuildReportUtility.GetAssetBundleIconPath());
             switch(tab)
@@ -261,7 +261,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return value;
         }
 
-        void ShowReferencesByForAsset(DetailsContents value, BuildLayout.ExplicitAsset asset, bool shouldCallDisplayContents)
+        private void ShowReferencesByForAsset(DetailsContents value, BuildLayout.ExplicitAsset asset, bool shouldCallDisplayContents)
         {
             if (shouldCallDisplayContents)
                 value = new DetailsContents(asset.AddressableName, asset.AssetPath);
@@ -284,7 +284,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void ShowReferencesToForAsset(DetailsContents value, BuildLayout.ExplicitAsset asset, bool shouldCallDisplayContents)
+        private void ShowReferencesToForAsset(DetailsContents value, BuildLayout.ExplicitAsset asset, bool shouldCallDisplayContents)
         {
             if (shouldCallDisplayContents)
                 value = new DetailsContents(asset.GetName(), asset.AssetPath);
@@ -307,7 +307,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> GetAssetsThatLinkToBundleMap(BuildLayout.Bundle bundle, BuildLayout.ExplicitAsset asset)
+        private Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> GetAssetsThatLinkToBundleMap(BuildLayout.Bundle bundle, BuildLayout.ExplicitAsset asset)
         {
             Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> bundlesLinkedToAsset = new Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>>();
             foreach(var bDep in bundle.BundleDependencies)
@@ -327,7 +327,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return bundlesLinkedToAsset;
         }
 
-        Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> GetAssetsThatLinkFromBundleMap(BuildLayout.Bundle bundle, BuildLayout.ExplicitAsset asset)
+        private Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> GetAssetsThatLinkFromBundleMap(BuildLayout.Bundle bundle, BuildLayout.ExplicitAsset asset)
         {
             Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> bundlesLinkedToAsset = new Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>>();
 
@@ -352,7 +352,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return bundlesLinkedToAsset;
         }
 
-        void ShowAssetsThatLinkToBundle(DetailsViewTab tab, BuildLayout.Bundle bundle, List<BuildLayout.ExplicitAsset> linkedAssets)
+        private void ShowAssetsThatLinkToBundle(DetailsViewTab tab, BuildLayout.Bundle bundle, List<BuildLayout.ExplicitAsset> linkedAssets)
         {
             DetailsContents dc = new DetailsContents(bundle.Name, BuildReportUtility.GetAssetBundleIconPath());
             foreach (var asset in linkedAssets)
@@ -372,7 +372,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             DisplayContents(dc);
         }
 
-        DetailsContents GetContents(BuildLayout.ExplicitAsset asset, DetailsViewTab tab)
+        private DetailsContents GetContents(BuildLayout.ExplicitAsset asset, DetailsViewTab tab)
         {
             DetailsContents value = new DetailsContents(asset.AddressableName, asset.AssetPath);
 
@@ -390,7 +390,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return value;
         }
 
-        DetailsContents GetContents(BuildLayout.DataFromOtherAsset asset, DetailsViewTab tab)
+        private DetailsContents GetContents(BuildLayout.DataFromOtherAsset asset, DetailsViewTab tab)
         {
             DetailsContents value = new DetailsContents($"{asset.AssetPath} (in this Bundle)", asset.AssetPath);
 
@@ -409,7 +409,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return value;
         }
 
-        VisualElement RefToMakeItem()
+        private VisualElement RefToMakeItem()
         {
             var vta = m_DetailsContentDrillableListItem.Clone();
             m_ButtonCallBackTracker.Add(vta, new List<Action>());
@@ -418,7 +418,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return vta;
         }
 
-        void RefToBindItem(VisualElement e, int i)
+        private void RefToBindItem(VisualElement e, int i)
         {
             var drillDownEvent = m_ContentItems[i].DrillDownEvent;
 
@@ -484,7 +484,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void RefreshBackButton()
+        private void RefreshBackButton()
         {
             if (DetailsStack.Count > 0)
                 BuildReportUtility.SetVisibility(m_BackButton, true);
@@ -492,7 +492,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 BuildReportUtility.SetVisibility(m_BackButton, false);
         }
 
-        void UpdateTabButtons(int refBy, int refTo)
+        private void UpdateTabButtons(int refBy, int refTo)
         {
             if (refBy == 0 && refTo == 0)
             {
@@ -506,22 +506,22 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        int GetRefByCount(BuildLayout.Bundle bundle)
+        private int GetRefByCount(BuildLayout.Bundle bundle)
         {
             return bundle.DependentBundles.Count;
         }
 
-        int GetRefByCount(BuildLayout.ExplicitAsset asset)
+        private int GetRefByCount(BuildLayout.ExplicitAsset asset)
         {
             return asset.ReferencingAssets.Count;
         }
 
-        int GetRefByCount(BuildLayout.DataFromOtherAsset asset)
+        private int GetRefByCount(BuildLayout.DataFromOtherAsset asset)
         {
             return asset.ReferencingAssets.Count;
         }
 
-        int GetRefToCount(BuildLayout.Bundle bundle)
+        private int GetRefToCount(BuildLayout.Bundle bundle)
         {
             int total = 0;
             foreach (var file in bundle.Files)
@@ -530,12 +530,12 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return total;
         }
 
-        int GetRefToCount(BuildLayout.ExplicitAsset asset)
+        private int GetRefToCount(BuildLayout.ExplicitAsset asset)
         {
             return asset.InternalReferencedExplicitAssets.Count + asset.ExternallyReferencedAssets.Count + asset.InternalReferencedOtherAssets.Count;
         }
 
-        int GetRefToCount(BuildLayout.DataFromOtherAsset asset)
+        private int GetRefToCount(BuildLayout.DataFromOtherAsset asset)
         {
             return 0;
         }

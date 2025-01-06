@@ -7,11 +7,11 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEditor.AddressableAssets
 {
-    class EditorSceneOp : IAssetOp<Scene>
+    internal class EditorSceneOp : IAssetOp<Scene>
     {
-        AsyncOperation _op;
-        Scene _scene;
-        Action<Scene> _onComplete;
+        private AsyncOperation _op;
+        private Scene _scene;
+        private Action<Scene> _onComplete;
 
         public EditorSceneOp(AssetGUID guid)
         {
@@ -56,7 +56,7 @@ namespace UnityEditor.AddressableAssets
             return _scene;
         }
 
-        void OnComplete(AsyncOperation asyncOperation)
+        private void OnComplete(AsyncOperation asyncOperation)
         {
             // OnComplete will be called twice if the Result property is called before the task is complete.
             if (_scene.IsValid())

@@ -4,7 +4,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
 {
     public class CompletedOp<TResult> : IAssetOp<TResult>
     {
-        readonly TResult _result;
+        private readonly TResult _result;
 
         public CompletedOp(TResult result)
         {

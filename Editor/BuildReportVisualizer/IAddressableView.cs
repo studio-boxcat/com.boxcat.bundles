@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    interface IAddressableView
+    internal interface IAddressableView
     {
         void CreateGUI(VisualElement rootVisualElement);
     }

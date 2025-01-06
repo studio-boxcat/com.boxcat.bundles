@@ -6,7 +6,7 @@ using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEngine.AddressableAssets.AsyncOperations
 {
-    class AssetOpBlock
+    internal class AssetOpBlock
     {
         public Address Address;
         public AssetBundleId Bundle;
@@ -16,7 +16,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
         public readonly AssetBundleLoader Loader;
         public readonly CompleteCallback OnComplete;
 
-        readonly List<AssetOpBlock> _pool;
+        private readonly List<AssetOpBlock> _pool;
 
 
         public AssetOpBlock(ResourceCatalog catalog, AssetBundleLoader loader, List<AssetOpBlock> pool)
@@ -43,9 +43,9 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
 
     public class AssetOp<TResult> : IAssetOp<TResult>
     {
-        AssetOpBlock _b;
-        AsyncOperation _op;
-        TResult _result;
+        private AssetOpBlock _b;
+        private AsyncOperation _op;
+        private TResult _result;
 
 
         internal AssetOp(AssetOpBlock b)
@@ -125,9 +125,9 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             return _result;
         }
 
-        static readonly Action<AssetBundle, object> _onDepLoaded = static (bundle, thiz) => ((AssetOp<TResult>) thiz).OnDepLoaded(bundle);
+        private static readonly Action<AssetBundle, object> _onDepLoaded = static (bundle, thiz) => ((AssetOp<TResult>) thiz).OnDepLoaded(bundle);
 
-        void OnDepLoaded(AssetBundle bundle)
+        private void OnDepLoaded(AssetBundle bundle)
         {
             Assert.IsNull(_op, "Operation should be null before execution");
             Assert.IsNotNull(_b, "Block should not be null before execution");
@@ -144,7 +144,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             _op.completed += _onComplete;
         }
 
-        static readonly Action<AsyncOperation> _onComplete = static op =>
+        private static readonly Action<AsyncOperation> _onComplete = static op =>
         {
             var thiz = AsyncOpPayloads.PopData(op);
             Assert.AreEqual(typeof(AssetOp<TResult>), thiz.GetType(),
@@ -152,7 +152,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             ((AssetOp<TResult>) thiz).OnComplete(op);
         };
 
-        void OnComplete(AsyncOperation req)
+        private void OnComplete(AsyncOperation req)
         {
             Assert.IsNotNull(_op, "OnComplete is called twice");
             Assert.AreEqual(req, _op, "Operation mismatch");
@@ -168,7 +168,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             b.Return();
         }
 
-        void CompleteManually()
+        private void CompleteManually()
         {
             Assert.IsNotNull(_op, "Operation should not be null");
             Assert.IsFalse(_op.isDone, "Operation should not be done");

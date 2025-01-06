@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
-    static class ResourceCatalogBuilder
+    internal static class ResourceCatalogBuilder
     {
         public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
         {
@@ -165,7 +165,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return keyToId;
         }
 
-        static HashSet<AssetBundleId> CollectDeps(BundleKey bundle, ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
+        private static HashSet<AssetBundleId> CollectDeps(BundleKey bundle, ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
         {
             var deps = new HashSet<BundleKey>();
 
@@ -188,7 +188,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return deps.Select(x => keyToId[x]).ToHashSet();
         }
 
-        readonly struct DepSpan
+        private readonly struct DepSpan
         {
             public readonly ushort Start;
             public readonly ushort Count;
@@ -202,7 +202,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
         }
 
-        class DepNode
+        private class DepNode
         {
             public AssetBundleId Bundle;
             public AssetBundleId[] Deps;
@@ -211,7 +211,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             public override string ToString() => Bundle.Name();
         }
 
-        static (DepSpan[] SpanData, AssetBundleId[] DepData) BuildDepSpan(Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleDeps)
+        private static (DepSpan[] SpanData, AssetBundleId[] DepData) BuildDepSpan(Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleDeps)
         {
             var nodes = bundleDeps
                 .Select(x => new DepNode

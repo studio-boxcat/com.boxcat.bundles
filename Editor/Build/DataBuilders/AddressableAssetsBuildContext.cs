@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Simple context object for passing data through SBP, between different sections of Addressables code.
     /// </summary>
-    class AddressableAssetsBuildContext : IContextObject
+    internal class AddressableAssetsBuildContext : IContextObject
     {
         /// <summary>
         /// The catalog object to use.

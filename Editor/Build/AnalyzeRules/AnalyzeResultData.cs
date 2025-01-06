@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// Represents the data acquired after analyzing Addressable assets.
     /// </summary>
     [Serializable]
-    class AddressablesAnalyzeResultData : ISerializationCallbackReceiver
+    internal class AddressablesAnalyzeResultData : ISerializationCallbackReceiver
     {
         [Serializable]
         private class RuleToResults

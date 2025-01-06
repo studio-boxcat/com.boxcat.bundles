@@ -6,7 +6,7 @@ using BuildCompression = UnityEngine.BuildCompression;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
-    static class BundleBuildParamsFactory
+    internal static class BundleBuildParamsFactory
     {
         public static IBundleBuildParameters Get(BuildTarget target)
         {

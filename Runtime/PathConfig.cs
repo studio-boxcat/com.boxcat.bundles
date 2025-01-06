@@ -6,7 +6,7 @@ namespace UnityEngine.AddressableAssets
     {
         public const string RuntimeStreamingAssetsSubFolder = "aa";
 
-        static string _runtimePath
+        private static string _runtimePath
         {
             get
             {
@@ -20,7 +20,7 @@ namespace UnityEngine.AddressableAssets
 
         public static string RuntimePath_CatalogBin => _runtimePath + "/catalog.bin";
 
-        static StringBuilder _bundlePathBuilder;
+        private static StringBuilder _bundlePathBuilder;
 
         public static string GetAssetBundleLoadPath(AssetBundleId bundleId)
         {
@@ -34,7 +34,7 @@ namespace UnityEngine.AddressableAssets
         public const string BuildReportPath = "Library/com.boxcat.addressables/BuildReports/";
         public const string TempPath_BundleRoot = "Temp/com.boxcat.addressables/AssetBundles";
 
-        static string _buildPath;
+        private static string _buildPath;
         public static string BuildPath => _buildPath ??=
             $"{LibraryPath}{UnityEditor.EditorUserBuildSettings.activeBuildTarget}";
 

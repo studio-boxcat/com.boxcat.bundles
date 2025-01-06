@@ -150,7 +150,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public BuildLayout.Bundle Bundle { get; set; }
     }
 
-    class DuplicatedAssetsContentView : ContentView
+    internal class DuplicatedAssetsContentView : ContentView
     {
         public DuplicatedAssetsContentView(BuildReportHelperConsumer helperConsumer, DetailsView detailsView)
             : base(helperConsumer, detailsView) { }

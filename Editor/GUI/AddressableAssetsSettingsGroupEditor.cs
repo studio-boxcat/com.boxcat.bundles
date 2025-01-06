@@ -14,17 +14,19 @@ namespace UnityEditor.AddressableAssets.GUI
     [Serializable]
     internal class AddressableAssetsSettingsGroupEditor
     {
-        [SerializeField] TreeViewState m_TreeState;
-        [SerializeField] MultiColumnHeaderState m_Mchs;
+        [SerializeField]
+        private TreeViewState m_TreeState;
+        [SerializeField]
+        private MultiColumnHeaderState m_Mchs;
 
         internal AddressableAssetEntryTreeView m_EntryTree;
 
         public AddressableAssetsWindow window;
 
-        SearchField m_SearchField;
-        const int k_SearchHeight = 20;
+        private SearchField m_SearchField;
+        private const int k_SearchHeight = 20;
 
-        AddressableCatalog m_Catalog;
+        private AddressableCatalog m_Catalog;
 
         internal AddressableCatalog Catalog
         {
@@ -36,13 +38,13 @@ namespace UnityEditor.AddressableAssets.GUI
             set => m_Catalog = value;
         }
 
-        bool m_ResizingVerticalSplitter;
-        Rect m_VerticalSplitterRect = new Rect(0, 0, 10, k_SplitterWidth);
+        private bool m_ResizingVerticalSplitter;
+        private Rect m_VerticalSplitterRect = new Rect(0, 0, 10, k_SplitterWidth);
 
         [SerializeField]
-        float m_VerticalSplitterPercent;
+        private float m_VerticalSplitterPercent;
 
-        const int k_SplitterWidth = 3;
+        private const int k_SplitterWidth = 3;
 
 
         public AddressableAssetsSettingsGroupEditor(AddressableAssetsWindow w)
@@ -133,7 +135,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        void OnSettingsModification(AddressableCatalog s, AddressableCatalog.ModificationEvent e, object o)
+        private void OnSettingsModification(AddressableCatalog s, AddressableCatalog.ModificationEvent e, object o)
         {
             if (m_EntryTree == null)
                 return;
@@ -155,7 +157,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        GUIStyle GetStyle(string styleName)
+        private GUIStyle GetStyle(string styleName)
         {
             GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
             if (s == null)
@@ -170,15 +172,15 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 
         [NonSerialized]
-        List<GUIStyle> m_SearchStyles;
+        private List<GUIStyle> m_SearchStyles;
 
         [NonSerialized]
-        GUIStyle m_ButtonStyle;
+        private GUIStyle m_ButtonStyle;
 
         [NonSerialized]
-        Texture2D m_CogIcon;
+        private Texture2D m_CogIcon;
 
-        void TopToolbar(Rect toolbarPos)
+        private void TopToolbar(Rect toolbarPos)
         {
             if (m_SearchStyles == null)
             {
@@ -258,7 +260,7 @@ namespace UnityEditor.AddressableAssets.GUI
             GUILayout.EndArea();
         }
 
-        bool m_ModificationRegistered;
+        private bool m_ModificationRegistered;
 
         public void OnEnable()
         {
@@ -328,7 +330,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 m_EntryTree.Reload();
         }
 
-        void HandleVerticalResize(Rect position)
+        private void HandleVerticalResize(Rect position)
         {
             m_VerticalSplitterRect.y = (int) (position.yMin + position.height * m_VerticalSplitterPercent);
             m_VerticalSplitterRect.width = position.width;

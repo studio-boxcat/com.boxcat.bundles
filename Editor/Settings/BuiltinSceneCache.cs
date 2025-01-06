@@ -6,8 +6,8 @@ namespace UnityEditor.AddressableAssets
     internal static class BuiltinSceneCache
     {
         internal static EditorBuildSettingsScene[] m_Scenes;
-        static Dictionary<AssetGUID, int> s_GUIDSceneIndexLookup;
-        static bool s_IsListening;
+        private static Dictionary<AssetGUID, int> s_GUIDSceneIndexLookup;
+        private static bool s_IsListening;
         public static event Action sceneListChanged;
 
         public static EditorBuildSettingsScene[] scenes

@@ -2,7 +2,7 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.Util
 {
-    static class Hex
+    internal static class Hex
     {
         public static char Char(int value)
         {
@@ -10,7 +10,7 @@ namespace UnityEngine.AddressableAssets.Util
             return (char) (value < 10 ? (value + '0') : (value - 10 + 'a'));
         }
 
-        static readonly char[] _hexBuf = new char[6];
+        private static readonly char[] _hexBuf = new char[6];
 
         public static string To2(byte value)
         {

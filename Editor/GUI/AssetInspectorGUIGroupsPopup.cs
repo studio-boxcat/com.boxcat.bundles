@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 namespace UnityEditor.AddressableAssets.GUI
 {
     [InitializeOnLoad, ExcludeFromCoverage]
-    class GroupsPopupWindow : EditorWindow
+    internal class GroupsPopupWindow : EditorWindow
     {
         private AddressableCatalog m_Catalog;
         private List<AddressableAssetEntry> m_Entries;

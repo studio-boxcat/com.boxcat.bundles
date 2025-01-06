@@ -9,41 +9,41 @@ using static UnityEditor.AddressableAssets.BuildReportVisualizer.ContentView;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    class BuildReportWindow : EditorWindow, IBuildReportConsumer
+    internal class BuildReportWindow : EditorWindow, IBuildReportConsumer
     {
         [SerializeField]
-        VisualTreeAsset m_WindowTreeAsset;
+        private VisualTreeAsset m_WindowTreeAsset;
 
         [SerializeField]
-        VisualTreeAsset m_ReportListItemTreeAsset;
+        private VisualTreeAsset m_ReportListItemTreeAsset;
 
         [SerializeField]
-        VisualTreeAsset m_DetailsPanelSummaryNavigableItemTreeAsset;
+        private VisualTreeAsset m_DetailsPanelSummaryNavigableItemTreeAsset;
 
         [SerializeField]
-        VisualTreeAsset m_DetailsPanelSummaryNavigableBundleTreeAsset;
+        private VisualTreeAsset m_DetailsPanelSummaryNavigableBundleTreeAsset;
 
         internal ContentView m_ActiveContentView;
 
-        BuildReportListView m_ReportListView;
-        MainToolbar m_MainToolbar;
-        MainPanelSummaryTab m_MainPanelSummaryTab;
-        BuildReportHelperConsumer m_HelperConsumer;
+        private BuildReportListView m_ReportListView;
+        private MainToolbar m_MainToolbar;
+        private MainPanelSummaryTab m_MainPanelSummaryTab;
+        private BuildReportHelperConsumer m_HelperConsumer;
 
-        bool m_Initialized = false;
-        static BuildLayout m_BuildReport;
+        private bool m_Initialized = false;
+        private static BuildLayout m_BuildReport;
 
-        VisualElement m_MainPanel;
-        VisualElement[] m_Tabs = new VisualElement[3];
-        Ribbon m_TabsRibbon;
+        private VisualElement m_MainPanel;
+        private VisualElement[] m_Tabs = new VisualElement[3];
+        private Ribbon m_TabsRibbon;
 
-        int m_CurrentTab;
+        private int m_CurrentTab;
         internal string m_SearchValue = "";
 
-        DropdownField m_ContentViewTypeDropdown;
-        DropdownField m_PotentialIssuesViewTypeDropdown;
-        int m_PreviousContentDropDownValue;
-        int m_PreviousPotentialIssuesDropDownValue;
+        private DropdownField m_ContentViewTypeDropdown;
+        private DropdownField m_PotentialIssuesViewTypeDropdown;
+        private int m_PreviousContentDropDownValue;
+        private int m_PreviousPotentialIssuesDropDownValue;
 
         public enum RibbonTabType
         {
@@ -53,10 +53,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
 
         [SerializeField]
-        ContentViewType m_ActiveContentViewType = ContentViewType.BundleView;
+        private ContentViewType m_ActiveContentViewType = ContentViewType.BundleView;
 
         [SerializeField]
-        PotentialIssuesType m_ActivePotentialIssuesViewType = PotentialIssuesType.DuplicatedAssetsView;
+        private PotentialIssuesType m_ActivePotentialIssuesViewType = PotentialIssuesType.DuplicatedAssetsView;
 
         public enum ContentViewType
         {
@@ -70,21 +70,21 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             DuplicatedAssetsView
         }
 
-        static List<string> s_ContentViewTypes = new List<string>()
+        private static List<string> s_ContentViewTypes = new List<string>()
         {
             "AssetBundles",
             "Assets",
             "Groups"
         };
 
-        static List<string> s_PotentialIssuesViewTypes = new List<string>()
+        private static List<string> s_PotentialIssuesViewTypes = new List<string>()
         {
             "Duplicated Assets"
         };
 
-        DetailsView m_DetailsView;
+        private DetailsView m_DetailsView;
 
-        void OnEnable()
+        private void OnEnable()
         {
             m_BuildReport = null;
 
@@ -203,7 +203,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        void OnViewDropDownChanged(ChangeEvent<string> evt)
+        private void OnViewDropDownChanged(ChangeEvent<string> evt)
         {
             if(m_CurrentTab == (int)RibbonTabType.ContentTab)
                 OnViewDropDownChanged(s_ContentViewTypes.IndexOf(evt.newValue));
@@ -211,7 +211,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 OnViewDropDownChanged(s_PotentialIssuesViewTypes.IndexOf(evt.newValue));
         }
 
-        void OnViewDropDownChanged(int newIndex)
+        private void OnViewDropDownChanged(int newIndex)
         {
             var treeView = m_ActiveContentView.ContentTreeView;
             if (treeView != null)
@@ -234,10 +234,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
-        Dictionary<ContentViewType, ContentView> m_CachedContentViews = new();
-        Dictionary<PotentialIssuesType, ContentView> m_CachedPotentialIssuesViews = new();
+        private Dictionary<ContentViewType, ContentView> m_CachedContentViews = new();
+        private Dictionary<PotentialIssuesType, ContentView> m_CachedPotentialIssuesViews = new();
 
-        ContentView GetContentView(ContentViewType type)
+        private ContentView GetContentView(ContentViewType type)
         {
             if (m_CachedContentViews.ContainsKey(type))
                 return m_CachedContentViews[type].UseCachedView(rootVisualElement);
@@ -266,7 +266,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return view;
         }
 
-        ContentView GetPotentialIssuesView(PotentialIssuesType type)
+        private ContentView GetPotentialIssuesView(PotentialIssuesType type)
         {
             if (m_CachedPotentialIssuesViews.ContainsKey(type))
                 return m_CachedPotentialIssuesViews[type].UseCachedView(rootVisualElement);
@@ -289,7 +289,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return view;
         }
 
-        void ChangeTab(int index)
+        private void ChangeTab(int index)
         {
             if (index == m_CurrentTab)
                 return;

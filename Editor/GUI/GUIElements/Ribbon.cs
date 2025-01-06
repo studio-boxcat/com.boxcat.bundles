@@ -9,20 +9,21 @@ namespace UnityEditor.AddressableAssets.GUIElements
 {
     internal class Ribbon : VisualElement
     {
-        static class Content
+        private static class Content
         {
             // Technically Rbbon is a UI controll that could be more agnostic of this specific implementation for the Memory Profiler.
             // While this content may be reused in other places of the Memory Profiler and therefore makes sense to be located on TextContent,
             // keeping a Content class here makes it easier to keep things separated and helps when copying it out into other tools.
             public static readonly string OpenManualTooltip = GUIUtility.OpenManualTooltip;
         }
-        static class Styles
+
+        private static class Styles
         {
             public static readonly string HelpIconButtonClass = GUIUtility.HelpIconButtonClass;
             public static readonly string MenuIconButtonClass = GUIUtility.MenuIconButtonClass;
         }
 
-        Align m_Alignment;
+        private Align m_Alignment;
         public Align Alignment
         {
             get { return m_Alignment; }
@@ -68,18 +69,18 @@ namespace UnityEditor.AddressableAssets.GUIElements
         public event Action HelpClicked = delegate { };
         public event Action MenuClicked = delegate { };
 
-        VisualElement m_Root;
-        VisualElement m_Content;
-        VisualElement m_Container;
-        List<RibbonButton> m_Buttons = new List<RibbonButton>();
-        VisualElement m_OptionsAndInfos;
-        Button m_Menu;
-        Button m_Help;
+        private VisualElement m_Root;
+        private VisualElement m_Content;
+        private VisualElement m_Container;
+        private List<RibbonButton> m_Buttons = new List<RibbonButton>();
+        private VisualElement m_OptionsAndInfos;
+        private Button m_Menu;
+        private Button m_Help;
 
-        const string k_ContainerClassCenterAligned = "ribbon__container--centered";
-        const string k_ClassCenterAligned = "ribbon--centered";
-        const string k_ContainerClassLeftAligned = "ribbon__container--left-aligned";
-        const string k_ClassLeftAligned = "ribbon--left-aligned";
+        private const string k_ContainerClassCenterAligned = "ribbon__container--centered";
+        private const string k_ClassCenterAligned = "ribbon--centered";
+        private const string k_ContainerClassLeftAligned = "ribbon__container--left-aligned";
+        private const string k_ClassLeftAligned = "ribbon--left-aligned";
 
         public Ribbon()
         {
@@ -109,7 +110,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
             Setup();
         }
 
-        void Init()
+        private void Init()
         {
             m_CurrentOption = InitialOption;
             Setup();
@@ -128,7 +129,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
                 RegisterCallback<GeometryChangedEvent>(OnPostDisplaySetup);
         }
 
-        void GatherElements()
+        private void GatherElements()
         {
             m_Buttons.Clear();
             if (m_Content == null)
@@ -142,7 +143,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
             }
         }
 
-        void OnPostDisplaySetup(GeometryChangedEvent evt)
+        private void OnPostDisplaySetup(GeometryChangedEvent evt)
         {
             GatherElements();
             if (m_Buttons.Count > 0)
@@ -152,7 +153,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
             }
         }
 
-        void SetupElements()
+        private void SetupElements()
         {
             if (m_Alignment == Align.Center)
                 SetCenterAligned();
@@ -173,7 +174,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
             }
         }
 
-        void RefreshButtonToggleStates()
+        private void RefreshButtonToggleStates()
         {
             m_CurrentOption = Mathf.Clamp(m_CurrentOption, 0, Mathf.Max(0, m_Buttons.Count - 1));
             for (int i = 0; i < m_Buttons.Count; i++)
@@ -189,13 +190,13 @@ namespace UnityEditor.AddressableAssets.GUIElements
             Clicked(index);
         }
 
-        void SetCenterAligned()
+        private void SetCenterAligned()
         {
             m_Container.SwitchClasses(classToAdd: k_ContainerClassCenterAligned, classToRemove: k_ContainerClassLeftAligned);
             m_Content.SwitchClasses(classToAdd: k_ClassCenterAligned, classToRemove: k_ClassLeftAligned);
         }
 
-        void SetLeftAligned()
+        private void SetLeftAligned()
         {
             m_Container.SwitchClasses(classToAdd: k_ContainerClassLeftAligned, classToRemove: k_ContainerClassCenterAligned);
             m_Content.SwitchClasses(classToAdd: k_ClassLeftAligned, classToRemove: k_ClassCenterAligned);
@@ -211,10 +212,10 @@ namespace UnityEditor.AddressableAssets.GUIElements
         /// </summary>
         public new class UxmlTraits : VisualElement.UxmlTraits
         {
-            UxmlEnumAttributeDescription<Align> m_Align = new UxmlEnumAttributeDescription<Align> { name = "alignment", defaultValue = Align.Center };
-            UxmlBoolAttributeDescription m_ShowHelp = new UxmlBoolAttributeDescription { name = "show-help-button", defaultValue = false };
-            UxmlBoolAttributeDescription m_ShowMenu = new UxmlBoolAttributeDescription { name = "show-menu-button", defaultValue = false };
-            UxmlIntAttributeDescription m_InitialOption = new UxmlIntAttributeDescription { name = "initial-option", defaultValue = 0 };
+            private UxmlEnumAttributeDescription<Align> m_Align = new UxmlEnumAttributeDescription<Align> { name = "alignment", defaultValue = Align.Center };
+            private UxmlBoolAttributeDescription m_ShowHelp = new UxmlBoolAttributeDescription { name = "show-help-button", defaultValue = false };
+            private UxmlBoolAttributeDescription m_ShowMenu = new UxmlBoolAttributeDescription { name = "show-menu-button", defaultValue = false };
+            private UxmlIntAttributeDescription m_InitialOption = new UxmlIntAttributeDescription { name = "initial-option", defaultValue = 0 };
             public override IEnumerable<UxmlChildElementDescription> uxmlChildElementsDescription
             {
                 get

@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.GUI
 {
     internal struct FoldoutSessionStateValue
     {
-        bool? m_Value;
+        private bool? m_Value;
         private string m_Key;
 
         public FoldoutSessionStateValue(string key)

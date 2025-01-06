@@ -26,7 +26,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
-        IBundleWriteData m_WriteData;
+        private IBundleWriteData m_WriteData;
 
         [InjectContext(ContextUsage.In)]
         internal IBuildContext m_BuildContext;

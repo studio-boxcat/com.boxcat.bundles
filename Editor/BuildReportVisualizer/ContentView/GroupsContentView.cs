@@ -208,7 +208,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
 
-    class GroupsContentView : ContentView
+    internal class GroupsContentView : ContentView
     {
         public GroupsContentView(BuildReportHelperConsumer helperConsumer,  DetailsView detailsView)
             : base(helperConsumer, detailsView)

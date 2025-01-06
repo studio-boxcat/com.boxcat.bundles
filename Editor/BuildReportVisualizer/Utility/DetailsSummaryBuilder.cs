@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal class DetailsSummaryBuilder
     {
-        List<VisualElement> m_Containers;
+        private List<VisualElement> m_Containers;
 
         public DetailsSummaryBuilder()
         {
@@ -118,7 +118,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return masterContainer;
         }
 
-        void RegisterCopyTextToClipboardCallback(Label element)
+        private void RegisterCopyTextToClipboardCallback(Label element)
         {
             element.RegisterCallback<ContextClickEvent>((args) =>
             {

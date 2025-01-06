@@ -6,7 +6,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     /// <summary>
     /// Rule class to check resource dependencies for duplicates
     /// </summary>
-    class CheckResourcesDupeDependencies : BundleRuleBase
+    internal class CheckResourcesDupeDependencies : BundleRuleBase
     {
         /// <inheritdoc />
         public override string ruleName => "Check Resources to Addressable Duplicate Dependencies";

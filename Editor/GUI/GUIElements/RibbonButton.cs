@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
 {
     internal class RibbonButton : Button
     {
-        bool m_Toggled;
+        private bool m_Toggled;
         public bool Toggled
         {
             get { return m_Toggled; }
@@ -21,7 +21,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
             }
         }
 
-        string m_CachedOriginalTooltip;
+        private string m_CachedOriginalTooltip;
 
         public const string StyleClass = "ribbon__button";
         public const string StyleClassToggled = "ribbon__button--toggled";
@@ -54,7 +54,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
             SetEnabled(enabled);
         }
 
-        void Init()
+        private void Init()
         {
             m_CachedOriginalTooltip = tooltip;
         }
@@ -69,8 +69,8 @@ namespace UnityEditor.AddressableAssets.GUIElements
         /// </summary>
         public new class UxmlTraits : VisualElement.UxmlTraits
         {
-            UxmlStringAttributeDescription m_Text = new UxmlStringAttributeDescription { name = "text", defaultValue = "Button" };
-            UxmlBoolAttributeDescription m_Toggled = new UxmlBoolAttributeDescription { name = "toggled", defaultValue = false };
+            private UxmlStringAttributeDescription m_Text = new UxmlStringAttributeDescription { name = "text", defaultValue = "Button" };
+            private UxmlBoolAttributeDescription m_Toggled = new UxmlBoolAttributeDescription { name = "toggled", defaultValue = false };
             public override IEnumerable<UxmlChildElementDescription> uxmlChildElementsDescription
             {
                 get { yield break; }

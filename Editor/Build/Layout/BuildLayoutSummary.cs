@@ -53,7 +53,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     /// <summary>
     /// Data store for Addressables build
     /// </summary>
-    class BuildLayoutSummary
+    internal class BuildLayoutSummary
     {
         /// <summary>
         /// Summary of bundles

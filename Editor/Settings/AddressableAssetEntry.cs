@@ -13,11 +13,11 @@ namespace UnityEditor.AddressableAssets
     public class AddressableAssetEntry : ISelfValidator
     {
         [SerializeField, HideInInspector]
-        string m_GUID;
+        private string m_GUID;
         public AssetGUID guid => (AssetGUID) m_GUID;
 
         [SerializeField, HideInInspector]
-        string m_Address;
+        private string m_Address;
         [ShowInInspector, DelayedProperty]
         public string address
         {
@@ -26,7 +26,7 @@ namespace UnityEditor.AddressableAssets
         }
 
         [NonSerialized]
-        AddressableAssetGroup m_ParentGroup;
+        private AddressableAssetGroup m_ParentGroup;
         /// <summary>
         /// The asset group that this entry belongs to.  An entry can only belong to a single group at a time.
         /// </summary>

@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets
 {
-    interface IAddressablesImpl
+    internal interface IAddressablesImpl
     {
         IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object;
         TObject LoadAsset<TObject>(string address) where TObject : Object;

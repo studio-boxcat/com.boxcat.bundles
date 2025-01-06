@@ -18,9 +18,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
-    class BuildScriptPackedMode : BuildScriptBase
+    internal class BuildScriptPackedMode : BuildScriptBase
     {
-        LinkXmlGenerator m_Linker;
+        private LinkXmlGenerator m_Linker;
 
         /// <inheritdoc />
         protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
@@ -47,9 +47,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return new DataBuildResult { Error = errorString };
         }
 
-        struct SBPSettingsOverwriterScope : IDisposable
+        private struct SBPSettingsOverwriterScope : IDisposable
         {
-            bool m_PrevSlimResults;
+            private bool m_PrevSlimResults;
 
             public SBPSettingsOverwriterScope(bool forceFullWriteResults)
             {
@@ -167,7 +167,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         /// <param name="assetGroup">The AddressableAssetGroup to be processed.</param>
         /// <returns>The total list of AddressableAssetEntries that were processed.</returns>
-        static IEnumerable<AssetBundleBuild> GenerateBundleBuilds(AddressableAssetGroup assetGroup)
+        private static IEnumerable<AssetBundleBuild> GenerateBundleBuilds(AddressableAssetGroup assetGroup)
         {
             return assetGroup.BundleMode switch
             {
@@ -209,7 +209,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         // and isn't needed for most tests.
         internal static bool s_SkipCompilePlayerScripts = false;
 
-        static IList<IBuildTask> RuntimeDataBuildTasks()
+        private static IList<IBuildTask> RuntimeDataBuildTasks()
         {
             var buildTasks = new List<IBuildTask>();
 
@@ -247,7 +247,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return buildTasks;
         }
 
-        static string CopyBundleToOutputPath(string srcFileName, string dstFileName)
+        private static string CopyBundleToOutputPath(string srcFileName, string dstFileName)
         {
             var srcPath = Path.Combine(PathConfig.TempPath_BundleRoot, srcFileName);
             var dstPath = Path.Combine(PathConfig.BuildPath_BundleRoot, dstFileName);

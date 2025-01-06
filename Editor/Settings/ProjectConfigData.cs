@@ -13,7 +13,7 @@ namespace UnityEditor.AddressableAssets
     public class ProjectConfigData
     {
         [Serializable]
-        class ConfigSaveData
+        private class ConfigSaveData
         {
             [SerializeField]
             internal bool generateBuildLayout = false;
@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets
 #endif
         }
 
-        static ConfigSaveData s_Data;
+        private static ConfigSaveData s_Data;
 
         /// <summary>
         /// Whether to generate the bundle build layout report.
@@ -115,7 +115,7 @@ namespace UnityEditor.AddressableAssets
         }
 
 
-        static void ValidateData()
+        private static void ValidateData()
         {
             if (s_Data != null) return;
 
@@ -150,7 +150,7 @@ namespace UnityEditor.AddressableAssets
                 s_Data.buildReports = new List<string>();
         }
 
-        static void SaveData()
+        private static void SaveData()
         {
             if (s_Data == null)
                 return;

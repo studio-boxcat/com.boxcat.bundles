@@ -13,8 +13,9 @@ namespace UnityEngine.AddressableAssets
     /// </summary>
     public static class Addressables
     {
-        [CanBeNull] static IAddressablesImpl _implCache;
-        static IAddressablesImpl _impl
+        [CanBeNull]
+        private static IAddressablesImpl _implCache;
+        private static IAddressablesImpl _impl
         {
             get
             {
@@ -53,7 +54,7 @@ namespace UnityEngine.AddressableAssets
             return op;
         }
 
-        static ResourceCatalog LoadCatalog()
+        private static ResourceCatalog LoadCatalog()
         {
 #if DEBUG
             var sw = new System.Diagnostics.Stopwatch();

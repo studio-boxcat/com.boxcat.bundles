@@ -9,7 +9,7 @@ using BuildLayout = UnityEditor.AddressableAssets.Build.Layout.BuildLayout;
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     // Nested class that represents a generic item in the bundle view (can be an asset, header, or bundle).
-    class BundlesViewBuildReportItem : IAddressablesBuildReportItem
+    internal class BundlesViewBuildReportItem : IAddressablesBuildReportItem
     {
         public string Name { get; protected set; }
 
@@ -81,7 +81,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
     // Nested class that represents an bundle.
-    class BundlesViewBuildReportBundle : BundlesViewBuildReportItem, IAddressablesBuildReportBundle
+    internal class BundlesViewBuildReportBundle : BundlesViewBuildReportItem, IAddressablesBuildReportBundle
     {
         public BuildLayout.Bundle Bundle { get; set; }
         public List<BuildLayout.Bundle> Dependencies { get; set; }
@@ -116,7 +116,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public List<BuildLayout.DataFromOtherAsset> ImplicitAssets { get; set; }
     }
 
-    class BundlesViewBuildReportAsset : BundlesViewBuildReportItem, IAddressablesBuildReportAsset
+    internal class BundlesViewBuildReportAsset : BundlesViewBuildReportItem, IAddressablesBuildReportAsset
     {
         public BuildLayout.ExplicitAsset ExplicitAsset { get; }
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; }
@@ -165,7 +165,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    class BundlesViewBuildReportUnrelatedAssets : BundlesViewBuildReportItem
+    internal class BundlesViewBuildReportUnrelatedAssets : BundlesViewBuildReportItem
     {
         public BundlesViewBuildReportUnrelatedAssets(ulong assetSize, int assetCount)
         {
@@ -174,7 +174,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    class BundlesViewBuildReportIndirectlyReferencedBundles : BundlesViewBuildReportItem
+    internal class BundlesViewBuildReportIndirectlyReferencedBundles : BundlesViewBuildReportItem
     {
         public BundlesViewBuildReportIndirectlyReferencedBundles(List<BuildLayout.Bundle> bundles)
         {
@@ -215,9 +215,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
 
-    class BundlesContentView : ContentView
+    internal class BundlesContentView : ContentView
     {
-        IList<TreeViewItemData<BundlesViewBuildReportItem>> m_TreeRoots;
+        private IList<TreeViewItemData<BundlesViewBuildReportItem>> m_TreeRoots;
 
         public BundlesContentView(BuildReportHelperConsumer helperConsumer, DetailsView detailsView)
             : base(helperConsumer, detailsView)

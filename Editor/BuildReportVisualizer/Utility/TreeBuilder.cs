@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal class TreeBuilder
     {
-        MultiColumnTreeView m_TreeView;
+        private MultiColumnTreeView m_TreeView;
 
         public TreeBuilder()
         {
@@ -34,7 +34,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return this;
         }
 
-        void AddColumn(ContentViewColumnData column)
+        private void AddColumn(ContentViewColumnData column)
         {
             Column newColumn = new Column();
             if (column.Name.Contains("Name"))

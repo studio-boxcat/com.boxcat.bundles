@@ -2,15 +2,15 @@ using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Build
 {
-    static class AddressablesBuildScriptHooks
+    internal static class AddressablesBuildScriptHooks
     {
         [InitializeOnLoadMethod]
-        static void Init()
+        private static void Init()
         {
             EditorApplication.playModeStateChanged += OnEditorPlayModeChanged;
         }
 
-        static void OnEditorPlayModeChanged(PlayModeStateChange state)
+        private static void OnEditorPlayModeChanged(PlayModeStateChange state)
         {
             // Build data only when exiting edit mode.
             if (state != PlayModeStateChange.ExitingEditMode)

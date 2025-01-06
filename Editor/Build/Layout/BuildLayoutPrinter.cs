@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
-    class BuildLayoutPrinter
+    internal class BuildLayoutPrinter
     {
         static public string GetFriendlySize(ulong byteSize)
         {
@@ -25,7 +25,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             return result;
         }
 
-        class TabWriter
+        private class TabWriter
         {
             public StreamWriter Writer;
             private int Indentation;
@@ -35,9 +35,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 Writer = writer;
             }
 
-            class TabWriterIdentScope : IDisposable
+            private class TabWriterIdentScope : IDisposable
             {
-                TabWriter m_Writer;
+                private TabWriter m_Writer;
 
                 public TabWriterIdentScope(TabWriter writer)
                 {
@@ -64,9 +64,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        class AttrBuilder
+        private class AttrBuilder
         {
-            List<Tuple<string, string>> m_Items = new();
+            private List<Tuple<string, string>> m_Items = new();
 
             public void Add(string k, string v)
             {
@@ -85,7 +85,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         }
 
 
-        static void PrintAsset(TabWriter writer, BuildLayout.ExplicitAsset asset, int fileIndex)
+        private static void PrintAsset(TabWriter writer, BuildLayout.ExplicitAsset asset, int fileIndex)
         {
             AttrBuilder attr = new AttrBuilder();
             attr.AddSize("Total Size", asset.SerializedSize + asset.StreamedSize);
@@ -107,7 +107,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        static void PrintDataFromOtherAsset(TabWriter writer, BuildLayout.DataFromOtherAsset asset)
+        private static void PrintDataFromOtherAsset(TabWriter writer, BuildLayout.DataFromOtherAsset asset)
         {
             AttrBuilder attr = new AttrBuilder();
             attr.AddSize("Size", asset.SerializedSize + asset.StreamedSize);
@@ -120,7 +120,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        static void PrintFile(TabWriter writer, BuildLayout.File file, int i)
+        private static void PrintFile(TabWriter writer, BuildLayout.File file, int i)
         {
             AttrBuilder attr = new AttrBuilder();
             if (file.PreloadInfoSize > 0)
@@ -148,7 +148,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        static void PrintArchive(TabWriter writer, BuildLayout.Bundle archive)
+        private static void PrintArchive(TabWriter writer, BuildLayout.Bundle archive)
         {
             AttrBuilder attr = new AttrBuilder();
             attr.AddSize("Size", archive.FileSize);
@@ -184,7 +184,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        static void PrintGroup(TabWriter writer, BuildLayout.Group grp)
+        private static void PrintGroup(TabWriter writer, BuildLayout.Group grp)
         {
             var explicitAssetCount = grp.Bundles.Sum(x => x.Files.Sum(y => y.Assets.Count));
             var attr = new AttrBuilder();
@@ -224,7 +224,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        static void WriteSummary(TabWriter writer, BuildLayout layout)
+        private static void WriteSummary(TabWriter writer, BuildLayout layout)
         {
             int ExplicitAssetCount = 0;
             int SceneBundleCount = 0;
