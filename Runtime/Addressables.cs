@@ -28,6 +28,7 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
+        [MustUseReturnValue]
         public static IAssetOp<TObject> LoadAssetAsync<TObject>(string key) where TObject : Object
         {
             L.I($"[Addressables] Load Start: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
@@ -38,6 +39,7 @@ namespace UnityEngine.AddressableAssets
             return op;
         }
 
+        [MustUseReturnValue]
         public static TObject LoadAsset<TObject>(string key) where TObject : Object
         {
             L.I($"[Addressables] Load: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
