@@ -107,7 +107,7 @@ namespace UnityEditor.AddressableAssets
         {
             var noDelay = UnityEngine.Random.value < 0.05f; // 5% chance of no delay.
             if (noDelay) return 0f;
-            var loadDelay = UnityEngine.Random.Range(0, 0.3f); // 0s - 0.3s delay.
+            var loadDelay = UnityEngine.Random.Range(0.05f, 0.15f); // 0.05s - 0.15s delay.
             return loadDelay;
         }
     }
