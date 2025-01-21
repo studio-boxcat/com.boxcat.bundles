@@ -80,6 +80,7 @@ namespace UnityEditor.AddressableAssets
                 throw;
             }
 
+            L.I($"[EditorAssetOp] Loaded asset: path={_path}");
             var onComplete = _onComplete;
             _onComplete = null;
             onComplete?.Invoke(_result);
