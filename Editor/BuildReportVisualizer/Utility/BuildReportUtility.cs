@@ -26,8 +26,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string ReportsListItemContainerRighthandElements = nameof(ReportsListItemContainerRighthandElements);
         public static readonly string ReportsListItemContainerLefthandElements = nameof(ReportsListItemContainerLefthandElements);
 
-        public static readonly string MainContainer = nameof(MainToolbar);
-
         public static readonly string ReportsList = nameof(ReportsList);
         public static readonly string ReportsListItemBuildStatus = nameof(ReportsListItemBuildStatus);
         public static readonly string ReportsListItemBuildPlatform = nameof(ReportsListItemBuildPlatform);
@@ -36,23 +34,15 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
 
         public static readonly string MainPanel = nameof(MainPanel);
-        public static readonly string DetailsPanel = nameof(DetailsPanel);
 
-        public static readonly string DetailsUses = nameof(DetailsUses);
-        public static readonly string DetailsUsedBy = nameof(DetailsUsedBy);
-
-        public static readonly string BundleContainsAssetsPane = nameof(BundleContainsAssetsPane);
-        public static readonly string AssetsDetailsView = nameof(AssetsDetailsView);
         public static readonly string LeftMiddlePaneSplitter = nameof(LeftMiddlePaneSplitter);
         public static readonly string MiddleRightPaneSplitter = nameof(MiddleRightPaneSplitter);
 
         public static readonly string ContentViewTypeDropdown = nameof(ContentViewTypeDropdown);
 
         public static readonly string ContentView = nameof(ContentView);
-        public static readonly string ContentViewColumns = nameof(ContentViewColumns);
 
         // Bundle view
-        public static readonly string BundlesContentView = nameof(BundlesContentView);
         public static readonly string BundlesContentViewColBundleName = nameof(BundlesContentViewColBundleName);
         public static readonly string BundlesContentViewColRefsTo = nameof(BundlesContentViewColRefsTo);
         public static readonly string BundlesContentViewColRefsBy = nameof(BundlesContentViewColRefsBy);
@@ -62,7 +52,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
 
         // Asset view
-        public static readonly string AssetsContentView = nameof(AssetsContentView);
         public static readonly string AssetsContentViewColAssetName = nameof(AssetsContentViewColAssetName);
         public static readonly string AssetsContentViewColSizePlusRefs = nameof(AssetsContentViewColSizePlusRefs);
         public static readonly string AssetsContentViewColSizeUncompressed = nameof(AssetsContentViewColSizeUncompressed);
@@ -71,7 +60,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string AssetsContentViewColRefsBy = nameof(AssetsContentViewColRefsBy);
 
         // Groups view
-        public static readonly string GroupsContentView = nameof(GroupsContentView);
         public static readonly string GroupsContentViewColGroupName = nameof(GroupsContentViewColGroupName);
         public static readonly string GroupsContentViewColSizePlusRefs = nameof(GroupsContentViewColSizePlusRefs);
         public static readonly string GroupsContentViewColSizeUncompressed = nameof(GroupsContentViewColSizeUncompressed);
@@ -80,21 +68,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string GroupsContentViewColRefsBy = nameof(GroupsContentViewColRefsBy);
 
         // Duplicated Assets view
-        public static readonly string DuplicatedAssetsContentView = nameof(DuplicatedAssetsContentView);
         public static readonly string DuplicatedAssetsContentViewColAssetName = nameof(DuplicatedAssetsContentViewColAssetName);
         public static readonly string DuplicatedAssetsContentViewColSize = nameof(DuplicatedAssetsContentViewColSize);
         public static readonly string DuplicatedAssetsContentViewSpaceSaved = nameof(DuplicatedAssetsContentViewSpaceSaved);
         public static readonly string DuplicatedAssetsContentViewDuplicationCount = nameof(DuplicatedAssetsContentViewDuplicationCount);
-
-        // Inefficient Bundles view
-        public static readonly string InefficientBundlesContentView = nameof(InefficientBundlesContentView);
-        public static readonly string InefficientBundlesContentViewBundleName = nameof(InefficientBundlesContentViewBundleName);
-        public static readonly string InefficientBundlesContentViewGroup = nameof(InefficientBundlesContentViewGroup);
-        public static readonly string InefficientBundlesContentViewSize = nameof(InefficientBundlesContentViewSize);
-        public static readonly string InefficientBundlesContentViewSizeWDeps = nameof(InefficientBundlesContentViewSizeWDeps);
-        public static readonly string InefficientBundlesContentViewNumOfDeps = nameof(InefficientBundlesContentViewNumOfDeps);
-        public static readonly string InefficientBundlesContentViewNumOfParents = nameof(InefficientBundlesContentViewNumOfParents);
-        public static readonly string InefficientBundlesContentViewEfficiency = nameof(InefficientBundlesContentViewEfficiency);
 
         // Cell stylesheets
         public static readonly string TreeViewImplicitAsset = nameof(TreeViewImplicitAsset);
@@ -107,97 +84,22 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string TreeViewItemNoIcon = "NoIcon";
         public static readonly string TreeViewItemName = nameof(TreeViewItemName);
         public static readonly string TreeViewItemFilePath = UxmlFilesPath + "TreeViewItem.uxml";
-        public static readonly string TreeViewNavigableItem = nameof(TreeViewNavigableItem);
-        public static readonly string TreeViewNavigableItemButton = nameof(TreeViewNavigableItemButton);
-        public static readonly string TreeViewNavigableItemName = nameof(TreeViewNavigableItemName);
-        public static readonly string TreeViewNavigableItemStatus = nameof(TreeViewNavigableItemStatus);
-        public static readonly string TreeViewNavigableItemStatusWarning = "Warning";
         public static readonly string TreeViewNavigableItemFilePath = UxmlFilesPath + "TreeViewNavigableItem.uxml";
         public static readonly string DetailsPanelSummaryNavigableItem = UxmlFilesPath + "DetailsPanelSummaryNavigableItem.uxml";
         public static readonly string DetailsPanelSummaryNavigableBundle = UxmlFilesPath + "DetailsPanelSummaryNavigableBundle.uxml";
         public static readonly string DrillableListViewItemPath = UxmlFilesPath + "DrillableListViewItem.uxml";
 
-        // Summary Foldouts
-        public static readonly string SummaryTabBuildFilesFoldout = nameof(SummaryTabBuildFilesFoldout);
-        public static readonly string SummaryTabBundlesUpdatedCount = nameof(SummaryTabBundlesUpdatedCount);
-        public static readonly string SummaryTabBundlesUpdatedSize = nameof(SummaryTabBundlesUpdatedSize);
-        public static readonly string SummaryTabBundlesUnchangedCount = nameof(SummaryTabBundlesUnchangedCount);
-        public static readonly string SummaryTabBundlesUnchangedSize = nameof(SummaryTabBundlesUnchangedSize);
-        public static readonly string SummaryTabBundlesPlayerPlatform = nameof(SummaryTabBundlesPlayerPlatform);
-        public static readonly string SummaryTabBundlesPlayerSize = nameof(SummaryTabBundlesPlayerSize);
-
-        public static readonly string SummaryTabTotalSizeFoldout = nameof(SummaryTabTotalSizeFoldout);
         public const string SummaryTabLabelElementNameFormat = "SummaryTabLabel_{0}";
         public const string SummaryTabSizeElementNameFormat = "SummaryTabSize_{0}";
-        public const string SummaryTabScene = "Scene";
-        public const string SummaryTabScriptableObject = "ScriptableObject";
-        public const string SummaryTabPrefab = "Prefab";
-        public const string SummaryTabMaterial = "Material";
-        public const string SummaryTabShader = "Shader";
-        public const string SummaryTabTexture = "Texture";
-        public const string SummaryTabMesh = "Mesh";
-        public const string SummaryTabAnimation = "Animation";
-        public const string SummaryTabAudio = "Audio";
-        public const string SummaryTabVideo = "Video";
-        public const string SummaryTabOther = "Other";
-        public const string SummaryTabTotal = "Total";
-        public const string SummaryTabBundles = "BundlesCompressed";
-
-        public static readonly string SummaryTabDuplicatedAssetsFoldout = nameof(SummaryTabDuplicatedAssetsFoldout);
-        public static readonly string SummaryTabInefficientBundlesFoldout = nameof(SummaryTabInefficientBundlesFoldout);
-        public static readonly string SummaryTabDuplicatedAssetsIndentedRow = nameof(SummaryTabDuplicatedAssetsIndentedRow);
-        public static readonly string SummaryTabInefficientBundlesIndentedRow = nameof(SummaryTabInefficientBundlesIndentedRow);
-        public static readonly string SummaryTabIndentedRows = nameof(SummaryTabIndentedRows);
-        public static readonly string SummaryTabIssuesFoldout = nameof(SummaryTabIssuesFoldout);
-        public static readonly string SummaryTabIssuesIcon = nameof(SummaryTabIssuesIcon);
 
         public const string SummaryTabUssPath = StyleSheetsPath + "SummaryTab.uss";
         public const string SummaryTabDarkUssPath = StyleSheetsPath + "SummaryTabDark.uss";
         public const string SummaryTabLightUssPath = StyleSheetsPath + "SummaryTabLight.uss";
 
-        public const string SummaryTabCardDarkUssPath = StyleSheetsPath + "SummaryTabCardDark.uss";
-        public const string SummaryTabCardLightUssPath = StyleSheetsPath + "SummaryTabCardLight.uss";
-
-        public static readonly string BuildPerformanceReportButton = nameof(BuildPerformanceReportButton);
-        public static readonly string BuildFilesContentViewButton = nameof(BuildFilesContentViewButton);
-        public static readonly string DuplicatedAssetsContentViewButton = nameof(DuplicatedAssetsContentViewButton);
-        public static readonly string InefficientBundlesContentViewButton = nameof(InefficientBundlesContentViewButton);
-
         // Details panel
         public static readonly string DetailsSummaryPane = nameof(DetailsSummaryPane);
-        public static readonly string DetailsContents = nameof(DetailsContents);
         public static readonly string DetailsContentsList = nameof(DetailsContentsList);
-        public static readonly string DetailsContentsTreeView = nameof(DetailsContentsTreeView);
-        public static readonly string DetailsPanelSummaryAsset = nameof(DetailsPanelSummaryAsset);
-        public static readonly string DetailsPanelSummaryBundle = nameof(DetailsPanelSummaryBundle);
-        public static readonly string DetailsPanelSummaryLabel = nameof(DetailsPanelSummaryLabel);
-        public static readonly string DetailsPanelSummaryGroup = nameof(DetailsPanelSummaryGroup);
 
-        public static readonly string DetailsContentsTreeViewBreadcrumb = nameof(DetailsContentsTreeViewBreadcrumb);
-
-        public static readonly string DetailsPanelSummaryBundleName = nameof(DetailsPanelSummaryBundleName);
-        public static readonly string DetailsPanelSummaryBundleUncompressedSize = nameof(DetailsPanelSummaryBundleUncompressedSize);
-        public static readonly string DetailsPanelSummaryBundleSizeWDeps = nameof(DetailsPanelSummaryBundleSizeWDeps);
-        public static readonly string DetailsPanelSummaryBundleCompressionType = nameof(DetailsPanelSummaryBundleCompressionType);
-        public static readonly string DetailsPanelSummaryBundle_GroupsContainer = nameof(DetailsPanelSummaryBundle_GroupsContainer);
-        public static readonly string DetailsPanelSummaryBundleBuildTime = nameof(DetailsPanelSummaryBundleBuildTime);
-        public static readonly string DetailsPanelSummaryBundleLoadPath = nameof(DetailsPanelSummaryBundleLoadPath);
-
-        public static readonly string DetailsPanelSummaryAssetField = nameof(DetailsPanelSummaryAssetField);
-        public static readonly string DetailsPanelSummaryAssetUncompressedSize = nameof(DetailsPanelSummaryAssetUncompressedSize);
-        public static readonly string DetailsPanelSummaryAssetSizeWDeps = nameof(DetailsPanelSummaryAssetSizeWDeps);
-        public static readonly string DetailsPanelSummaryAsset_BundlesContainer = nameof(DetailsPanelSummaryAsset_BundlesContainer);
-        public static readonly string DetailsPanelSummaryAsset_GroupsContainer = nameof(DetailsPanelSummaryAsset_GroupsContainer);
-        public static readonly string DetailsPanelSummaryAsset_LabelsContainer = nameof(DetailsPanelSummaryAsset_LabelsContainer);
-
-        public static readonly string DetailsPanelSummaryNavigableItemName = nameof(DetailsPanelSummaryNavigableItemName);
-        public static readonly string DetailsPanelSummaryNavigableItemButton = nameof(DetailsPanelSummaryNavigableItemButton);
-        public static readonly string DetailsPanelSummaryNavigableBundleName = nameof(DetailsPanelSummaryNavigableBundleName);
-        public static readonly string DetailsPanelSummaryNavigableBundleItemButton = nameof(DetailsPanelSummaryNavigableBundleItemButton);
-        public static readonly string DetailsPanelSummaryNavigableBundleLoadPath = nameof(DetailsPanelSummaryNavigableBundleLoadPath);
-
-        public static readonly string DetailsContentViewColumn1 = nameof(DetailsContentViewColumn1);
-        public static readonly string DetailsContentViewColumn2 = nameof(DetailsContentViewColumn2);
         public static readonly string BreadcrumbToolbar = nameof(BreadcrumbToolbar);
         public static readonly string BreadcrumbToolbarName = nameof(BreadcrumbToolbarName);
         public static readonly string BreadcrumbToolbarBackButton = nameof(BreadcrumbToolbarBackButton);
@@ -211,7 +113,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string SummaryTab = nameof(SummaryTab);
         public static readonly string ContentTab = nameof(ContentTab);
         public static readonly string PotentialIssuesTab = nameof(PotentialIssuesTab);
-        public static readonly string PotentialIssuesTabButton = nameof(PotentialIssuesTabButton);
         public static readonly string PotentialIssuesDropdown = nameof(PotentialIssuesDropdown);
         public static readonly string ReferencedByTab = nameof(ReferencedByTab);
         public static readonly string ReferencesToTab = nameof(ReferencesToTab);
@@ -224,8 +125,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public const string StyleSheetsPath = UIToolKitAssetsPath + "StyleSheets/";
 
         public const string MainToolbarButtonsUssPath = StyleSheetsPath + "MainToolbarButtons.uss";
-        public const string MainToolbarButtonsDarkUssPath = StyleSheetsPath + "MainToolbarButtonsDark.uss";
-        public const string MainToolbarButtonsLightUssPath = StyleSheetsPath + "MainToolbarButtonsLight.uss";
         public const string SideBarDark = "Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_DarkTheme@2x.png";
         public const string SideBarLight = "Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_LightTheme@2x.png";
 

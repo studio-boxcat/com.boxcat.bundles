@@ -9,6 +9,5 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         public static readonly string AssetBundleIconLight = "Package Manager@2x";
         public static readonly string ForwardIconLight = "tab_next@2x";
         public static readonly string BackIconLight = "tab_prev@2x";
-        public static readonly string ErrorIcon = "console.erroricon";
     }
 }
