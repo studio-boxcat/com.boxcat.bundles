@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Threading.Tasks;
+using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.AsyncOperations;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
@@ -19,7 +20,8 @@ namespace UnityEditor.AddressableAssets
         {
             _path = path;
 
-            var loadDelay = GetDelay();
+            // load immediately if delay is 0
+            var loadDelay = SimulateDelay();
             if (loadDelay == 0)
             {
                 LoadImmediate();
@@ -27,8 +29,11 @@ namespace UnityEditor.AddressableAssets
                 return;
             }
 
+            // otherwise, schedule the load
             _loadTime = DateTime.Now.AddSeconds(loadDelay);
-            Task.Delay((int) (loadDelay * 1000)).ContinueWith(_ => EditorApplication.delayCall += LoadImmediate);
+            Task.Delay((int) (loadDelay * 1000)).ContinueWith(
+                static (_, s) => EditorApplication.delayCall += ((EditorAssetOp<TObject>) s).LoadImmediate,
+                this);
         }
 
         public override string ToString() => $"EditorAssetOp:{_path} ({(_result != default ? "Loaded" : "Loading")})";
@@ -104,8 +109,9 @@ namespace UnityEditor.AddressableAssets
         public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object> onComplete, object payload)
             => AddOnComplete(obj => onComplete(this, obj, payload));
 
-        private static float GetDelay()
+        private static float SimulateDelay()
         {
+            if (EditorConfig.NoAssetDatabaseDelaySimulation) return 0f;
             var noDelay = UnityEngine.Random.value < 0.05f; // 5% chance of no delay.
             if (noDelay) return 0f;
             var loadDelay = UnityEngine.Random.Range(0.05f, 0.15f); // 0.05s - 0.15s delay.
