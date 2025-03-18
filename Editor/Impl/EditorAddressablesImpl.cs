@@ -115,7 +115,7 @@ namespace UnityEditor.AddressableAssets
                         // Empty address means it's only for including this asset into the group.
                         if (string.IsNullOrEmpty(e.address)) continue;
                         var added = _addressToEntry.TryAdd(e.address, e);
-                        if (added is false) L.E(e.MainAsset, "Address already exists: " + e.address);
+                        if (added is false) L.E("Address already exists: " + e.address, e.MainAsset);
                     }
                 }
             }
