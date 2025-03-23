@@ -1,5 +1,3 @@
-using UnityEngine.AddressableAssets.Util;
-
 namespace UnityEditor.AddressableAssets.Build
 {
     internal static class AddressablesBuildScriptHooks

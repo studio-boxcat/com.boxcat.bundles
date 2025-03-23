@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 x => (AssetGUID) x.Key,
                 x => x.Value.Select(y => BundleKey.FromBuildName(m_WriteData.FileToBundle[y])).ToList());
 
-            var ctx = (AddressableAssetsBuildContext) m_AaBuildContext;
+            var ctx = m_AaBuildContext;
             Process(
                 ctx.Catalog,
                 assetToFiles,

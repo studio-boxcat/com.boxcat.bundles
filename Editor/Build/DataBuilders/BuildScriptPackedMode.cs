@@ -111,9 +111,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             {
                 L.I("[BuildScriptPackedMode] Process Catalog Entries");
-                foreach (var r in results.WriteResults)
+                foreach (var resultValue in results.WriteResults.Values)
                 {
-                    var resultValue = r.Value;
                     m_Linker.AddTypes(resultValue.includedTypes);
                     m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
                 }
