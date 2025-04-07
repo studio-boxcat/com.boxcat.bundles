@@ -4,7 +4,6 @@ using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEngine;
-using UnityEngine.AddressableAssets.Util;
 using Assert = UnityEngine.Assertions.Assert;
 
 namespace UnityEditor.AddressableAssets

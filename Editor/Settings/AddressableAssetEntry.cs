@@ -1,7 +1,6 @@
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.AddressableAssets.Util;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
