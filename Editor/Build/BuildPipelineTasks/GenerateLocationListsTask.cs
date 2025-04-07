@@ -58,14 +58,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             out Dictionary<BundleKey, HashSet<BundleKey>> bundleToImmediateBundleDependencies,
             out Dictionary<BundleKey, HashSet<BundleKey>> bundleToExpandedBundleDependencies)
         {
-            entries = catalog.groups.SelectMany(g => g.entries).ToDictionary(
-                e => e.guid,
+            entries = catalog.Groups.SelectMany(g => g.Entries).ToDictionary(
+                e => e.GUID,
                 e =>
                 {
-                    var guid = e.guid;
+                    var guid = e.GUID;
                     var deps = assetToFiles[guid];
                     var bundle = deps[0]; // First bundle is the containing bundle.
-                    Address? address = string.IsNullOrEmpty(e.address) ? null : AddressUtils.Hash(e.address);
+                    Address? address = string.IsNullOrEmpty(e.Address) ? null : AddressUtils.Hash(e.Address);
                     return new EntryDef(guid, address, bundle, deps.ToHashSet());
                 });
 

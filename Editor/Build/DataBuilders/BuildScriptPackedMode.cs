@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
 using UnityEditor.Build.Pipeline;
@@ -10,7 +9,6 @@ using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -82,8 +80,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             IBundleBuildResults results;
             using (new SBPSettingsOverwriterScope(ProjectConfigData.GenerateBuildLayout)) // build layout generation requires full SBP write results
             {
-                aaContext.bundleToAssetGroup = new Dictionary<BundleKey, AddressableAssetGroup>();
-                var bundleBuilds = GenerateBundleBuilds(catalog.groups, aaContext.bundleToAssetGroup);
+                aaContext.bundleToAssetGroup = new Dictionary<BundleKey, AssetGroup>();
+                var bundleBuilds = GenerateBundleBuilds(catalog.Groups, aaContext.bundleToAssetGroup);
                 var buildContent = new BundleBuildContent(bundleBuilds);
                 var buildTasks = RuntimeDataBuildTasks();
                 buildTasks.Add(extractData);
@@ -126,7 +124,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             {
                 L.I("[BuildScriptPackedMode] Generate link");
-                m_Linker.Save(Path.Combine(catalog.ResolveConfigFolder(), "link.xml"));
+                var dir = Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))!;
+                m_Linker.Save(Path.Combine(dir, "link.xml"));
             }
 
             if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)
@@ -146,62 +145,19 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         /// <returns>An error string if there were any problems processing the groups</returns>
         public static List<AssetBundleBuild> GenerateBundleBuilds(
-            List<AddressableAssetGroup> groups,
-            Dictionary<BundleKey, AddressableAssetGroup> bundleToAssetGroup)
+            AssetGroup[] groups,
+            Dictionary<BundleKey, AssetGroup> bundleToAssetGroup)
         {
             Assert.IsNotNull(groups, "AddressableAssetGroup list is null");
 
-            var bundleBuilds = new List<AssetBundleBuild>();
+            var bundleBuilds = new List<AssetBundleBuild>(groups.Length);
             foreach (var group in groups)
-            foreach (var bundleBuild in GenerateBundleBuilds(group))
             {
+                var bundleBuild = group.GenerateAssetBundleBuild();
                 bundleBuilds.Add(bundleBuild);
                 bundleToAssetGroup.Add(BundleKey.FromBuildName(bundleBuild.assetBundleName), group);
             }
             return bundleBuilds;
-        }
-
-        /// <summary>
-        /// Processes an AddressableAssetGroup and generates AssetBundle input definitions based on the BundlePackingMode.
-        /// </summary>
-        /// <param name="assetGroup">The AddressableAssetGroup to be processed.</param>
-        /// <returns>The total list of AddressableAssetEntries that were processed.</returns>
-        private static IEnumerable<AssetBundleBuild> GenerateBundleBuilds(AddressableAssetGroup assetGroup)
-        {
-            return assetGroup.BundleMode switch
-            {
-                BundlePackingMode.PackTogether => GenerateBuildInputDefinitions(assetGroup, assetGroup.entries, "all"),
-                BundlePackingMode.PackSeparately => assetGroup.entries.SelectMany(e =>
-                {
-                    var suffix = string.IsNullOrEmpty(e.address) ? e.guid.Value : e.address;
-                    return GenerateBuildInputDefinitions(assetGroup, new List<AddressableAssetEntry> { e }, suffix);
-                }),
-                _ => throw new Exception("Unknown Packing Mode")
-            };
-
-            static IEnumerable<AssetBundleBuild> GenerateBuildInputDefinitions(
-                AddressableAssetGroup group, ICollection<AddressableAssetEntry> entries, string suffix)
-            {
-                var scenes = new List<AddressableAssetEntry>();
-                var assets = new List<AddressableAssetEntry>();
-                foreach (var e in entries)
-                    (e.IsScene ? scenes : assets).Add(e);
-
-                if (assets.Count > 0)
-                    yield return GenerateBuildInputDefinition(group, assets, "Asset_" + suffix);
-                if (scenes.Count > 0)
-                    yield return GenerateBuildInputDefinition(group, scenes, "Scene_" + suffix);
-            }
-
-            static AssetBundleBuild GenerateBuildInputDefinition(AddressableAssetGroup group, List<AddressableAssetEntry> assets, string suffix)
-            {
-                return new AssetBundleBuild
-                {
-                    assetBundleName = BundleKey.Create(group.Name, suffix).GetBuildName(),
-                    assetNames = assets.Select(e => e.ResolveAssetPath()).ToArray(),
-                    addressableNames = assets.Select(e => AddressUtils.Hash(e.address).Name()).ToArray()
-                };
-            }
         }
 
         // Tests can set this flag to prevent player script compilation. This is the most expensive part of small builds

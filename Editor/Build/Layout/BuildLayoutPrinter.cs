@@ -186,17 +186,15 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         private static void PrintGroup(TabWriter writer, BuildLayout.Group grp)
         {
-            var explicitAssetCount = grp.Bundles.Sum(x => x.Files.Sum(y => y.Assets.Count));
+            var explicitAssetCount = grp.Bundle.Files.Sum(y => y.Assets.Count);
             var attr = new AttrBuilder();
-            attr.Add("Bundles", grp.Bundles.Count.ToString());
-            attr.Add("Packing Mode", grp.PackingMode);
-            attr.AddSize("Total Size", (ulong)grp.Bundles.Sum(x => (long)x.FileSize));
+            attr.AddSize("Total Size", grp.Bundle.FileSize);
             attr.Add("Explicit Asset Count", explicitAssetCount.ToString());
 
             using (writer.IndentScope($"Group {grp.Name} {attr}"))
             {
-                foreach (BuildLayout.Bundle archive in grp.Bundles)
-                    PrintArchive(writer, archive);
+                var archive = grp.Bundle;
+                PrintArchive(writer, archive);
             }
         }
 

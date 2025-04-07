@@ -91,7 +91,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             Dictionary<AssetType, ulong> sizes = new Dictionary<AssetType, ulong>();
             foreach (var group in layout.Groups)
             {
-                foreach (var bundle in group.Bundles)
+                var bundle = group.Bundle;
                 {
                     summary.BundleSummary.TotalCompressedSize += bundle.FileSize;
                     summary.BundleSummary.TotalUncompressedSize += bundle.UncompressedFileSize;
@@ -125,7 +125,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             BuildLayoutSummary summary = new BuildLayoutSummary();
             foreach (var group in layout.Groups)
             {
-                foreach (var bundle in group.Bundles)
+                var bundle = group.Bundle;
                 {
                     summary.BundleSummary.TotalCompressedSize += bundle.FileSize;
                     summary.BundleSummary.TotalUncompressedSize += bundle.UncompressedFileSize;

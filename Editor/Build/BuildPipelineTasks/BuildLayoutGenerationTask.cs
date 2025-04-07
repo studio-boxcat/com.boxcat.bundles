@@ -629,14 +629,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Map from GUID to AddrssableAssetEntry
             lookup.GuidToEntry = aaContext.entries.ToDictionary(
                 kvp => (AssetId) kvp.Key,
-                kvp => aaCatalog.FindAssetEntry(kvp.Value.GUID));
+                kvp => aaCatalog.GetEntryByGUID(kvp.Value.GUID));
 
             // create groups
             foreach (var (bundle, group) in aaContext.bundleToAssetGroup)
             {
                 var grp = new BuildLayout.Group();
-                grp.Name = group.Name;
-                grp.PackingMode = group.BundleMode.ToString();
+                grp.Name = group.BundleName;
                 lookup.GroupLookup.Add(bundle, grp);
                 layout.Groups.Add(grp);
             }
@@ -660,17 +659,18 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         private void CorrelateBundleToAssetGroup(BuildLayout layout, BuildLayout.Bundle b, LayoutLookupTables lookup, AddressableAssetsBuildContext aaContext)
         {
-            if (aaContext.bundleToAssetGroup.TryGetValue(b.Key, out _))
+            if (aaContext.Catalog.TryGetGroup(b.Key.GetBuildName(), out _))
             {
                 var assetGroup = lookup.GroupLookup[b.Key];
                 b.Group = assetGroup;
-                assetGroup.Bundles.Add(b);
+                Assert.IsNull(assetGroup.Bundle);
+                assetGroup.Bundle = b;
             }
             // bundleToAssetGroup doesn't contain the builtin bundles. The builtin content is built using values from the default group
             else
             {
                 var defaultGroup = aaContext.Catalog.DefaultGroup;
-                b.Group = lookup.GroupLookup.Values.Single(g => g.Name == defaultGroup.Name);
+                b.Group = lookup.GroupLookup.Values.Single(g => g.Name == defaultGroup.BundleName);
                 layout.BuiltInBundles.Add(b);
             }
 
@@ -768,7 +768,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     foreach (BuildLayout.ExplicitAsset rootAsset in bundle.Files[fileIndex].Assets)
                     {
-                        if (lookup.GuidToEntry.TryGetValue(rootAsset.Guid, out AddressableAssetEntry rootEntry))
+                        if (lookup.GuidToEntry.TryGetValue(rootAsset.Guid, out AssetEntry rootEntry))
                         {
                             ApplyAddressablesInformationToExplicitAsset(rootAsset, rootEntry);
                         }
@@ -777,14 +777,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
         }
 
-        private static void ApplyAddressablesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AddressableAssetEntry rootEntry)
+        private static void ApplyAddressablesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AssetEntry rootEntry)
         {
-            rootAsset.AddressableName = rootEntry.address;
-            rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.MainAssetType);
+            rootAsset.AddressableName = rootEntry.Address;
+            rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.Asset.GetType());
 
             if (rootAsset.Bundle == null)
             {
-                Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.guid}");
+                Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
                 return;
             }
 
@@ -792,7 +792,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 if (referencedAsset.Bundle == null)
                 {
-                    Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.guid}");
+                    Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
                     continue;
                 }
 

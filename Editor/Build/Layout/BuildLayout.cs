@@ -5,6 +5,7 @@ using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
@@ -464,15 +465,10 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string Name;
 
             /// <summary>
-            /// The packing mode as defined by the BundledAssetGroupSchema on the AddressableAssetGroup
-            /// </summary>
-            public string PackingMode;
-
-            /// <summary>
-            /// A list of the AssetBundles associated with the Group
+            /// An AssetBundles associated with the Group
             /// </summary>
             [SerializeReference]
-            public List<Bundle> Bundles = new();
+            public Bundle Bundle;
         }
 
         /// <summary>
@@ -1044,7 +1040,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Maps used for lookups while building the BuildLayout
         internal Dictionary<AssetId, List<BuildLayout.DataFromOtherAsset>> UsedImplicits = new();
 
-        internal Dictionary<AssetId, AddressableAssetEntry> GuidToEntry = new();
+        internal Dictionary<AssetId, AssetEntry> GuidToEntry = new();
         internal Dictionary<string, AssetType> AssetPathToTypeMap = new();
     }
 

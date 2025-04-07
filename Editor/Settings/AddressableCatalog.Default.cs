@@ -4,7 +4,7 @@ namespace UnityEditor.AddressableAssets
 {
     public partial class AddressableCatalog
     {
-        private const string _key = "JvdB2Lb8";
+        private const string _key = "q8FnVbLc";
 
         private static AddressableCatalog _default;
 
@@ -13,8 +13,7 @@ namespace UnityEditor.AddressableAssets
             get
             {
                 var guid = GetGuid();
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                return AssetDatabase.LoadAssetAtPath<AddressableCatalog>(path);
+                return AddressablesUtils.Load<AddressableCatalog>((AssetGUID) guid);
 
                 static string GetGuid()
                 {

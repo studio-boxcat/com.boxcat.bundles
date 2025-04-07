@@ -92,7 +92,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             FileSizeBundle = 0;
             FileSizeUncompressed = 0;
             RefsBy = -1;
-            RefsTo = group.Bundles.Count;
+            RefsTo = 1; // group.Bundle
         }
     }
 
@@ -283,7 +283,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         private List<TreeViewItemData<GroupsViewBuildReportItem>> CreateGroupBundles(GroupsViewBuildReportGroup group, ref int id, bool includeAllDependencies)
         {
             var bundlesUnderGroup = new List<TreeViewItemData<GroupsViewBuildReportItem>>();
-            foreach (var bundle in group.Group.Bundles)
+            var bundle = group.Group.Bundle;
             {
                 var bundleReportItem = new GroupsViewBuildReportBundle(bundle);
                 var children = new List<TreeViewItemData<GroupsViewBuildReportItem>>();

@@ -67,17 +67,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         /// <summary>
-        /// Check path is valid path for Addressables entry
-        /// </summary>
-        /// <param name="path"> The path to check</param>
-        /// <returns>Whether path is valid</returns>
-        protected static bool IsValidPath(string path)
-        {
-            return AddressableAssetUtility.IsPathValidForEntry(path) &&
-                   !path.Contains("/Resources/", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
         /// Refresh build to check bundles against current rules
         /// </summary>
         /// <param name="buildContext"> Context information for building</param>
@@ -198,7 +187,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         protected void CalculateInputDefinitions(AddressableCatalog catalog)
         {
             m_AllBundleInputDefs = BuildScriptPackedMode.GenerateBundleBuilds(
-                catalog.groups, new Dictionary<BundleKey, AddressableAssetGroup>());
+                catalog.Groups, new Dictionary<BundleKey, AssetGroup>());
         }
 
         /// <summary>

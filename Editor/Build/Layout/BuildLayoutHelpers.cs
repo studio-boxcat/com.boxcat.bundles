@@ -50,7 +50,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             foreach (BuildLayout.Bundle b in layout.BuiltInBundles)
                 yield return b;
 
-            foreach (BuildLayout.Bundle b in layout.Groups.SelectMany(g => g.Bundles))
+            foreach (BuildLayout.Bundle b in layout.Groups.Select(g => g.Bundle))
                 yield return b;
         }
 

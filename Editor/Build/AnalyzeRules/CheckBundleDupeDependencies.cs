@@ -198,7 +198,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             IEnumerable<KeyValuePair<GUID, List<string>>> validGuids =
                 from dupeGuid in implicitGuids
                 where dupeGuid.Value.Distinct().Count() > 1
-                where IsValidPath(AssetDatabase.GUIDToAssetPath(dupeGuid.Key.ToString()))
                 select dupeGuid;
 
             return
