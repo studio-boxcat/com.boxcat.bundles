@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -36,7 +37,7 @@ namespace UnityEditor.AddressableAssets
         private Dictionary<string, AssetGroup> _cachedGroupNameToGroupMap;
         private Dictionary<string, AssetEntry> _cachedAddressToEntryMap;
         private Dictionary<string, AssetEntry> _cachedAssetGUIDToEntryMap;
-        private List<string> _cachedAddressList;
+        [NonSerialized] private List<string> _cachedAddressList;
 
         public bool TryGetGroup(string groupName, out AssetGroup group)
         {
@@ -59,9 +60,9 @@ namespace UnityEditor.AddressableAssets
             cache = new Dictionary<string, AssetEntry>(Groups.Length * 64);
             foreach (var assetGroup in Groups)
             foreach (var assetEntry in assetGroup.Entries)
-                cache[assetEntry.GUID.Value] = assetEntry;
+                cache.Add(assetEntry.GUID.Value, assetEntry);
             cache.TrimExcess();
-            return default;
+            return cache[guid.Value];
         }
 
         public AssetEntry GetEntryByAddress(string address)
@@ -73,9 +74,12 @@ namespace UnityEditor.AddressableAssets
             cache = new Dictionary<string, AssetEntry>(Groups.Length * 64);
             foreach (var assetGroup in Groups)
             foreach (var assetEntry in assetGroup.Entries)
-                cache[assetEntry.Address] = assetEntry;
+            {
+                if (!string.IsNullOrEmpty(assetEntry.Address))
+                    cache.Add(assetEntry.Address, assetEntry);
+            }
             cache.TrimExcess();
-            return default;
+            return cache[address];
         }
 
         public List<string> GetAddressList()
