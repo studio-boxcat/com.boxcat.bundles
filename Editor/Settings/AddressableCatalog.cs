@@ -365,7 +365,7 @@ namespace UnityEditor.AddressableAssets
 
             // Check for scene registered as EditorBuildSettings.scenes.
             {
-                var scenes = BuiltinSceneCache.scenes;
+                var scenes = EditorBuildSettings.scenes;
                 var sceneGuids = new HashSet<GUID>(scenes.Where(s => s.enabled).Select(s => s.guid));
 
                 foreach (var e in groups.SelectMany(g => g.entries))

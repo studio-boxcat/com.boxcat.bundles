@@ -31,17 +31,9 @@ namespace UnityEditor.AddressableAssets.GUI
             m_Editor = ed;
             columnIndexForTreeFoldouts = 0;
             multiColumnHeader.canSort = false;
-            BuiltinSceneCache.sceneListChanged += OnScenesChanged;
         }
 
         internal TreeViewItem Root => rootItem;
-
-        private void OnScenesChanged()
-        {
-            if (m_Editor.Catalog == null)
-                return;
-            Reload();
-        }
 
         protected override void SelectionChanged(IList<int> selectedIds)
         {
