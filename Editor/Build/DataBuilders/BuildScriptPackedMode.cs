@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
+using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.Assertions;
+using BuildCompression = UnityEngine.BuildCompression;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -23,15 +23,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         // Tests can set this flag to prevent player script compilation. This is the most expensive part of small builds
         // and isn't needed for most tests.
-        private const bool _skinCompilePlayerScripts = false;
-
-        private LinkXmlGenerator m_Linker;
+        private const bool _skipCompilePlayerScripts = false;
 
         /// <inheritdoc />
         protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
         {
-            m_Linker = LinkXmlGenerator.CreateDefault();
-
             var aaContext = new AddressableAssetsBuildContext(catalog) { buildStartTime = DateTime.Now };
             var result = DoBuild(aaContext, target);
 
@@ -81,7 +77,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 return CreateErrorResult("Unsaved scenes", aaContext);
 
             var catalog = aaContext.Catalog;
-            var buildParams = BundleBuildParamsFactory.Get(buildTarget);
+            var buildParams = GetBuildParameter(buildTarget, PathConfig.TempPath_BundleRoot);
+            buildParams.WriteLinkXML = true; // See GenerateLinkXml.cs
 
             L.I("[BuildScriptPackedMode] ContentPipeline.BuildAssetBundles");
             IBundleBuildResults results;
@@ -98,24 +95,25 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             var bundleIds = ResourceCatalogBuilder.BuildBundleIdMap(catalog);
 
-            L.I("[BuildScriptPackedMode] PostProcessBundles");
+            L.I("[BuildScriptPackedMode] Copy to Output Folder");
             using (var progressTracker = new ProgressTracker())
             {
-                progressTracker.UpdateTask("Post Processing AssetBundles");
+                progressTracker.UpdateTask("Copy to Output Folder");
 
+                // bundles
                 foreach (var bundleKey in bundleIds.Keys)
                 {
                     // L.I(bundleKey.ToString());
-                    CopyBundleToOutputPath(bundleKey.Value, bundleIds[bundleKey].Name());
+                    Overwrite(
+                        Path.Combine(PathConfig.TempPath_BundleRoot, bundleKey.Value),
+                        Path.Combine(PathConfig.BuildPath_BundleRoot, bundleIds[bundleKey].Name()));
                 }
-            }
 
-            {
-                L.I("[BuildScriptPackedMode] Process Catalog Entries");
-                foreach (var resultValue in results.WriteResults.Values)
+                // link.xml
                 {
-                    m_Linker.AddTypes(resultValue.includedTypes);
-                    m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
+                    Overwrite(
+                        Path.Combine(PathConfig.TempPath_BundleRoot, "link.xml"),
+                        Path.Combine(Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))!, "link.xml"));
                 }
             }
 
@@ -123,12 +121,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 L.I("[BuildScriptPackedMode] Generate Binary Catalog");
                 var bytes = ResourceCatalogBuilder.Build(aaContext.entries.Values, bundleIds);
                 WriteFile(PathConfig.BuildPath_CatalogBin, bytes);
-            }
-
-            {
-                L.I("[BuildScriptPackedMode] Generate link");
-                var dir = Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))!;
-                m_Linker.Save(Path.Combine(dir, "link.xml"));
             }
 
             if (_generateBuildReport && extractData.BuildContext != null)
@@ -147,60 +139,25 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return result;
         }
 
-        /// <summary>
-        /// Loops over each group, after doing some data checking.
-        /// </summary>
-        /// <returns>An error string if there were any problems processing the groups</returns>
-        public static List<AssetBundleBuild> GenerateBundleBuilds(
-            AssetGroup[] groups)
-        {
-            Assert.IsNotNull(groups, "AddressableAssetGroup list is null");
-            return groups.Select(group => group.GenerateAssetBundleBuild()).ToList();
-        }
-
         private static IList<IBuildTask> RuntimeDataBuildTasks()
         {
-            var buildTasks = new List<IBuildTask>();
+            var buildTasks = (List<IBuildTask>) DefaultBuildTasks.Create(DefaultBuildTasks.Preset.AssetBundleShaderAndScriptExtraction);
 
-            // Setup
-            buildTasks.Add(new SwitchToBuildPlatform());
-            buildTasks.Add(new RebuildSpriteAtlasCache());
+            // remove BuildPlayerScripts when skipCompilePlayerScripts
+            if (_skipCompilePlayerScripts)
+                buildTasks.RemoveAll(x => x is BuildPlayerScripts);
 
-            // Player Scripts
-            if (!_skinCompilePlayerScripts)
-                buildTasks.Add(new BuildPlayerScripts());
-            buildTasks.Add(new PostScriptsCallback());
+            // do not append hash to bundle names
+            buildTasks.RemoveAll(x => x is AppendBundleHash);
 
-            // Dependency
-            buildTasks.Add(new CalculateSceneDependencyData());
-            buildTasks.Add(new CalculateAssetDependencyData());
-            buildTasks.Add(new StripUnusedSpriteSources());
-            buildTasks.Add(new CreateBuiltInShadersBundle(BundleNames.BuiltInShaders));
-            buildTasks.Add(new CreateMonoScriptBundle(BundleNames.MonoScript));
-            buildTasks.Add(new PostDependencyCallback());
-
-            // Packing
-            buildTasks.Add(new GenerateBundlePacking());
-            buildTasks.Add(new UpdateBundleObjectLayout());
-            buildTasks.Add(new GenerateBundleCommands());
-            buildTasks.Add(new GenerateSubAssetPathMaps());
-            buildTasks.Add(new GenerateBundleMaps());
-            buildTasks.Add(new PostPackingCallback());
-
-            // Writing
-            buildTasks.Add(new WriteSerializedFiles());
-            buildTasks.Add(new ArchiveAndCompressBundles());
+            // add GenerateLocationListsTask to the end of the list
             buildTasks.Add(new GenerateLocationListsTask());
-            buildTasks.Add(new PostWritingCallback());
 
             return buildTasks;
         }
 
-        private static string CopyBundleToOutputPath(string srcFileName, string dstFileName)
+        private static string Overwrite(string srcPath, string dstPath)
         {
-            var srcPath = Path.Combine(PathConfig.TempPath_BundleRoot, srcFileName);
-            var dstPath = Path.Combine(PathConfig.BuildPath_BundleRoot, dstFileName);
-
             // L.I($"Move File: {srcPath} -> {dstPath}");
 
             var directory = Path.GetDirectoryName(dstPath);
@@ -228,6 +185,33 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 Debug.LogException(e);
             }
+        }
+
+        public static IBundleBuildParameters GetBuildParameter(BuildTarget target, string outputFolder)
+        {
+            var result = new BundleBuildParameters(
+                target, BuildPipeline.GetBuildTargetGroup(target), outputFolder)
+            {
+                UseCache = true,
+                // If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods.
+                // This approach helps reduce asset bundle rebuilds and runtime memory consumption.
+                NonRecursiveDependencies = false,
+                // If set, packs assets in bundles contiguously based on the ordering of the source asset
+                // which results in improved asset loading times. Disable this if you've built bundles with
+                // a version of Addressables older than 1.12.1 and you want to minimize bundle changes.
+                ContiguousBundles = true,
+                DisableVisibleSubAssetRepresentations = false, // To include main sprite in Texture.
+                // LZMA: This compression format is a stream of data representing the entire AssetBundle,
+                // which means that if you need to read an Asset from these archives, you must decompress the entire stream.
+                // LZ4: compression is a chunk-based compression algorithm.
+                // If Unity needs to access an Asset from an LZ4 archive,
+                // it only needs to decompress and read the chunks that contain bytes of the requested Asset.
+                // XXX: BuildCompression.LZ4 를 사용하는 경우, 다수의 애셋을 동시로드하면 안드로이드에서 데드락이 걸림.
+                BundleCompression = BuildCompression.LZMA,
+            };
+
+            result.ContentBuildFlags |= ContentBuildFlags.StripUnityVersion;
+            return result;
         }
     }
 }

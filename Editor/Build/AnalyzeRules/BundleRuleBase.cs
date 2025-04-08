@@ -9,6 +9,7 @@ using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 {
@@ -38,30 +39,15 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
         internal static List<IBuildTask> RuntimeDataBuildTasks()
         {
-            return new List<IBuildTask>(){
-                // Setup
-                new SwitchToBuildPlatform(),
-                new RebuildSpriteAtlasCache(),
-
-                // Player Scripts
-                new BuildPlayerScripts(),
-
-                // Dependency
-                new CalculateSceneDependencyData(),
-                new CalculateAssetDependencyData(),
-                new StripUnusedSpriteSources(),
-                new CreateBuiltInShadersBundle(BundleNames.BuiltInShaders),
-
-                // Packing
-                new GenerateBundlePacking(),
-                new UpdateBundleObjectLayout(),
-
-                new GenerateBundleCommands(),
-                new GenerateSubAssetPathMaps(),
-                new GenerateBundleMaps(),
-
-                new GenerateLocationListsTask(),
-            };
+            var buildTasks = (List<IBuildTask>) DefaultBuildTasks.Create(DefaultBuildTasks.Preset.AssetBundleShaderAndScriptExtraction);
+            buildTasks.RemoveAll(x => x
+                is WriteSerializedFiles
+                or ArchiveAndCompressBundles
+                or AppendBundleHash
+                or GenerateLinkXml
+                or PostWritingCallback);
+            buildTasks.Add(new GenerateLocationListsTask());
+            return buildTasks;
         }
 
         /// <summary>
@@ -71,7 +57,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <returns> The return code of whether analyze build was successful, </returns>
         protected internal ReturnCode RefreshBuild(AddressableAssetsBuildContext buildContext)
         {
-            var buildParams = BundleBuildParamsFactory.Get(EditorUserBuildSettings.activeBuildTarget);
+            var buildParams = BuildScriptPackedMode.GetBuildParameter(
+                EditorUserBuildSettings.activeBuildTarget, PathConfig.TempPath_BundleRoot);
             var buildTasks = RuntimeDataBuildTasks();
             m_ExtractData = new ExtractDataTask();
             buildTasks.Add(m_ExtractData);

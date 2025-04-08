@@ -2,7 +2,8 @@ namespace UnityEditor.AddressableAssets.Build
 {
     internal static class BundleNames
     {
-        public const string BuiltInShaders = "UnityBuiltInShaders";
-        public const string MonoScript = "MonoScripts";
+        // See DefaultBuildTasks.cs
+        public const string MonoScript = "UnityMonoScripts.bundle";
+        public const string BuiltInShaders = "UnityBuiltInShaders.bundle";
     }
 }
