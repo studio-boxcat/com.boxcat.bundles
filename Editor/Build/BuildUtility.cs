@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.Build
     /// <summary>
     /// Utility class for the Addressables Build Content process.
     /// </summary>
-    public static class BuildUtility
+    internal static class BuildUtility
     {
         /// <summary>
         /// Used during the build to check for unsaved scenes and provide a user popup if there are any.

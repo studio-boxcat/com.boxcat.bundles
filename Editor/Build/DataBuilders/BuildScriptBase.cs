@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using UnityEngine;
-using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {

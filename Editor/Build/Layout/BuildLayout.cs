@@ -5,7 +5,6 @@ using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
-using UnityEngine.Serialization;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
