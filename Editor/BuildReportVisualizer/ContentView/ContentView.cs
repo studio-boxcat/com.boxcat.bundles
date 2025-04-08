@@ -20,7 +20,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public MultiColumnTreeView ContentTreeView => m_TreeView;
 
         protected IList<IAddressablesBuildReportItem> m_TreeItems = null;
-        public IList<IAddressablesBuildReportItem> TreeItems => m_TreeItems;
 
         public struct TreeDataReportItem
         {

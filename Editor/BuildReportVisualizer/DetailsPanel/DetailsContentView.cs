@@ -203,7 +203,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         private DetailsContents GetContents(BuildLayout.Bundle bundle, DetailsViewTab tab)
         {
-            DetailsContents value = new DetailsContents(bundle.Name, BuildReportUtility.GetAssetBundleIconPath());
+            DetailsContents value = new DetailsContents((string) bundle.Key, BuildReportUtility.GetAssetBundleIconPath());
             switch(tab)
             {
                 case DetailsViewTab.ReferencedBy:
@@ -212,13 +212,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                         var referencingAssetList = GetReferencingAssetsFromBundle(referencingBundle, bundle);
                         if (referencingAssetList.Count > 0)
                         {
-                            value.DrillableItems.Add(new DetailsListItem(referencingBundle.Name, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(DetailsViewTab.ReferencedBy,
+                            value.DrillableItems.Add(new DetailsListItem((string) referencingBundle.Key, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(DetailsViewTab.ReferencedBy,
                                 referencingBundle,
                                 GetReferencingAssetsFromBundle(referencingBundle, bundle)), BuildReportUtility.GetForwardIconPath()));
                         }
                         else
                         {
-                            value.DrillableItems.Add(new DetailsListItem(referencingBundle.Name, BuildReportUtility.GetAssetBundleIconPath(), null, null));
+                            value.DrillableItems.Add(new DetailsListItem((string) referencingBundle.Key, BuildReportUtility.GetAssetBundleIconPath(), null, null));
                         }
                     }
 
@@ -271,7 +271,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                     value.DrillableItems.Add(new DetailsListItem(refAsset.GetName(), refAsset.AssetPath, null, null));
                 else
                 {
-                    value.DrillableItems.Add(new DetailsListItem(refAsset.Bundle.Name, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(DetailsViewTab.ReferencedBy,
+                    value.DrillableItems.Add(new DetailsListItem((string) refAsset.Bundle.Key, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(DetailsViewTab.ReferencedBy,
                         refAsset.Bundle,
                         GetAssetsThatLinkFromBundleMap(asset.Bundle, refAsset)[refAsset.Bundle]), BuildReportUtility.GetForwardIconPath()));
                 }
@@ -292,7 +292,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 value.DrillableItems.Add(new DetailsListItem(internalAsset.GetName(), internalAsset.AssetPath, null, null));
 
             foreach (var externalAsset in asset.ExternallyReferencedAssets)
-                value.DrillableItems.Add(new DetailsListItem(externalAsset.Bundle.Name, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(
+                value.DrillableItems.Add(new DetailsListItem((string) externalAsset.Bundle.Key, BuildReportUtility.GetAssetBundleIconPath(), () => ShowAssetsThatLinkToBundle(
                     DetailsViewTab.ReferencesTo,
                     externalAsset.Bundle,
                     GetAssetsThatLinkToBundleMap(asset.Bundle, asset)[externalAsset.Bundle]), BuildReportUtility.GetForwardIconPath()));
@@ -354,7 +354,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         private void ShowAssetsThatLinkToBundle(DetailsViewTab tab, BuildLayout.Bundle bundle, List<BuildLayout.ExplicitAsset> linkedAssets)
         {
-            DetailsContents dc = new DetailsContents(bundle.Name, BuildReportUtility.GetAssetBundleIconPath());
+            DetailsContents dc = new DetailsContents((string) bundle.Key, BuildReportUtility.GetAssetBundleIconPath());
             foreach (var asset in linkedAssets)
             {
                 Action onDrillDown = null;

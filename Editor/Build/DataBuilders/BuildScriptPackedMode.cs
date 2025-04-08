@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
 using UnityEditor.Build.Pipeline;
@@ -86,9 +87,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             IBundleBuildResults results;
             using (new SBPSettingsOverwriterScope(_generateBuildReport)) // build layout generation requires full SBP write results
             {
-                aaContext.bundleToAssetGroup = new Dictionary<BundleKey, AssetGroup>();
-                var bundleBuilds = GenerateBundleBuilds(catalog.Groups, aaContext.bundleToAssetGroup);
-                var buildContent = new BundleBuildContent(bundleBuilds);
+                var buildContent = new BundleBuildContent(catalog.GenerateBundleBuilds());
                 var buildTasks = RuntimeDataBuildTasks();
                 buildTasks.Add(extractData);
 
@@ -97,7 +96,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     return CreateErrorResult("SBP Error" + exitCode, aaContext);
             }
 
-            var bundleIds = ResourceCatalogBuilder.AssignBundleId(aaContext.entries.Values);
+            var bundleIds = ResourceCatalogBuilder.BuildBundleIdMap(catalog);
 
             L.I("[BuildScriptPackedMode] PostProcessBundles");
             using (var progressTracker = new ProgressTracker())
@@ -107,7 +106,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 foreach (var bundleKey in bundleIds.Keys)
                 {
                     // L.I(bundleKey.ToString());
-                    CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].Name());
+                    CopyBundleToOutputPath(bundleKey.Value, bundleIds[bundleKey].Name());
                 }
             }
 
@@ -153,19 +152,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         /// <returns>An error string if there were any problems processing the groups</returns>
         public static List<AssetBundleBuild> GenerateBundleBuilds(
-            AssetGroup[] groups,
-            Dictionary<BundleKey, AssetGroup> bundleToAssetGroup)
+            AssetGroup[] groups)
         {
             Assert.IsNotNull(groups, "AddressableAssetGroup list is null");
-
-            var bundleBuilds = new List<AssetBundleBuild>(groups.Length);
-            foreach (var group in groups)
-            {
-                var bundleBuild = group.GenerateAssetBundleBuild();
-                bundleBuilds.Add(bundleBuild);
-                bundleToAssetGroup.Add(BundleKey.FromBuildName(bundleBuild.assetBundleName), group);
-            }
-            return bundleBuilds;
+            return groups.Select(group => group.GenerateAssetBundleBuild()).ToList();
         }
 
         private static IList<IBuildTask> RuntimeDataBuildTasks()

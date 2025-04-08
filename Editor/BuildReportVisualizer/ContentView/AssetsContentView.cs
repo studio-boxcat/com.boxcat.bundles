@@ -11,9 +11,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public string Name { get; set; }
 
-        public string BundleName { get; set; }
-
-        public string GroupName { get; set; }
+        public GroupKey? BundleName => Bundle?.Key;
 
         public ulong FileSizePlusRefs { get; set; }
 
@@ -115,11 +113,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public AssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
-            Name = bundle.Name;
+            Name = (string) bundle.Key;
             Bundle = bundle;
             BundleSize = bundle.FileSize;
-            GroupName = bundle.Group.Name;
-            BundleName = "";
             FileSizePlusRefs = bundle.FileSize;
             foreach (var b in Bundle.ExpandedDependencies)
                 FileSizePlusRefs += b.FileSize;
@@ -134,8 +130,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             Name = $"({assetCount} unrelated assets)";
             FileSizeUncompressed = assetSize;
-            GroupName = "";
-            BundleName = "";
         }
     }
 
@@ -157,7 +151,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             Name = $"{asset.AddressableName} ({asset.AssetPath})";
             Bundle = asset.Bundle;
             Bundles = new List<BuildLayout.Bundle>(){ Bundle };
-            BundleName = asset.Bundle?.Name;
             ExternallyReferencedAssets = asset.ExternallyReferencedAssets;
             InternallyReferencedAssets = asset.InternalReferencedExplicitAssets;
             ImplicitDependencies = asset.InternalReferencedOtherAssets;
@@ -199,21 +192,15 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DataHashtoReportItem = new Dictionary<Hash128, TreeDataReportItem>();
         }
 
-        internal override ContentViewColumnData[] ColumnDataForView
+        internal override ContentViewColumnData[] ColumnDataForView => new[]
         {
-            get
-            {
-                return new ContentViewColumnData[]
-                {
-                new ContentViewColumnData(BuildReportUtility.AssetsContentViewColAssetName, this, true, "Asset Name"),
-                new ContentViewColumnData(BuildReportUtility.AssetsContentViewColSizePlusRefs, this, false, "Total Size (+ refs)"),
-                new ContentViewColumnData(BuildReportUtility.AssetsContentViewColSizeUncompressed, this, false, "Uncompressed Size"),
-                new ContentViewColumnData(BuildReportUtility.AssetsContentViewColBundleSize, this, false, "Bundle File Size"),
-                new ContentViewColumnData(BuildReportUtility.AssetsContentViewColRefsTo, this, false, "Refs To"),
-                new ContentViewColumnData(BuildReportUtility.AssetsContentViewColRefsBy, this, false, "Refs By")
-                };
-            }
-        }
+            new ContentViewColumnData(BuildReportUtility.AssetsContentViewColAssetName, this, true, "Asset Name"),
+            new ContentViewColumnData(BuildReportUtility.AssetsContentViewColSizePlusRefs, this, false, "Total Size (+ refs)"),
+            new ContentViewColumnData(BuildReportUtility.AssetsContentViewColSizeUncompressed, this, false, "Uncompressed Size"),
+            new ContentViewColumnData(BuildReportUtility.AssetsContentViewColBundleSize, this, false, "Bundle File Size"),
+            new ContentViewColumnData(BuildReportUtility.AssetsContentViewColRefsTo, this, false, "Refs To"),
+            new ContentViewColumnData(BuildReportUtility.AssetsContentViewColRefsBy, this, false, "Refs By")
+        };
 
         // Data about assets from our currently selected build report.
         public override IList<IAddressablesBuildReportItem> CreateTreeViewItems(BuildLayout report)

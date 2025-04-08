@@ -1,5 +1,7 @@
 #if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -9,7 +11,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     internal class GroupsViewBuildReportItem : IAddressablesBuildReportItem
     {
-        public BuildLayout.Group Group { get; set; }
+        [CanBeNull]
+        public BuildLayout.Bundle Group { get; set; }
         public string Name { get; protected set; }
         public ulong FileSizePlusRefs { get; set; }
 
@@ -81,13 +84,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
     internal class GroupsViewBuildReportGroup : GroupsViewBuildReportItem
     {
-        public List<BuildLayout.ExplicitAsset> BuildReportAssets;
-
-        public GroupsViewBuildReportGroup(BuildLayout.Group group, List<BuildLayout.ExplicitAsset> reportAssets)
+        public GroupsViewBuildReportGroup(BuildLayout.Bundle group)
         {
-            Name = group.Name;
+            Name = group.Key.Value;
             Group = group;
-            BuildReportAssets = reportAssets;
             FileSizePlusRefs = 0;
             FileSizeBundle = 0;
             FileSizeUncompressed = 0;
@@ -145,7 +145,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public GroupsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
-            Name = bundle.Name;
+            Name = (string) bundle.Key;
             Bundle = bundle;
             FileSizeBundle = bundle.FileSize;
             FileSizeUncompressed = bundle.UncompressedFileSize;
@@ -238,18 +238,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             if (report == null)
                 return buildReportGroups;
 
-            var groupToAssets = new Dictionary<BuildLayout.Group, List<BuildLayout.ExplicitAsset>>();
-            foreach (var asset in BuildLayoutHelpers.EnumerateAssets(report))
-            {
-                if (groupToAssets.ContainsKey(asset.Bundle.Group))
-                    groupToAssets[asset.Bundle.Group].Add(asset);
-                else
-                    groupToAssets.Add(asset.Bundle.Group, new List<BuildLayout.ExplicitAsset> { asset });
-            }
+            var groupToAssets = BuildLayoutHelpers.EnumerateAssets(report)
+                .GroupBy(asset => asset.Bundle)
+                .ToDictionary(p => p.Key, p => p.ToList());
 
             foreach (var pair in groupToAssets)
             {
-                buildReportGroups.Add(new GroupsViewBuildReportGroup(pair.Key, pair.Value));
+                buildReportGroups.Add(new GroupsViewBuildReportGroup(pair.Key));
             }
 
             return buildReportGroups;
@@ -283,21 +278,20 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         private List<TreeViewItemData<GroupsViewBuildReportItem>> CreateGroupBundles(GroupsViewBuildReportGroup group, ref int id, bool includeAllDependencies)
         {
             var bundlesUnderGroup = new List<TreeViewItemData<GroupsViewBuildReportItem>>();
-            var bundle = group.Group.Bundle;
+            var bundle = group.Group;
+
+            var bundleReportItem = new GroupsViewBuildReportBundle(bundle);
+            var children = new List<TreeViewItemData<GroupsViewBuildReportItem>>();
+            var directlyReferencedBundles = new HashSet<BuildLayout.Bundle>();
+
+            PopulateAssets(children, directlyReferencedBundles, bundle, ref id, includeAllDependencies);
+            PopulateIndirectlyReferencedBundles(children, directlyReferencedBundles, bundle, ref id, includeAllDependencies);
+
+            if (children.Count > 0 || EntryAppearsInSearch(bundleReportItem, m_SearchValue))
             {
-                var bundleReportItem = new GroupsViewBuildReportBundle(bundle);
-                var children = new List<TreeViewItemData<GroupsViewBuildReportItem>>();
-                var directlyReferencedBundles = new HashSet<BuildLayout.Bundle>();
-
-                PopulateAssets(children, directlyReferencedBundles, bundle, ref id, includeAllDependencies);
-                PopulateIndirectlyReferencedBundles(children, directlyReferencedBundles, bundle, ref id, includeAllDependencies);
-
-                if (children.Count > 0 || EntryAppearsInSearch(bundleReportItem, m_SearchValue))
-                {
-                    var bundleItem = new TreeViewItemData<GroupsViewBuildReportItem>(++id, bundleReportItem, children);
-                    m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(group.Name, bundle.Name), new TreeDataReportItem(id, bundleItem.data));
-                    bundlesUnderGroup.Add(bundleItem);
-                }
+                var bundleItem = new TreeViewItemData<GroupsViewBuildReportItem>(++id, bundleReportItem, children);
+                m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(group.Name, (string) bundle.Key), new TreeDataReportItem(id, bundleItem.data));
+                bundlesUnderGroup.Add(bundleItem);
             }
 
             return bundlesUnderGroup;

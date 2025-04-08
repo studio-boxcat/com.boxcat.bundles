@@ -10,15 +10,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         private BuildReportWindow m_Window;
         protected VisualElement m_DetailsSummary;
-        private VisualTreeAsset m_DetailsPanelSummaryNavigableItem;
-        private VisualTreeAsset m_DetailsPanelSummaryNavigableBundle;
 
         internal DetailsSummaryView(VisualElement root, BuildReportWindow window)
         {
             m_Window = window;
 
-            m_DetailsPanelSummaryNavigableItem = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(BuildReportUtility.DetailsPanelSummaryNavigableItem);
-            m_DetailsPanelSummaryNavigableBundle = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(BuildReportUtility.DetailsPanelSummaryNavigableBundle);
             m_DetailsSummary = root.Q<VisualElement>(BuildReportUtility.DetailsSummaryPane);
             m_DetailsSummary.style.paddingLeft =
                 m_DetailsSummary.style.paddingRight = new StyleLength(new Length(15f, LengthUnit.Pixel));
@@ -56,11 +52,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 return;
 
             DetailsSummaryBuilder builder = new DetailsSummaryBuilder()
-                .With(BuildReportUtility.GetIcon(BuildReportUtility.GetAssetBundleIconPath()), bundle.Name)
+                .With(BuildReportUtility.GetIcon(BuildReportUtility.GetAssetBundleIconPath()), (string) bundle.Key)
                 .With("Uncompressed", $"{ BuildReportUtility.GetDenominatedBytesString(bundle.UncompressedFileSize)}")
                 .With("Bundle fizesize", $"{BuildReportUtility.GetDenominatedBytesString(bundle.FileSize)}")
                 .With("Total size (+ refs)", $"{BuildReportUtility.GetDenominatedBytesString(bundle.FileSize + bundle.DependencyFileSize + bundle.ExpandedDependencyFileSize)}")
-                .With("Group", bundle.Group.Name)
                 .With("Load Path", $"{bundle.LoadPath}");
 
             m_DetailsSummary.Add(builder.Build());
@@ -68,13 +63,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DetailsSummary.Add(CreateButtonRow(
                 BuildReportUtility.CreateButton("Search in this view", () =>
                 {
-                    string newSearchValue = bundle.Name;
+                    string newSearchValue = (string) bundle.Key;
                     m_Window.m_ActiveContentView.m_SearchField.Q<TextField>().value = newSearchValue;
                 }),
                 BuildReportUtility.CreateButton("Select in Group", () =>
                 {
                     m_Window.NavigateToView(ContentViewType.GroupsView);
-                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(bundle.Group.Name, bundle.Name), true);
+                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(bundle.Key.Value), true);
                 })));
         }
 
@@ -90,9 +85,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             {
                 foreach (BuildLayout.Bundle bundle in reportAsset.Bundles)
                 {
-                    builder.With("Bundle", bundle.Name)
-                           .With("Group", bundle.Group.Name)
-                           .With("Load Path", bundle.Key.GetBuildName());
+                    builder.With("Bundle", (string) bundle.Key)
+                           .With("Load Path", bundle.Key.Value);
                 }
             }
 
@@ -115,7 +109,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DetailsSummary.Add(CreateButtonRow(BuildReportUtility.CreateButton("Select in Bundle", () =>
                 {
                     m_Window.NavigateToView(ContentViewType.BundleView);
-                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(reportAsset.ExplicitAsset.Bundle.Name, reportAsset.ExplicitAsset.AddressableName));
+                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash((string) reportAsset.ExplicitAsset.Bundle.Key, reportAsset.ExplicitAsset.AddressableName));
                 })));
         }
 
@@ -143,7 +137,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DetailsSummary.Add(CreateHelpTextBox("This asset was pulled into the AssetBundle because one or more Addressable assets have references to it."));
         }
 
-        private VisualElement CreateButtonRow(params Button[] buttons)
+        private static VisualElement CreateButtonRow(params Button[] buttons)
         {
             VisualElement container = new VisualElement();
             container.style.flexDirection = FlexDirection.Row;
@@ -155,7 +149,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return container;
         }
 
-        private VisualElement CreateHelpTextBox(string helpText)
+        private static VisualElement CreateHelpTextBox(string helpText)
         {
             Foldout foldout = new Foldout();
             foldout.style.marginTop = new Length(10f, LengthUnit.Pixel);

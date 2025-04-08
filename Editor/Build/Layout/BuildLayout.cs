@@ -38,6 +38,11 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         public static implicit operator AssetId(AssetGUID guid) => new(guid);
         public static implicit operator AssetId(GUID guid) => new(guid);
+        public static explicit operator AssetGUID(AssetId id)
+        {
+            Assert.IsFalse(id.IsPath, "Cannot convert AssetId to GUID when IsPath is true");
+            return new AssetGUID(id.Value);
+        }
         public static explicit operator GUID(AssetId id)
         {
             Assert.IsFalse(id.IsPath, "Cannot convert AssetId to GUID when IsPath is true");
@@ -118,7 +123,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// The Addressable Groups that reference this data
         /// </summary>
         [SerializeReference]
-        public List<Group> Groups = new List<Group>();
+        public List<Bundle> Groups = new List<Bundle>();
 
         /// <summary>
         /// The List of AssetBundles that were built without a group associated to them, such as the BuiltIn Shaders Bundle and the MonoScript Bundle
@@ -401,30 +406,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         }
 
         /// <summary>
-        /// Data about the AddressableAssetGroup that gets processed during a build.
-        /// </summary>
-        [Serializable]
-        public class Group
-        {
-            /// <summary>
-            /// The Name of the AdressableAssetGroup
-            /// </summary>
-            public string Name;
-
-            /// <summary>
-            /// An AssetBundles associated with the Group
-            /// </summary>
-            [SerializeReference]
-            public Bundle Bundle;
-        }
-
-        /// <summary>
         /// Data store for AssetBundle information.
         /// </summary>
         [Serializable]
         public class Bundle
         {
-            public Bundle(BundleKey key, AssetBundleId id)
+            public Bundle(GroupKey key, AssetBundleId id)
             {
                 Key = key;
                 Id = id;
@@ -433,11 +420,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// The name of the AssetBundle
             /// </summary>
-            public BundleKey Key;
+            public GroupKey Key;
 
             public AssetBundleId Id;
-
-            public string Name => Key.ToString();
 
             /// <summary>
             /// The file size of the AssetBundle on disk, in bytes
@@ -594,13 +579,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
 
 
-            /// <summary>
-            /// A reference to the Group data that this AssetBundle was generated from
-            /// </summary>
-            [SerializeReference]
-            public Group Group;
-
-            public string LoadPath => Key.GetBuildName();
+            public string LoadPath => Key.Value;
 
             /// <summary>
             /// List of the Files referenced by the AssetBundle
@@ -739,16 +718,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public long LocalIdentifierInFile;
 
             /// <summary>
-            /// Object name within the Asset
-            /// </summary>
-            [SerializeField] internal string ObjectName;
-
-            /// <summary>
-            /// Component name if AssetType is a MonoBehaviour or Component
-            /// </summary>
-            [SerializeField] internal string ComponentName;
-
-            /// <summary>
             /// Type of Object
             /// </summary>
             public AssetType AssetType;
@@ -762,21 +731,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The size of the streamed Asset.
             /// </summary>
             public ulong StreamedSize;
-
-            /// <summary>
-            /// References to other Objects
-            /// </summary>
-            [SerializeField] internal List<ObjectReference> References = new List<ObjectReference>();
-        }
-
-        /// <summary>
-        /// Identification of an Object within the same file
-        /// </summary>
-        [Serializable]
-        internal class ObjectReference
-        {
-            public int AssetId;
-            public List<int> ObjectIds;
         }
 
         /// <summary>
@@ -964,7 +918,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// <summary>
         /// The default AssetBundle name to the Bundle data map.
         /// </summary>
-        public Dictionary<BundleKey, BuildLayout.Bundle> Bundles = new();
+        public Dictionary<GroupKey, BuildLayout.Bundle> Bundles = new();
 
         /// <summary>
         /// File name to File data map.
@@ -978,16 +932,10 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// </summary>
         public Dictionary<AssetId, BuildLayout.ExplicitAsset> GuidToExplicitAsset = new();
 
-        /// <summary>
-        /// Group name to Group data map.
-        /// </summary>
-        public Dictionary<BundleKey, BuildLayout.Group> GroupLookup = new();
-
 
         /// Maps used for lookups while building the BuildLayout
         internal Dictionary<AssetId, List<BuildLayout.DataFromOtherAsset>> UsedImplicits = new();
 
-        internal Dictionary<AssetId, AssetEntry> GuidToEntry = new();
         internal Dictionary<string, AssetType> AssetPathToTypeMap = new();
     }
 

@@ -7,6 +7,7 @@ namespace UnityEngine.AddressableAssets
     public enum AssetBundleId : byte
     {
         MonoScript = 0, // reserved for MonoScript.
+        BuiltInShader = 1, // reserved for BuiltInShader.
     }
 
     public static class AssetBundleIdUtils

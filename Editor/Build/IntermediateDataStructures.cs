@@ -32,39 +32,14 @@ namespace UnityEditor.AddressableAssets
         public static explicit operator GUID(AssetGUID value) => new(value.Value);
     }
 
-    [Serializable]
-    public struct BundleKey : IEquatable<BundleKey>, IComparable<BundleKey>
-    {
-        public string Value;
-
-        public BundleKey(string value)
-        {
-            Value = value;
-        }
-
-        public static BundleKey FromBuildName(string fileName) => new(fileName);
-
-        public override string ToString() => Value;
-
-        public readonly string GetBuildName() => Value;
-
-        public bool Equals(BundleKey other) => Value == other.Value;
-        public override bool Equals(object obj) => obj is BundleKey other && Equals(other);
-        public override int GetHashCode() => Value.GetHashCode();
-        public int CompareTo(BundleKey other) => string.CompareOrdinal(Value, other.Value);
-
-        public static bool operator ==(BundleKey x, BundleKey y) => x.Equals(y);
-        public static bool operator !=(BundleKey x, BundleKey y) => !x.Equals(y);
-    }
-
     internal readonly struct EntryDef
     {
         public readonly AssetGUID GUID;
         public readonly Address? Address;
-        public readonly BundleKey Bundle;
-        public readonly HashSet<BundleKey> Dependencies;
+        public readonly GroupKey Bundle;
+        public readonly HashSet<GroupKey> Dependencies;
 
-        public EntryDef(AssetGUID guid, Address? address, BundleKey bundle, HashSet<BundleKey> dependencies)
+        public EntryDef(AssetGUID guid, Address? address, GroupKey bundle, HashSet<GroupKey> dependencies)
         {
             GUID = guid;
             Address = address;

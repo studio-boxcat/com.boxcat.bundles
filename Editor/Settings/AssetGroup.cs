@@ -10,21 +10,28 @@ using Object = UnityEngine.Object;
 namespace UnityEditor.AddressableAssets
 {
     [Serializable]
-    public class AssetGroup
+    public class AssetGroup : ISelfValidator
     {
+        [FormerlySerializedAs("_name")]
         [FormerlySerializedAs("BundleName")]
+        [FormerlySerializedAs("Name")]
         [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditNameEnabled))]
-        public string Name;
-        [LabelText("@Name"), TableList(ShowPaging = false)]
+        public string _key;
+        public GroupKey Key => new(_key);
+
+        [LabelText("@_key"), TableList(ShowPaging = false)]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
+
+        [HideInInspector]
+        public AssetBundleId BundleId;
 
         [SerializeField, HideInInspector] internal string GeneratorId;
         public bool IsGenerated => !string.IsNullOrEmpty(GeneratorId);
 
-        public AssetGroup(string name, AssetEntry[] entries)
+        public AssetGroup(string key, AssetEntry[] entries)
         {
-            Name = name;
+            _key = key;
             Entries = entries;
 
             foreach (var entry in Entries)
@@ -49,7 +56,7 @@ namespace UnityEditor.AddressableAssets
         {
             return new AssetBundleBuild
             {
-                assetBundleName = Name,
+                assetBundleName = _key,
                 assetNames = Entries.Select(e => AssetDatabase.GetAssetPath(e.Asset)).ToArray(),
                 addressableNames = Entries.Select(e => AddressUtils.Hash(e.Address).Name()).ToArray()
             };
@@ -58,6 +65,12 @@ namespace UnityEditor.AddressableAssets
         private void Entries_OnValueChanged()
         {
             _cachedAddressToAssetMap = null;
+        }
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (BundleId is AssetBundleId.MonoScript)
+                result.AddError("MonoScript is reserved for built-in MonoScript bundles.");
         }
     }
 }

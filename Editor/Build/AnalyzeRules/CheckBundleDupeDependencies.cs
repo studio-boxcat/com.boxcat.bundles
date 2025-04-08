@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.Build.Pipeline;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 {
@@ -17,7 +18,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         protected internal struct CheckDupeResult
         {
-            public BundleKey Bundle;
+            public GroupKey Bundle;
             public string DuplicatedFile;
             public string AssetPath;
             public GUID DuplicatedGroupGuid;
@@ -35,7 +36,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         public override string ruleName => "Check Duplicate Bundle Dependencies";
 
         [NonSerialized]
-        internal readonly Dictionary<BundleKey, List<string>> m_AllIssues = new();
+        internal readonly Dictionary<GroupKey, List<string>> m_AllIssues = new();
 
         [SerializeField]
         internal HashSet<GUID> m_ImplicitAssets;
@@ -161,27 +162,22 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
             CalculateInputDefinitions(catalog);
 
-            if (AllBundleInputDefs.Count > 0)
-            {
-                var context = new AddressableAssetsBuildContext(catalog);
-                ReturnCode exitCode = RefreshBuild(context);
-                if (exitCode < ReturnCode.Success)
-                {
-                    Debug.LogError("Analyze build failed. " + exitCode);
-                    m_Results.Add(new AnalyzeResult {resultName = ruleName + "Analyze build failed. " + exitCode});
-                    return m_Results;
-                }
+            Assert.IsTrue(AllBundleInputDefs.Length is not 0,
+                "No bundle input definitions found. Please check your Addressables settings.");
 
-                var implicitGuids = GetImplicitGuidToFilesMap();
-                var checkDupeResults = CalculateDuplicates(implicitGuids);
-                BuildImplicitDuplicatedAssetsSet(checkDupeResults);
-                m_ResultsData = checkDupeResults.ToList();
-            }
-            else
+            var context = new AddressableAssetsBuildContext(catalog);
+            ReturnCode exitCode = RefreshBuild(context);
+            if (exitCode < ReturnCode.Success)
             {
-                m_ResultsData = new List<CheckDupeResult>(0);
-                m_ImplicitAssets = new HashSet<GUID>();
+                Debug.LogError("Analyze build failed. " + exitCode);
+                m_Results.Add(new AnalyzeResult {resultName = ruleName + "Analyze build failed. " + exitCode});
+                return m_Results;
             }
+
+            var implicitGuids = GetImplicitGuidToFilesMap();
+            var checkDupeResults = CalculateDuplicates(implicitGuids);
+            BuildImplicitDuplicatedAssetsSet(checkDupeResults);
+            m_ResultsData = checkDupeResults.ToList();
 
             RefreshDisplay();
             return m_Results;
@@ -205,7 +201,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 from file in guidToFile.Value
 
                 //Get the files that belong to those guids
-                let bundle = BundleKey.FromBuildName(ExtractData.WriteData.FileToBundle[file])
+                let bundle = (GroupKey) ExtractData.WriteData.FileToBundle[file]
 
                 //Get the asset groups that belong to those bundles
                 select new CheckDupeResult

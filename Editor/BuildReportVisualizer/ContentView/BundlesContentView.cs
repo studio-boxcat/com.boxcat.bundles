@@ -26,8 +26,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public int AssetsCount { get; set; }
 
-        public string GroupName { get; protected set; }
-
         public virtual void CreateGUI(VisualElement rootVisualElement) { }
 
         public virtual string GetCellContent(string colName)
@@ -90,11 +88,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public BundlesViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
             Bundle = bundle;
-            Name = bundle.Name;
+            Name = (string) bundle.Key;
             foreach (var file in bundle.Files)
                 RefsTo += file.Assets.Count + file.OtherAssets.Count;
             RefsBy = bundle.DependentBundles.Count;
-            GroupName = bundle.Group?.Name;
 
             Dependencies = bundle.Dependencies;
             DependentBundles = bundle.DependentBundles;

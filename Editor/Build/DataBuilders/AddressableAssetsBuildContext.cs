@@ -24,17 +24,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         internal Dictionary<AssetGUID, EntryDef> entries;
 
-        public Dictionary<BundleKey, AssetGroup> bundleToAssetGroup;
-
         /// <summary>
         /// Mapping of AssetBundle to the direct dependencies.
         /// </summary>
-        public Dictionary<BundleKey, HashSet<BundleKey>> bundleToImmediateBundleDependencies;
+        public Dictionary<GroupKey, HashSet<GroupKey>> bundleToImmediateBundleDependencies;
 
         /// <summary>
         /// A mapping of AssetBundle to the full dependency tree, flattened into a single list.
         /// </summary>
-        public Dictionary<BundleKey, HashSet<BundleKey>> bundleToExpandedBundleDependencies;
+        public Dictionary<GroupKey, HashSet<GroupKey>> bundleToExpandedBundleDependencies;
 
 
         public AddressableAssetsBuildContext(AddressableCatalog catalog)

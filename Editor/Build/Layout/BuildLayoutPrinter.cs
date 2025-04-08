@@ -156,13 +156,13 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             ulong bundleSize = archive.Files.First(x => x.BundleObjectInfo != null).BundleObjectInfo.Size;
             attr.AddSize("Asset Bundle Object Size", bundleSize);
 
-            using (writer.IndentScope($"Archive {archive.Name} {attr}"))
+            using (writer.IndentScope($"Archive {(string) archive.Key} {attr}"))
             {
                 if (archive.Dependencies != null)
-                    writer.WriteLine("Bundle Dependencies: " + string.Join(", ", archive.Dependencies.Select(x => x.Name)));
+                    writer.WriteLine("Bundle Dependencies: " + string.Join(", ", archive.Dependencies.Select(x => (string) x.Key)));
 
                 if (archive.ExpandedDependencies != null)
-                    writer.WriteLine("Expanded Bundle Dependencies: " + string.Join(", ", archive.ExpandedDependencies.Select(x => x.Name)));
+                    writer.WriteLine("Expanded Bundle Dependencies: " + string.Join(", ", archive.ExpandedDependencies.Select(x => (string) x.Key)));
 
                 using (writer.IndentScope($"Explicit Assets"))
                 {
@@ -184,17 +184,16 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
         }
 
-        private static void PrintGroup(TabWriter writer, BuildLayout.Group grp)
+        private static void PrintGroup(TabWriter writer, BuildLayout.Bundle grp)
         {
-            var explicitAssetCount = grp.Bundle.Files.Sum(y => y.Assets.Count);
+            var explicitAssetCount = grp.Files.Sum(y => y.Assets.Count);
             var attr = new AttrBuilder();
-            attr.AddSize("Total Size", grp.Bundle.FileSize);
+            attr.AddSize("Total Size", grp.FileSize);
             attr.Add("Explicit Asset Count", explicitAssetCount.ToString());
 
-            using (writer.IndentScope($"Group {grp.Name} {attr}"))
+            using (writer.IndentScope($"Group {grp.Key} {attr}"))
             {
-                var archive = grp.Bundle;
-                PrintArchive(writer, archive);
+                PrintArchive(writer, grp);
             }
         }
 
@@ -211,7 +210,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 writer.WriteLine("");
 
 
-                foreach (BuildLayout.Group grp in layout.Groups)
+                foreach (var grp in layout.Groups)
                 {
                     PrintGroup(writer, grp);
                 }

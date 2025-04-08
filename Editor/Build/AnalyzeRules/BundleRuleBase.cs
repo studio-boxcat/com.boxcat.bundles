@@ -21,7 +21,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         internal Dictionary<string, List<GUID>> m_ResourcesToDependencies = new();
 
         [NonSerialized]
-        internal List<AssetBundleBuild> m_AllBundleInputDefs = new();
+        internal AssetBundleBuild[] m_AllBundleInputDefs = null;
 
         [NonSerialized]
         internal ExtractDataTask m_ExtractData = null;
@@ -34,36 +34,34 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// A mapping of resources to a list of guids that correspond to their dependencies
         /// </summary>
         protected Dictionary<string, List<GUID>> ResourcesToDependencies => m_ResourcesToDependencies;
-        protected internal List<AssetBundleBuild> AllBundleInputDefs => m_AllBundleInputDefs;
+        protected internal AssetBundleBuild[] AllBundleInputDefs => m_AllBundleInputDefs;
 
-        internal static IList<IBuildTask> RuntimeDataBuildTasks()
+        internal static List<IBuildTask> RuntimeDataBuildTasks()
         {
-            IList<IBuildTask> buildTasks = new List<IBuildTask>();
+            return new List<IBuildTask>(){
+                // Setup
+                new SwitchToBuildPlatform(),
+                new RebuildSpriteAtlasCache(),
 
-            // Setup
-            buildTasks.Add(new SwitchToBuildPlatform());
-            buildTasks.Add(new RebuildSpriteAtlasCache());
+                // Player Scripts
+                new BuildPlayerScripts(),
 
-            // Player Scripts
-            buildTasks.Add(new BuildPlayerScripts());
+                // Dependency
+                new CalculateSceneDependencyData(),
+                new CalculateAssetDependencyData(),
+                new StripUnusedSpriteSources(),
+                new CreateBuiltInShadersBundle(BundleNames.BuiltInShaders),
 
-            // Dependency
-            buildTasks.Add(new CalculateSceneDependencyData());
-            buildTasks.Add(new CalculateAssetDependencyData());
-            buildTasks.Add(new StripUnusedSpriteSources());
-            buildTasks.Add(new CreateBuiltInShadersBundle(BundleNames.BuiltInShaders));
+                // Packing
+                new GenerateBundlePacking(),
+                new UpdateBundleObjectLayout(),
 
-            // Packing
-            buildTasks.Add(new GenerateBundlePacking());
-            buildTasks.Add(new UpdateBundleObjectLayout());
+                new GenerateBundleCommands(),
+                new GenerateSubAssetPathMaps(),
+                new GenerateBundleMaps(),
 
-            buildTasks.Add(new GenerateBundleCommands());
-            buildTasks.Add(new GenerateSubAssetPathMaps());
-            buildTasks.Add(new GenerateBundleMaps());
-
-            buildTasks.Add(new GenerateLocationListsTask());
-
-            return buildTasks;
+                new GenerateLocationListsTask(),
+            };
         }
 
         /// <summary>
@@ -78,9 +76,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             m_ExtractData = new ExtractDataTask();
             buildTasks.Add(m_ExtractData);
 
-            var exitCode = ContentPipeline.BuildAssetBundles(buildParams, new BundleBuildContent(m_AllBundleInputDefs),
+            return ContentPipeline.BuildAssetBundles(buildParams, new BundleBuildContent(m_AllBundleInputDefs),
                 out _, buildTasks, buildContext);
-            return exitCode;
         }
 
         /// <summary>
@@ -186,8 +183,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <param name="catalog">The current Addressables catalog object</param>
         protected void CalculateInputDefinitions(AddressableCatalog catalog)
         {
-            m_AllBundleInputDefs = BuildScriptPackedMode.GenerateBundleBuilds(
-                catalog.Groups, new Dictionary<BundleKey, AssetGroup>());
+            m_AllBundleInputDefs = catalog.GenerateBundleBuilds();
         }
 
         /// <summary>
@@ -295,7 +291,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 return ReturnCode.SuccessNotRun;
 
             CalculateInputDefinitions(catalog);
-            if (m_AllBundleInputDefs == null || m_AllBundleInputDefs.Count == 0)
+            if (m_AllBundleInputDefs == null)
                 return ReturnCode.SuccessNotRun;
 
             EditorUtility.DisplayProgressBar("Calculating Built-in dependencies",
@@ -322,7 +318,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         public override void ClearAnalysis()
         {
-            m_AllBundleInputDefs.Clear();
+            m_AllBundleInputDefs = null;
             m_ResourcesToDependencies.Clear();
             m_ResultData = null;
             m_ExtractData = null;

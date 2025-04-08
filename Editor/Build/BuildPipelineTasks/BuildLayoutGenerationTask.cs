@@ -145,10 +145,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     objectTypes.Add(resultEntry.Key, resultEntry.Value);
             }
 
-            var bundleKeyToId = ResourceCatalogBuilder.AssignBundleId(aaContext.entries.Values);
+            var bundleKeyToId = ResourceCatalogBuilder.BuildBundleIdMap(aaContext.Catalog);
             foreach (var bundleName in m_WriteData.FileToBundle.Values.Distinct())
             {
-                var bundleKey = BundleKey.FromBuildName(bundleName);
+                var bundleKey = (GroupKey) bundleName;
                 var bundle = new BuildLayout.Bundle(bundleKey, bundleKeyToId[bundleKey]);
                 lookup.Bundles.Add(bundleKey, bundle);
             }
@@ -164,7 +164,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // create files
             foreach (var (fileName, bundleName) in m_WriteData.FileToBundle)
             {
-                var bundle = lookup.Bundles[BundleKey.FromBuildName(bundleName)];
+                var bundle = lookup.Bundles[(GroupKey) bundleName];
                 var f = new BuildLayout.File
                 {
                     Name = fileName,
@@ -299,8 +299,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         lookup.AssetPathToTypeMap[implicitAsset.AssetPath] = implicitAsset.MainAssetType;
                     }
 
-                    var localIdentifierToObjectName = GetObjectsIdForAsset(assetPath);
-
                     foreach (ObjectSerializedInfo bucketObj in bucket.objs)
                     {
                         Type objType = null;
@@ -314,12 +312,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                                 eType = AssetType.SceneObject;
                         }
 
-                        string name = "";
-                        if (localIdentifierToObjectName.TryGetValue(bucketObj.serializedObject.localIdentifierInFile, out string value))
-                            name = value;
                         var layoutObject = new BuildLayout.ObjectData()
                         {
-                            ObjectName = name,
                             LocalIdentifierInFile = bucketObj.serializedObject.localIdentifierInFile,
                             AssetType = eType,
                             SerializedSize = bucketObj.header.size,
@@ -372,8 +366,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     }
                     else
                     {
-                        var localIdentifierToObjectName = GetObjectsIdForAsset(asset.AssetPath);
-                        CollectObjectsForAsset(bucket, objectTypes, asset, localIdentifierToObjectName, fData, assetInFileId);
+                        CollectObjectsForAsset(bucket, objectTypes, asset, fData, assetInFileId);
                     }
                 }
 
@@ -445,22 +438,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return lookup;
         }
 
-        private static Dictionary<long, string> GetObjectsIdForAsset(string assetPath)
-        {
-            var assetSubObjects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            Assert.IsNotNull(assetSubObjects, $"Failed to load assets for {assetPath}");
-
-            var localIdentifierToObjectName = new Dictionary<long, string>(assetSubObjects.Length);
-            foreach (var o in assetSubObjects)
-            {
-                if (o != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o, out _, out long localId))
-                    localIdentifierToObjectName[localId] = o.name;
-            }
-            return localIdentifierToObjectName;
-        }
-
         private static void CollectObjectsForAsset(in AssetBucket bucket, in Dictionary<ObjectIdentifier, Type[]> objectTypes, BuildLayout.ExplicitAsset asset,
-            in Dictionary<long, string> localIdentifierToObjectName, FileObjectData fileObjectData, int assetInFileId)
+            FileObjectData fileObjectData, int assetInFileId)
         {
             foreach (ObjectSerializedInfo bucketObj in bucket.objs)
             {
@@ -470,21 +449,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 var eType = objType == null ? AssetType.Other : BuildLayoutHelpers.GetAssetType(objType);
                 if (IsComponentType(eType)) eType = AssetType.Component;
-                var componentName = "";
 
                 if (asset.IsScene && eType is AssetType.Other or AssetType.Component)
                     eType = GetSceneObjectType(bucketObj.serializedObject.filePath.Remove(0, 6));
-                if (eType == AssetType.Component)
-                    componentName = objType.Name;
-
-                var name = "";
-                if (localIdentifierToObjectName.TryGetValue(bucketObj.serializedObject.localIdentifierInFile, out var value))
-                    name = value;
 
                 var layoutObject = new BuildLayout.ObjectData()
                 {
-                    ObjectName = name,
-                    ComponentName = componentName,
                     LocalIdentifierInFile = bucketObj.serializedObject.localIdentifierInFile,
                     AssetType = eType,
                     SerializedSize = bucketObj.header.size,
@@ -514,7 +484,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 or AssetType.MonoBehaviour;
         }
 
-        private void CollectObjectsForScene(in AssetBucket bucket, BuildLayout.ExplicitAsset asset)
+        private static void CollectObjectsForScene(in AssetBucket bucket, BuildLayout.ExplicitAsset asset)
         {
             Dictionary<AssetType, BuildLayout.ObjectData> TypeToObjectData = new Dictionary<AssetType, BuildLayout.ObjectData>();
             foreach (ObjectSerializedInfo bucketObj in bucket.objs)
@@ -524,7 +494,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     layoutObject = new BuildLayout.ObjectData()
                     {
-                        ObjectName = eType.ToString(),
                         LocalIdentifierInFile = TypeToObjectData.Count + 1,
                         AssetType = eType,
                         SerializedSize = bucketObj.header.size,
@@ -542,7 +511,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // main scene object
             asset.Objects.Add(new BuildLayout.ObjectData()
             {
-                ObjectName = "Main",
                 LocalIdentifierInFile = 0,
                 AssetType = AssetType.SceneObject,
                 SerializedSize = 0,
@@ -608,11 +576,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         } // can be false for built in shared bundles
                     }
                 }
-
-                foreach (KeyValuePair<int, HashSet<int>> assetRefData in assetIndices)
-                {
-                    objectData.References.Add(new BuildLayout.ObjectReference() { AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value) });
-                }
             }
         }
 
@@ -626,28 +589,22 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             L.I("Generate Basic Information");
             SetLayoutMetaData(layout);
 
-            // Map from GUID to AddrssableAssetEntry
-            lookup.GuidToEntry = aaContext.entries.ToDictionary(
-                kvp => (AssetId) kvp.Key,
-                kvp => aaCatalog.GetEntryByGUID(kvp.Value.GUID));
-
-            // create groups
-            foreach (var (bundle, group) in aaContext.bundleToAssetGroup)
+            L.I("Correlate Bundles to groups");
+            foreach (var b in lookup.Bundles.Values)
             {
-                var grp = new BuildLayout.Group();
-                grp.Name = group.Name;
-                lookup.GroupLookup.Add(bundle, grp);
-                layout.Groups.Add(grp);
-            }
+                layout.Groups.Add(b);
+                // AssetCatalog doesn't contain the builtin bundles.
+                if (!aaContext.Catalog.TryGetGroup(b.Key, out _))
+                    layout.BuiltInBundles.Add(b);
 
-            {
-                L.I("Correlate Bundles to groups");
-                foreach (var b in lookup.Bundles.Values)
-                    CorrelateBundleToAssetGroup(layout, b, lookup, aaContext);
+                var filePath = PathConfig.GetAssetBundleLoadPath(b.Id);
+                b.FileSize = GetFileSizeFromPath(filePath, out bool success);
+                if (!success)
+                    L.W($"AssetBundle {b.Key} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
             }
 
             L.I("Apply Addressable info to layout data");
-            ApplyAddressablesInformationToExplicitAssets(layout, lookup);
+            ApplyAddressablesInformationToExplicitAssets(layout, aaCatalog);
             L.I("Process additional bundle data");
             PostProcessBundleData(lookup);
             L.I("Generating implicit inclusion data");
@@ -655,29 +612,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             SetDuration(layout);
             return layout;
-        }
-
-        private void CorrelateBundleToAssetGroup(BuildLayout layout, BuildLayout.Bundle b, LayoutLookupTables lookup, AddressableAssetsBuildContext aaContext)
-        {
-            if (aaContext.Catalog.TryGetGroup(b.Key.GetBuildName(), out _))
-            {
-                var assetGroup = lookup.GroupLookup[b.Key];
-                b.Group = assetGroup;
-                Assert.IsNull(assetGroup.Bundle);
-                assetGroup.Bundle = b;
-            }
-            // bundleToAssetGroup doesn't contain the builtin bundles. The builtin content is built using values from the default group
-            else
-            {
-                var defaultGroup = aaContext.Catalog.DefaultGroup;
-                b.Group = lookup.GroupLookup.Values.Single(g => g.Name == defaultGroup.Name);
-                layout.BuiltInBundles.Add(b);
-            }
-
-            var filePath = PathConfig.GetAssetBundleLoadPath(b.Id);
-            b.FileSize = GetFileSizeFromPath(filePath, out bool success);
-            if (!success)
-                L.W($"AssetBundle {b.Key} from Addressable Group \"{b.Group.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
         }
 
         private void PostProcessBundleData(LayoutLookupTables lookup)
@@ -760,44 +694,32 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
         }
 
-        private void ApplyAddressablesInformationToExplicitAssets(BuildLayout layout, LayoutLookupTables lookup)
+        private static void ApplyAddressablesInformationToExplicitAssets(BuildLayout layout, AddressableCatalog catalog)
         {
             foreach (var bundle in BuildLayoutHelpers.EnumerateBundles(layout))
+            foreach (var file in bundle.Files)
+            foreach (BuildLayout.ExplicitAsset rootAsset in file.Assets)
             {
-                for (int fileIndex = 0; fileIndex < bundle.Files.Count; ++fileIndex)
-                {
-                    foreach (BuildLayout.ExplicitAsset rootAsset in bundle.Files[fileIndex].Assets)
-                    {
-                        if (lookup.GuidToEntry.TryGetValue(rootAsset.Guid, out AssetEntry rootEntry))
-                        {
-                            ApplyAddressablesInformationToExplicitAsset(rootAsset, rootEntry);
-                        }
-                    }
-                }
+                var guid = rootAsset.Guid;
+                if (guid.IsPath) continue; // builtin assets (e.g. MonoScript)
+                var entry = catalog.GetEntryByGUID((AssetGUID) guid);
+                ApplyAddressablesInformationToExplicitAsset(rootAsset, entry);
             }
-        }
+            return;
 
-        private static void ApplyAddressablesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AssetEntry rootEntry)
-        {
-            rootAsset.AddressableName = rootEntry.Address;
-            rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.Asset.GetType());
-
-            if (rootAsset.Bundle == null)
+            static void ApplyAddressablesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AssetEntry rootEntry)
             {
-                Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
-                return;
-            }
+                rootAsset.AddressableName = rootEntry.Address;
+                rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.Asset.GetType());
 
-            foreach (BuildLayout.ExplicitAsset referencedAsset in rootAsset.ExternallyReferencedAssets)
-            {
-                if (referencedAsset.Bundle == null)
+                Assert.IsNotNull(rootAsset.Bundle, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
+
+                foreach (BuildLayout.ExplicitAsset referencedAsset in rootAsset.ExternallyReferencedAssets)
                 {
-                    Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
-                    continue;
+                    Assert.IsNotNull(referencedAsset, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
+                    // Create the dependency between rootAssets bundle and referenced Assets bundle,
+                    rootAsset.Bundle.UpdateBundleDependency(rootAsset, referencedAsset);
                 }
-
-                // Create the dependency between rootAssets bundle and referenced Assets bundle,
-                rootAsset.Bundle.UpdateBundleDependency(rootAsset, referencedAsset);
             }
         }
 

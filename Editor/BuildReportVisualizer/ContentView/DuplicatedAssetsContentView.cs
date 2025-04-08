@@ -141,7 +141,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public DuplicatedAssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
             Bundle = bundle;
-            Name = bundle.Name;
+            Name = (string) bundle.Key;
             Size = bundle.FileSize;
             DuplicationCount = -1;
             SpaceSavedIfDeduplicated = 0;

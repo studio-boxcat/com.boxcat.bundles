@@ -35,7 +35,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Build AssetGUID -> BundleKey dictionary.
             var assetToFiles = m_WriteData.AssetToFiles.ToDictionary(
                 x => (AssetGUID) x.Key,
-                x => x.Value.Select(y => BundleKey.FromBuildName(m_WriteData.FileToBundle[y])).ToList());
+                x => x.Value.Select(y => (GroupKey) m_WriteData.FileToBundle[y]).ToList());
 
             var ctx = m_AaBuildContext;
             Process(
@@ -53,10 +53,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <returns>An object that contains organized information about dependencies and catalog locations.</returns>
         private static void Process(
             AddressableCatalog catalog,
-            Dictionary<AssetGUID, List<BundleKey>> assetToFiles,
+            Dictionary<AssetGUID, List<GroupKey>> assetToFiles,
             out Dictionary<AssetGUID, EntryDef> entries,
-            out Dictionary<BundleKey, HashSet<BundleKey>> bundleToImmediateBundleDependencies,
-            out Dictionary<BundleKey, HashSet<BundleKey>> bundleToExpandedBundleDependencies)
+            out Dictionary<GroupKey, HashSet<GroupKey>> bundleToImmediateBundleDependencies,
+            out Dictionary<GroupKey, HashSet<GroupKey>> bundleToExpandedBundleDependencies)
         {
             entries = catalog.Groups.SelectMany(g => g.Entries).ToDictionary(
                 e => e.GUID,
@@ -83,11 +83,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.MonoScript);
 
             // Expand bundle deps.
-            bundleToExpandedBundleDependencies = new Dictionary<BundleKey, HashSet<BundleKey>>();
+            bundleToExpandedBundleDependencies = new Dictionary<GroupKey, HashSet<GroupKey>>();
             foreach (var bundle in bundleToImmediateBundleDependencies.Keys)
             {
-                var visited = new HashSet<BundleKey>();
-                var stack = new Stack<BundleKey>();
+                var visited = new HashSet<GroupKey>();
+                var stack = new Stack<GroupKey>();
                 stack.Push(bundle);
                 while (stack.Count > 0)
                 {
@@ -102,10 +102,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return;
 
 
-            static void AddBuiltInBundles(Dictionary<BundleKey, HashSet<BundleKey>> dict, string bundleName)
+            static void AddBuiltInBundles(Dictionary<GroupKey, HashSet<GroupKey>> dict, string bundleName)
             {
-                dict.Add(BundleKey.FromBuildName(bundleName),
-                    new HashSet<BundleKey> { BundleKey.FromBuildName(bundleName) });
+                dict.Add((GroupKey) bundleName,
+                    new HashSet<GroupKey> { (GroupKey) bundleName });
             }
         }
     }

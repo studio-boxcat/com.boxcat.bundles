@@ -68,9 +68,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         private static List<BuildBundleLayoutResultData> BuildResult(
-            List<AssetBundleBuild> buildInput, IBundleWriteData buildOutput)
+            AssetBundleBuild[] buildInput, IBundleWriteData buildOutput)
         {
-            var result = new List<BuildBundleLayoutResultData>(buildInput.Count);
+            var result = new List<BuildBundleLayoutResultData>(buildInput.Length);
 
             var bundleToFile = buildOutput.FileToBundle
                 .ToDictionary(x => x.Value, x => x.Key);

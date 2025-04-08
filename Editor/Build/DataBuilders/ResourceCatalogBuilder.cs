@@ -9,7 +9,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     internal static class ResourceCatalogBuilder
     {
-        public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
+        public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<GroupKey, AssetBundleId> keyToId)
         {
             L.I("[ResourceCatalogBuilder] Building ResourceCatalog...");
 
@@ -102,72 +102,22 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return data;
         }
 
-        public static Dictionary<BundleKey, AssetBundleId> AssignBundleId(ICollection<EntryDef> entries)
+        public static Dictionary<GroupKey, AssetBundleId> BuildBundleIdMap(AddressableCatalog catalog)
         {
-            var idToKey = new Dictionary<AssetBundleId, BundleKey>();
-            var keyToId = new Dictionary<BundleKey, AssetBundleId>();
-
-
-            // Collect all asset bundles.
-            var bundleKeys = entries
-                .Select(x => x.Bundle)
-                .Concat(entries.SelectMany(x => x.Dependencies))
-                .Distinct()
-                .OrderBy(x => x.Value) // Sort
-                .ToList();
-
-            var bundleCount = bundleKeys.Count;
-            Assert.IsTrue(bundleCount <= byte.MaxValue, "Too many asset bundles.");
-
-
-            // Manually add MonoScriptBundle.
-            var removed = bundleKeys.Remove(BundleKey.FromBuildName(BundleNames.MonoScript));
-            Assert.IsTrue(removed, "MonoScriptBundle not found.");
-            idToKey.Add(AssetBundleId.MonoScript, BundleKey.FromBuildName(BundleNames.MonoScript));
-            keyToId.Add(BundleKey.FromBuildName(BundleNames.MonoScript), AssetBundleId.MonoScript);
-
-
-            // Calculate hashes.
-            var bundleHashes = bundleKeys
-                .Select(x => Hasher.Hash(x.Value))
-                .ToList();
-
-
-            // Assign AssetBundleId to each asset bundle.
-            while (true)
+            var groups = catalog.Groups;
+            // 2 for MonoScriptBundle and BuiltInShaderBundle.
+            var keyToId = new Dictionary<GroupKey, AssetBundleId>(catalog.Groups.Length + 2)
             {
-                var count = bundleHashes.Count;
-                if (count == 0) break;
-
-                for (var i = 0; i < bundleHashes.Count; i++)
-                {
-                    var hash = bundleHashes[i];
-                    var possibleBundleId = (AssetBundleId) (hash % byte.MaxValue);
-                    if ((byte) possibleBundleId >= bundleCount // Out of range.
-                        || idToKey.ContainsKey(possibleBundleId)) // Already used.
-                    {
-                        bundleHashes[i] = hash + 1; // Try next hash.
-                        continue;
-                    }
-
-                    // Found a valid AssetBundleId.
-                    idToKey.Add(possibleBundleId, bundleKeys[i]);
-                    keyToId.Add(bundleKeys[i], possibleBundleId);
-                    bundleHashes.RemoveAt(i);
-                    bundleKeys.RemoveAt(i);
-                    i--;
-                }
-            }
-
-            L.I($"[ResourceCatalogBuilder] AssetBundleId assigned. {idToKey.Count} bundles\n"
-                + $"  AssetBundleId: {string.Join("\n", idToKey.Select(x => $"{x.Key.Name()} -> {x.Value}"))}");
-
+                { (GroupKey) BundleNames.MonoScript, AssetBundleId.MonoScript },
+                { (GroupKey) BundleNames.BuiltInShaders, AssetBundleId.BuiltInShader }
+            };
+            foreach (var g in groups) keyToId.Add(g.Key, g.BundleId);
             return keyToId;
         }
 
-        private static HashSet<AssetBundleId> CollectDeps(BundleKey bundle, ICollection<EntryDef> entries, Dictionary<BundleKey, AssetBundleId> keyToId)
+        private static HashSet<AssetBundleId> CollectDeps(GroupKey bundle, ICollection<EntryDef> entries, Dictionary<GroupKey, AssetBundleId> keyToId)
         {
-            var deps = new HashSet<BundleKey>();
+            var deps = new HashSet<GroupKey>();
 
             // Collect all dependencies of the bundle.
             foreach (var entry in entries)
@@ -180,7 +130,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             deps.Remove(bundle);
 
             // Remove MonoScript bundle from deps as it will be loaded manually. See AssetBundleLoader.cs.
-            deps.Remove(BundleKey.FromBuildName(BundleNames.MonoScript));
+            deps.Remove((GroupKey) BundleNames.MonoScript);
 
             L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Value}: {string.Join(", ", deps.Select(x => x.Value))}");
 
