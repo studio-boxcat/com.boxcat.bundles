@@ -35,10 +35,6 @@ namespace UnityEditor.AddressableAssets
             }
         }
 
-        // single entry AssetGroup
-        public AssetGroup(string name, AssetEntry entry)
-            : this(name, new[] { entry }) { }
-
         private Dictionary<string, Object> _cachedAddressToAssetMap;
 
         public bool TryGetAssetByAddress(string address, out Object asset)
