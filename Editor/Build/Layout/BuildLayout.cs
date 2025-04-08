@@ -64,58 +64,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     [Serializable]
     internal class BuildLayout
     {
-        /// <summary>
-        /// Helper class to wrap header values for BuildLayout
-        /// </summary>
-        public class LayoutHeader
-        {
-            /// <summary>
-            /// Build layout for this header
-            /// </summary>
-            internal BuildLayout m_BuildLayout;
-
-            /// <summary>
-            /// DateTime at the start of building Addressables
-            /// </summary>
-            public DateTime BuildStart
-            {
-                get
-                {
-                    if (m_BuildLayout == null)
-                        return DateTime.MinValue;
-                    return m_BuildLayout.BuildStart;
-                }
-            }
-
-            /// <summary>
-            /// Null or Empty if the build completed successfully, else contains error causing the failure
-            /// </summary>
-            public string BuildError
-            {
-                get
-                {
-                    if (m_BuildLayout == null)
-                        return "";
-                    return m_BuildLayout.BuildError;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Helper object to get header values for this build layout
-        /// </summary>
-        public LayoutHeader Header
-        {
-            get
-            {
-                if (m_Header == null)
-                    m_Header = new LayoutHeader() { m_BuildLayout = this };
-                return m_Header;
-            }
-        }
-
-        private LayoutHeader m_Header;
-
         #region HeaderValues // Any values in here should also be in BuildLayoutHeader class
 
         /// <summary>

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -18,33 +17,6 @@ namespace UnityEditor.AddressableAssets.Build
         /// Error that caused the build to fail.
         /// </summary>
         public string Error;
-
-        /// <summary>
-        /// Build results for AssetBundles created during the build.
-        /// </summary>
-        public List<BundleBuildResult> AssetBundleBuildResults = new();
-
-        /// <summary>
-        /// Information about a bundle build results
-        /// </summary>
-        [Serializable]
-        public class BundleBuildResult
-        {
-            /// <summary>
-            /// The Addressable Group that was responsible for generating a given AssetBundle
-            /// </summary>
-            public BundleKey BundleKey;
-            /// <summary>
-            /// The file path of the bundle.
-            /// </summary>
-            public string FilePath;
-
-            public BundleBuildResult(BundleKey bundleKey, string filePath)
-            {
-                BundleKey = bundleKey;
-                FilePath = filePath;
-            }
-        }
     }
 
     /// <summary>
