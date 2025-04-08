@@ -4,7 +4,7 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
@@ -12,18 +12,19 @@ namespace UnityEditor.AddressableAssets
     [Serializable]
     public class AssetGroup
     {
+        [FormerlySerializedAs("BundleName")]
         [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditNameEnabled))]
-        public string BundleName;
-        [LabelText("@BundleName"), TableList(ShowPaging = false)]
+        public string Name;
+        [LabelText("@Name"), TableList(ShowPaging = false)]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
         [SerializeField, HideInInspector] internal string GeneratorId;
         public bool IsGenerated => !string.IsNullOrEmpty(GeneratorId);
 
-        public AssetGroup(string bundleName, AssetEntry[] entries)
+        public AssetGroup(string name, AssetEntry[] entries)
         {
-            BundleName = bundleName;
+            Name = name;
             Entries = entries;
 
             foreach (var entry in Entries)
@@ -35,8 +36,8 @@ namespace UnityEditor.AddressableAssets
         }
 
         // single entry AssetGroup
-        public AssetGroup(string bundleName, AssetEntry entry)
-            : this(bundleName, new[] { entry }) { }
+        public AssetGroup(string name, AssetEntry entry)
+            : this(name, new[] { entry }) { }
 
         private Dictionary<string, Object> _cachedAddressToAssetMap;
 
@@ -52,7 +53,7 @@ namespace UnityEditor.AddressableAssets
         {
             return new AssetBundleBuild
             {
-                assetBundleName = BundleName,
+                assetBundleName = Name,
                 assetNames = Entries.Select(e => AssetDatabase.GetAssetPath(e.Asset)).ToArray(),
                 addressableNames = Entries.Select(e => AddressUtils.Hash(e.Address).Name()).ToArray()
             };

@@ -41,7 +41,7 @@ namespace UnityEditor.AddressableAssets
 
         public bool TryGetGroup(string groupName, out AssetGroup group)
         {
-            _cachedGroupNameToGroupMap ??= Groups.ToDictionary(x => x.BundleName, x => x);
+            _cachedGroupNameToGroupMap ??= Groups.ToDictionary(x => x.Name, x => x);
             return _cachedGroupNameToGroupMap.TryGetValue(groupName, out group);
         }
 
@@ -132,7 +132,7 @@ namespace UnityEditor.AddressableAssets
             generatedGroups.Sort((x, y) =>
             {
                 var cmp = string.CompareOrdinal(x.GeneratorId, y.GeneratorId);
-                return cmp != 0 ? cmp : string.CompareOrdinal(x.BundleName, y.BundleName);
+                return cmp != 0 ? cmp : string.CompareOrdinal(x.Name, y.Name);
             });
 
             groups.AddRange(generatedGroups);

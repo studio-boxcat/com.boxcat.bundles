@@ -635,7 +635,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             foreach (var (bundle, group) in aaContext.bundleToAssetGroup)
             {
                 var grp = new BuildLayout.Group();
-                grp.Name = group.BundleName;
+                grp.Name = group.Name;
                 lookup.GroupLookup.Add(bundle, grp);
                 layout.Groups.Add(grp);
             }
@@ -670,7 +670,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             else
             {
                 var defaultGroup = aaContext.Catalog.DefaultGroup;
-                b.Group = lookup.GroupLookup.Values.Single(g => g.Name == defaultGroup.BundleName);
+                b.Group = lookup.GroupLookup.Values.Single(g => g.Name == defaultGroup.Name);
                 layout.BuiltInBundles.Add(b);
             }
 
