@@ -18,9 +18,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// </summary>
     internal class BuildScriptPackedMode : BuildScriptBase
     {
-        private LinkXmlGenerator m_Linker;
-
         private const bool _generateBuildReport = false;
+
+        // Tests can set this flag to prevent player script compilation. This is the most expensive part of small builds
+        // and isn't needed for most tests.
+        private const bool _skinCompilePlayerScripts = false;
+
+        private LinkXmlGenerator m_Linker;
 
         /// <inheritdoc />
         protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
@@ -103,9 +107,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 foreach (var bundleKey in bundleIds.Keys)
                 {
                     // L.I(bundleKey.ToString());
-                    var targetPath = CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].Name());
-                    result.AssetBundleBuildResults.Add(
-                        new DataBuildResult.BundleBuildResult(bundleKey, targetPath));
+                    CopyBundleToOutputPath(bundleKey.GetBuildName(), bundleIds[bundleKey].Name());
                 }
             }
 
@@ -166,10 +168,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return bundleBuilds;
         }
 
-        // Tests can set this flag to prevent player script compilation. This is the most expensive part of small builds
-        // and isn't needed for most tests.
-        internal static bool s_SkipCompilePlayerScripts = false;
-
         private static IList<IBuildTask> RuntimeDataBuildTasks()
         {
             var buildTasks = new List<IBuildTask>();
@@ -179,7 +177,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             buildTasks.Add(new RebuildSpriteAtlasCache());
 
             // Player Scripts
-            if (!s_SkipCompilePlayerScripts)
+            if (!_skinCompilePlayerScripts)
                 buildTasks.Add(new BuildPlayerScripts());
             buildTasks.Add(new PostScriptsCallback());
 
