@@ -4,7 +4,6 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
@@ -12,9 +11,6 @@ namespace UnityEditor.AddressableAssets
     [Serializable]
     public class AssetGroup : ISelfValidator
     {
-        [FormerlySerializedAs("_name")]
-        [FormerlySerializedAs("BundleName")]
-        [FormerlySerializedAs("Name")]
         [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditNameEnabled))]
         public string _key;
         public GroupKey Key => new(_key);
