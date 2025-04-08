@@ -44,8 +44,6 @@ namespace UnityEditor.AddressableAssets
 
         public static BundleKey FromBuildName(string fileName) => new(fileName);
 
-        public static BundleKey Create(string groupName, string suffix) => new($"{groupName} ({suffix})");
-
         public override string ToString() => Value;
 
         public readonly string GetBuildName() => Value;

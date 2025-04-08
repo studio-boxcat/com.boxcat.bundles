@@ -20,6 +20,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     {
         private LinkXmlGenerator m_Linker;
 
+        private const bool _generateBuildReport = false;
+
         /// <inheritdoc />
         protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
         {
@@ -34,7 +36,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 result.Duration = span.TotalSeconds;
             }
 
-            if (result != null && !Application.isBatchMode && ProjectConfigData.AutoOpenAddressablesReport && ProjectConfigData.GenerateBuildLayout)
+            if (result != null && !Application.isBatchMode && _generateBuildReport)
                 BuildReportWindow.ShowWindowAfterBuild();
             return result;
         }
@@ -78,7 +80,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             L.I("[BuildScriptPackedMode] ContentPipeline.BuildAssetBundles");
             IBundleBuildResults results;
-            using (new SBPSettingsOverwriterScope(ProjectConfigData.GenerateBuildLayout)) // build layout generation requires full SBP write results
+            using (new SBPSettingsOverwriterScope(_generateBuildReport)) // build layout generation requires full SBP write results
             {
                 aaContext.bundleToAssetGroup = new Dictionary<BundleKey, AssetGroup>();
                 var bundleBuilds = GenerateBundleBuilds(catalog.Groups, aaContext.bundleToAssetGroup);
@@ -128,13 +130,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 m_Linker.Save(Path.Combine(dir, "link.xml"));
             }
 
-            if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)
+            if (_generateBuildReport && extractData.BuildContext != null)
             {
                 L.I("[BuildScriptPackedMode] Generate Build Layout");
                 using var progressTracker = new ProgressTracker();
                 progressTracker.UpdateTask("Generating Build Layout");
                 var tasks = new List<IBuildTask> { new BuildLayoutGenerationTask() };
                 BuildTasksRunner.Run(tasks, extractData.m_BuildContext);
+            }
+            else
+            {
+                L.I("[BuildScriptPackedMode] Skipping Build Layout generation");
             }
 
             return result;
