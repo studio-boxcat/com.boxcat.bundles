@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets
     /// <summary>
     /// The project configuration settings for addressables.
     /// </summary>
-    public static class ProjectConfigData
+    internal static class ProjectConfigData
     {
         private static List<string> s_BuildReportFilePaths;
 
