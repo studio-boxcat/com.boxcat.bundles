@@ -33,21 +33,21 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             _onLoaded = OnLoaded;
 
             // Load the MonoScript asset bundle immediately.
-            _bundles[AssetBundleId.MonoScript.Index()]
+            _bundles[AssetBundleId.MonoScript.Value()]
                 = ReadAssetBundle(AssetBundleId.MonoScript);
         }
 
         public AssetBundle GetResolvedBundle(AssetBundleId id)
         {
-            var bundle = _bundles[id.Index()];
+            var bundle = _bundles[id.Value()];
             Assert.IsNotNull(bundle, "AssetBundle not found");
-            Assert.AreEqual(AssetBundleResolveContext.Done, _contexts[id.Index()], "AssetBundle not fully resolved");
+            Assert.AreEqual(AssetBundleResolveContext.Done, _contexts[id.Value()], "AssetBundle not fully resolved");
             return bundle;
         }
 
         public bool TryGetResolvedBundle(AssetBundleId bundleId, out AssetBundle bundle)
         {
-            var bundleIndex = bundleId.Index();
+            var bundleIndex = bundleId.Value();
             var ctx = _contexts[bundleIndex];
 
             // Never resolved.
@@ -73,7 +73,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         public bool ResolveAsync(AssetBundleId bundleId, AssetBundleSpan deps, object payload, Action<AssetBundle, object> callback)
         {
             // When the asset bundle is currently resolving...
-            var bundleIndex = bundleId.Index();
+            var bundleIndex = bundleId.Value();
             var ctx = _contexts[bundleIndex];
             if (ctx is not null)
             {
@@ -112,7 +112,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
         public AssetBundle ResolveImmediate(AssetBundleId bundleId, AssetBundleSpan deps)
         {
-            var bundleIndex = bundleId.Index();
+            var bundleIndex = bundleId.Value();
             var ctx = _contexts[bundleIndex];
 
             // Fully resolved.
@@ -148,7 +148,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
             AssetBundle LoadBundle(AssetBundleId bundleId)
             {
-                var bundleIndex = bundleId.Index();
+                var bundleIndex = bundleId.Value();
                 var bundle = _bundles[bundleIndex];
 
                 // No need to load at all.
@@ -161,7 +161,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 {
                     var (req, _) = data;
                     bundle = req.WaitForComplete();
-                    Assert.IsNotNull(_bundles[bundleId.Index()], "AssetBundle not found");
+                    Assert.IsNotNull(_bundles[bundleId.Value()], "AssetBundle not found");
                     Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
                     return bundle;
                 }
@@ -170,7 +170,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 {
                     // No need to deal with the context as it will be fully resolved immediately.
                     bundle = ReadAssetBundle(bundleId);
-                    _bundles[bundleId.Index()] = bundle;
+                    _bundles[bundleId.Value()] = bundle;
                     L.I($"[AssetBundleLoader] LoadBundle: {bundleId.Name()} ({bundle.name})");
                     return bundle;
                 }
@@ -181,7 +181,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             Assert.AreNotEqual(AssetBundleResolveContext.Done, ctx, "Invalid context");
 
-            var bundleIndex = bundleId.Index();
+            var bundleIndex = bundleId.Value();
             var bundle = _bundles[bundleIndex];
 
             // No need to load at all.
@@ -217,7 +217,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
         public void CompleteResolveImmediate(AssetBundleId bundleId)
         {
-            var bundleIndex = bundleId.Index();
+            var bundleIndex = bundleId.Value();
             var ctx = _contexts[bundleIndex];
             Assert.IsNotNull(ctx, "AssetBundle is not resolving");
 
@@ -278,7 +278,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     throw new Exception($"AssetBundleCreateRequest failed: {bundleId.Name()}");
             }
 
-            _bundles[bundleId.Index()] = bundle;
+            _bundles[bundleId.Value()] = bundle;
             L.I($"[AssetBundleLoader] OnLoaded: {bundleId.Name()} ({bundle.name} assets)");
 
             // Get requesters.
@@ -315,7 +315,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
 
             // Mark as fully resolved before invoking callbacks to ensure reentrancy.
-            var bundleIndex = ctx.BundleId.Index();
+            var bundleIndex = ctx.BundleId.Value();
             _contexts[bundleIndex] = AssetBundleResolveContext.Done;
 
             // Get the asset bundle.

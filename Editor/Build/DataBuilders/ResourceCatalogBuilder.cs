@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -13,7 +12,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             L.I("[ResourceCatalogBuilder] Building ResourceCatalog...");
 
-            Assert.IsTrue(keyToId.Count < byte.MaxValue, "Too many asset bundles.");
+            Assert.IsTrue(keyToId.Count <= ushort.MaxValue, "Too many asset bundles.");
 
             // Build AssetBundle dependency data.
             var bundleKeys = keyToId.Keys;
@@ -21,56 +20,72 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 x => keyToId[x],
                 x => CollectDeps(x, entries, keyToId));
 
-            // Build AssetBundleSpan and AssetBundleDepData.
+            // Build DepSpan and DepData.
             var (spanData, depData) = BuildDepSpan(deps);
             Assert.AreEqual(bundleKeys.Count, spanData.Length, "Invalid span data length.");
 
-            // Get all addresses.
-            var addresses = entries
+            // Collect addresses separately from their bundle IDs (instead of packing them).
+            // We'll store addresses in 32 bits each, sorted ascending,
+            // and store the corresponding AssetBundleId in 16 bits each.
+            var assetInfo = entries
                 .Where(x => x.Address.HasValue)
-                .OrderBy(x => x.Address.Value) // Sort by address.
-                .Select(x =>
-                {
-                    var address = (uint) x.Address.Value;
-                    var bundle = x.Bundle;
-                    Assert.AreEqual(0, address & 0xFF000000, "MSB 1 byte is reserved for AssetBundleId.");
-                    return (uint) ((byte) keyToId[bundle] << 24) | address;
-                })
+                .Select(x => new AssetInfo(x.Address.Value, keyToId[x.Bundle]))
+                .OrderBy(x => x.Address)
                 .ToList();
-            L.I("[ResourceCatalogBuilder] All addresses: " + string.Join(", ", addresses.Select(x => ((Address) (x & 0x00FFFFFF)).ReadableString())));
-            Assert.AreEqual(addresses.Count, addresses.Distinct().Count(), "Duplicate address found.");
+
+            L.I("[ResourceCatalogBuilder] All addresses: " + string.Join(", ",
+                assetInfo.Select(x => x.Address.ReadableString())));
+            Assert.AreEqual(assetInfo.Count, assetInfo.Select(x => x.Address).Distinct().Count(),
+                "Duplicate address found.");
+
 
             // AssetBundleCount: ushort
-            // ResourceLocationCount: ushort
+            // AssetCount: ushort
             // AssetBundleDepSpans: uint[]
             //     Start: ushort
             //     Count: ushort
-            // ResourceLocations: uint[] (Sorted by Address)
-            //     AssetBundle: 1 byte
-            //     Address: 3 bytes
-            // AssetBundleDepData: byte[]
+            // Addresses: uint[] (Sorted)
+            // CorrespondingAssetBundles: ushort[] - AssetBundleIds
+            // OptionalPadding: 0 or 2 bytes
+            // AssetBundleDepData: ushort[] - AssetBundleIds
             var bundleCount = bundleKeys.Count;
-            var addressCount = addresses.Count;
+            var assetCount = assetInfo.Count;
+            var depSpanSize = 4 * bundleCount;
+            var addressesSize = 4 * assetCount; // each address is 4 bytes
+            var bundleIdsSize = 2 * assetCount; // each bundle ID is 2 bytes
+            // Simple alignment: if we've written an odd multiple of 2 bytes, add 2 bytes padding so DepData begins on a 4-byte boundary.
+            var optionalPadding = (assetCount & 1) == 1 ? 2 : 0;
+            var depDataSize = 2 * depData.Length; // each dep is now 2 bytes
+
             Assert.IsTrue(bundleCount <= byte.MaxValue, "Too many asset bundles.");
             var data = new byte[
-                2 + 2
-                  + bundleCount * 4
-                  + addressCount * 4
-                  + depData.Length];
+                2 + 2 // bundleCount, resourceLocationCount
+                  + depSpanSize // AssetBundleDepSpans
+                  + addressesSize
+                  + bundleIdsSize
+                  + optionalPadding
+                  + depDataSize];
 
             fixed (byte* ptr = data)
             {
                 var p = ptr;
+
+                // Write AssetBundleCount, ResourceLocationCount.
                 *(ushort*) p = (ushort) bundleCount;
                 p += 2;
-                *(ushort*) p = (ushort) addressCount;
+                *(ushort*) p = (ushort) assetCount;
                 p += 2;
 
                 // Write AssetBundleDepSpans.
-                var depOffset = 4 + 4 * bundleCount + 4 * addressCount;
+                // We'll need to compute the actual start of DepData for each bundle's DepSpan.
+                // DepData begins after all the preceding sections:
+                //     2 + 2 (counts) + depSpanSize + addressesSize + bundleIdsSize + optionalPadding
+                var depOffset = 2 + 2 + depSpanSize + addressesSize + bundleIdsSize + optionalPadding;
                 for (var i = 0; i < bundleCount; i++)
                 {
-                    var start = spanData[i].Start + depOffset;
+                    // Each DepSpan uses 'Start' as an index (count of AssetBundleIds), so we multiply by 2 bytes per dep ID
+                    // then add depDataStart to get an absolute offset in bytes.
+                    var start = spanData[i].Start * 2 + depOffset;
                     Assert.IsTrue(start <= ushort.MaxValue, "Start is out of range.");
                     *(ushort*) p = (ushort) start;
                     p += 2;
@@ -78,27 +93,44 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     p += 2;
                 }
 
-                // Write ResourceLocations.
-                foreach (var address in addresses)
+                // Write Addresses (4 bytes each).
+                foreach (var addressInfo in assetInfo)
                 {
-                    *(uint*) p = address;
+                    *(uint*) p = addressInfo.Address.Value();
                     p += 4;
                 }
 
-                // Write AssetBundleDepData.
+                // Write Bundle IDs (2 bytes each).
+                foreach (var addressInfo in assetInfo)
+                {
+                    *(ushort*) p = addressInfo.BundleId.Value();
+                    p += 2;
+                }
+
+                // Optional 2-byte padding for alignment.
+                if (optionalPadding == 2)
+                {
+                    *(ushort*) p = 0;
+                    p += 2;
+                }
+
+                // Write DepData (2 bytes for each dependency ID).
                 foreach (var dep in depData)
                 {
-                    *p = (byte) dep;
-                    p += 1;
+                    *(ushort*) p = dep.Value();
+                    p += 2;
                 }
             }
 
             L.I($"[ResourceCatalogBuilder] ResourceCatalog built. {data.Length} bytes\n"
                 + $"  AssetBundleCount: {bundleCount}\n"
-                + $"  ResourceLocationCount: {addressCount}\n"
-                + $"  AssetBundleDepSpans: {bundleCount * 4} bytes\n"
-                + $"  ResourceLocations: {addressCount * 4} bytes\n"
-                + $"  AssetBundleDepData: {depData.Length} bytes");
+                + $"  AssetCount: {assetCount}\n"
+                + $"  AssetBundleDepSpans: {depSpanSize} bytes\n"
+                + $"  Addresses: {addressesSize} bytes\n"
+                + $"  CorrespondingAssetBundles: {bundleIdsSize} bytes\n"
+                + $"  OptionalPadding: {optionalPadding} bytes\n"
+                + $"  AssetBundleDepData: {depDataSize} bytes");
+
             return data;
         }
 
@@ -111,11 +143,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 { (GroupKey) BundleNames.MonoScript, AssetBundleId.MonoScript },
                 { (GroupKey) BundleNames.BuiltInShaders, AssetBundleId.BuiltInShader }
             };
-            foreach (var g in groups) keyToId.Add(g.Key, g.BundleId);
+            foreach (var g in groups)
+                keyToId.Add(g.Key, g.BundleId);
             return keyToId;
         }
 
-        private static HashSet<AssetBundleId> CollectDeps(GroupKey bundle, ICollection<EntryDef> entries, Dictionary<GroupKey, AssetBundleId> keyToId)
+        private static HashSet<AssetBundleId> CollectDeps(
+            GroupKey bundle,
+            ICollection<EntryDef> entries,
+            Dictionary<GroupKey, AssetBundleId> keyToId)
         {
             var deps = new HashSet<GroupKey>();
 
@@ -129,12 +165,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             // Remove the bundle itself from the dependencies.
             deps.Remove(bundle);
 
-            // Remove MonoScript bundle from deps as it will be loaded manually. See AssetBundleLoader.cs.
+            // Remove MonoScript bundle from deps as it will be loaded manually.
             deps.Remove((GroupKey) BundleNames.MonoScript);
 
             L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Value}: {string.Join(", ", deps.Select(x => x.Value))}");
 
-            // Build final dependency data.
+            // Build final dependency data (mapping to AssetBundleId).
             return deps.Select(x => keyToId[x]).ToHashSet();
         }
 
@@ -161,7 +197,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             public override string ToString() => Bundle.Name();
         }
 
-        private static (DepSpan[] SpanData, AssetBundleId[] DepData) BuildDepSpan(Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleDeps)
+        /// <summary>
+        /// Returns (SpanData, DepData).
+        ///   SpanData: an array of DepSpan, one per bundle
+        ///   DepData: the flattened dependency IDs in the order determined by the SpanData.
+        /// </summary>
+        private static (DepSpan[] SpanData, AssetBundleId[] DepData) BuildDepSpan(
+            Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleDeps)
         {
             var nodes = bundleDeps
                 .Select(x => new DepNode
@@ -196,17 +238,18 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             foreach (var item in toRemove)
                 nodes.Remove(item);
 
-            // Sort root nodes by bundle.
-            nodes.Sort((x, y) => x.Bundle.CompareTo(y.Bundle));
+            // Sort root nodes by bundle ID.
+            nodes.Sort((x, y) => x.Bundle.CompareToFast(y.Bundle));
 
-            // Write span data.
-            var spanData = new DepSpan[bundleDeps.Count];
+            var spanData = new DepSpan[bundleDeps.Count]; // index = AssetBundleId
             var depData = new List<AssetBundleId>();
-            foreach (var node in nodes) // Root nodes.
+
+            // Flatten each root and its children.
+            foreach (var node in nodes)
             {
                 // Write span data.
                 var depStart = depData.Count;
-                spanData[(int) node.Bundle] = new DepSpan(depStart, node.Deps.Length);
+                spanData[node.Bundle.Value()] = new DepSpan(depStart, node.Deps.Length);
 
                 // Write dependency data.
                 depData.AddRange(node.Deps);
@@ -224,30 +267,32 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
 
                 // Sort children by bundle.
-                children.Sort((x, y) => x.Bundle.CompareTo(y.Bundle));
+                children.Sort((x, y) => x.Bundle.CompareToFast(y.Bundle));
 
                 // Write span data for children.
                 foreach (var child in children)
                 {
                     if (child.Deps.Length == 0)
                     {
-                        spanData[(int) child.Bundle] = new DepSpan(depStart, 0); // dep start
+                        spanData[child.Bundle.Value()] = new DepSpan(depStart, 0);
                         continue;
                     }
 
-                    var min = child.Deps.Min();
-                    var minIndex = depData.IndexOf(min, depStart);
-                    Assert.IsTrue(minIndex >= 0, "Dependency not found.");
-                    spanData[(int) child.Bundle] = new DepSpan(minIndex, child.Deps.Length); // dep start
+                    var minDep = child.Deps.Min();
+                    var minIndex = depData.IndexOf(minDep, depStart);
+                    Assert.IsTrue(minIndex >= 0, "Dependency not found in parent list.");
+                    spanData[child.Bundle.Value()] = new DepSpan(minIndex, child.Deps.Length); // dep start
                 }
             }
 
-            // Validate span data
-            foreach (var (bundleId, deps) in bundleDeps)
+            // Validate that the reconstructed sets match the original sets.
+            foreach (var (bundleId, depsSet) in bundleDeps)
             {
                 var span = spanData[(int) bundleId];
-                var resultDeps = depData.Skip(span.Start).Take(span.Count).ToHashSet();
-                Assert.IsTrue(deps.SetEquals(resultDeps), $"Invalid span data: {bundleId.Name()}, [{string.Join(", ", deps)}] != [{string.Join(", ", resultDeps)}]");
+                var subset = depData.Skip(span.Start).Take(span.Count).ToHashSet();
+                Assert.IsTrue(depsSet.SetEquals(subset),
+                    $"Invalid span data: {bundleId.Name()}, " +
+                    $"[{string.Join(", ", depsSet)}] != [{string.Join(", ", subset)}]");
             }
 
             return (spanData, depData.ToArray());
@@ -277,6 +322,18 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
 
                 return true;
+            }
+        }
+
+        private readonly struct AssetInfo
+        {
+            public readonly Address Address;
+            public readonly AssetBundleId BundleId;
+
+            public AssetInfo(Address address, AssetBundleId bundleId)
+            {
+                Address = address;
+                BundleId = bundleId;
             }
         }
     }

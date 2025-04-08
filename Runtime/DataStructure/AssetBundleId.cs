@@ -1,32 +1,36 @@
 using System.Runtime.CompilerServices;
-using System.Text;
 using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEngine.AddressableAssets
 {
-    public enum AssetBundleId : byte
+    public enum AssetBundleId : ushort
     {
         MonoScript = 0, // reserved for MonoScript.
         BuiltInShader = 1, // reserved for BuiltInShader.
+        Max = ushort.MaxValue,
     }
 
     public static class AssetBundleIdUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte Index(this AssetBundleId id)
+        public static ushort Value(this AssetBundleId id)
         {
-            return (byte) id;
+            return (ushort) id;
         }
 
-        public static void WriteHex2(this AssetBundleId id, StringBuilder sb, int startIndex)
+        public static void WriteHex4(this AssetBundleId id, char[] chars, int startIndex)
         {
-            sb[startIndex] = Hex.Char(((byte) id >> 4) & 0xF);
-            sb[startIndex + 1] = Hex.Char((byte) id & 0xF);
+            Hex.To4(id.Value(), chars, startIndex);
         }
 
         public static string Name(this AssetBundleId id)
         {
-            return Hex.To2((byte) id);
+            return Hex.To4(id.Value());
+        }
+
+        public static int CompareToFast(this AssetBundleId id, AssetBundleId other)
+        {
+            return id.Value().CompareTo(other.Value());
         }
     }
 }

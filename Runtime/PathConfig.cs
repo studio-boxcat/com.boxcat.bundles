@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace UnityEngine.AddressableAssets
 {
     public static class PathConfig
@@ -20,13 +18,13 @@ namespace UnityEngine.AddressableAssets
 
         public static string RuntimePath_CatalogBin => _runtimePath + "/catalog.bin";
 
-        private static StringBuilder _bundlePathBuilder;
+        private static char[] _bundlePathFormat;
 
         public static string GetAssetBundleLoadPath(AssetBundleId bundleId)
         {
-            _bundlePathBuilder ??= new StringBuilder(_runtimePath).Append("/XX");
-            bundleId.WriteHex2(_bundlePathBuilder, _bundlePathBuilder.Length - 2);
-            return _bundlePathBuilder.ToString();
+            _bundlePathFormat ??= (_runtimePath + "/XXXX").ToCharArray();
+            bundleId.WriteHex4(_bundlePathFormat, _bundlePathFormat.Length - 4);
+            return new string(_bundlePathFormat);
         }
 
 #if UNITY_EDITOR
