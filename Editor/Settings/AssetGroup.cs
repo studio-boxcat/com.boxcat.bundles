@@ -53,7 +53,7 @@ namespace UnityEditor.AddressableAssets
             return new AssetBundleBuild
             {
                 assetBundleName = _key,
-                assetNames = Entries.Select(e => AssetDatabase.GetAssetPath(e.Asset)).ToArray(),
+                assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray(),
                 addressableNames = Entries.Select(e => AddressUtils.Hash(e.Address).Name()).ToArray()
             };
         }
