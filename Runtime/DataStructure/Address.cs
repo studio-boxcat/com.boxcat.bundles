@@ -17,14 +17,7 @@ namespace UnityEngine.AddressableAssets
 
         public static Address Hash(string address)
         {
-            // XXX: Just right after adding the entry, address will be null for AddressableAssetEntry.
-            if (address is null) return default;
-
-            var hash = Hasher.Hash(address);
-#if DEBUG
-            Hasher.ReplaceReverseHash(hash, address);
-#endif
-            return (Address) hash;
+            return (Address) Hasher.Hash(address);
         }
 
         public static string Name(this Address address)
@@ -75,9 +68,6 @@ namespace UnityEngine.AddressableAssets
                     _reverseHash.Add(hash, str);
                 }
             }
-
-            internal static void ReplaceReverseHash(uint hash, string str) =>
-                AddReverseHash(hash, str);
 
             internal static bool TryReverseHash(uint hash, out string str) =>
                 _reverseHash.TryGetValue(hash, out str);
