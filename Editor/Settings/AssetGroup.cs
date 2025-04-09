@@ -32,8 +32,7 @@ namespace UnityEditor.AddressableAssets
 
             foreach (var entry in Entries)
             {
-                var path = AssetDatabase.GUIDToAssetPath(entry.GUID.Value);
-                if (string.IsNullOrEmpty(path))
+                if (string.IsNullOrEmpty(entry.ResolveAssetPath()))
                     throw new ArgumentException($"Asset not found: address={entry.Address}, guid={entry.GUID.Value}");
             }
         }

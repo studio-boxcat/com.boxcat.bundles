@@ -45,7 +45,7 @@ namespace UnityEditor.AddressableAssets
         public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object
         {
             var entry = GetEntryByAddress(address);
-            var path = AssetDatabase.GUIDToAssetPath(entry.GUID.Value);
+            var path = AssetDatabase.GUIDToAssetPath(entry.ResolveAssetPath());
             return new EditorAssetOp<TObject>(path);
         }
 

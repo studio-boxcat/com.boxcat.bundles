@@ -40,6 +40,8 @@ namespace UnityEditor.AddressableAssets
             Address = address;
         }
 
+        public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath((GUID) GUID);
+
         private void Asset_OnValueChanged(Object asset)
         {
             _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(Asset));
