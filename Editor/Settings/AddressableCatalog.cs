@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -13,7 +14,13 @@ namespace UnityEditor.AddressableAssets
         {
             var builds = new AssetBundleBuild[Groups.Length];
             for (var i = 0; i < Groups.Length; i++)
-                builds[i] = Groups[i].GenerateAssetBundleBuild();
+            {
+                var build = Groups[i].GenerateAssetBundleBuild();
+                L.I(string.Format(
+                    $"[AddressableCatalog] Build {build.assetBundleName}:\n"
+                    + string.Join("\n", build.addressableNames.Select((x, i) => $"{x} -> {build.assetNames[i]}"))));
+                builds[i] = build;
+            }
             return builds;
         }
     }

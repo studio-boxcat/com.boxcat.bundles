@@ -14,6 +14,18 @@ namespace UnityEngine.AddressableAssets.Util
 
         private static readonly char[] _hexBuf = new char[8];
 
+        public static unsafe string To2(byte value)
+        {
+            // https://stackoverflow.com/a/624379
+            fixed (char* p = _hexBuf)
+            {
+                var v = (uint) value;
+                p[0] = Char(v >> 4);
+                p[1] = Char(v & 0xF);
+            }
+            return new string(_hexBuf, 0, 2);
+        }
+
         public static unsafe string To4(ushort value)
         {
             // https://stackoverflow.com/a/624379

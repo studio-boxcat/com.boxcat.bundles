@@ -1,20 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets
 {
     public partial class AddressableCatalog
     {
-        private Dictionary<GroupKey, AssetGroup> _cachedGroupNameToGroupMap;
+        private Dictionary<GroupKey, AssetGroup> _cachedGroupKeyToGroupMap;
+        private Dictionary<AssetBundleId, AssetGroup> _cachedBundleIdToGroupMap;
         private Dictionary<string, AssetEntry> _cachedAddressToEntryMap;
         private Dictionary<string, AssetEntry> _cachedAssetGUIDToEntryMap;
         [NonSerialized] private List<string> _cachedAddressList;
 
         public bool TryGetGroup(GroupKey groupKey, out AssetGroup group)
         {
-            _cachedGroupNameToGroupMap ??= Groups.ToDictionary(x => x.Key, x => x);
-            return _cachedGroupNameToGroupMap.TryGetValue(groupKey, out group);
+            _cachedGroupKeyToGroupMap ??= Groups.ToDictionary(x => x.Key, x => x);
+            return _cachedGroupKeyToGroupMap.TryGetValue(groupKey, out group);
+        }
+
+        public AssetGroup GetGroup(AssetBundleId bundleId)
+        {
+            _cachedBundleIdToGroupMap ??= Groups.ToDictionary(x => x.BundleId, x => x);
+            return _cachedBundleIdToGroupMap[bundleId];
         }
 
         public bool TryGetEntryByGUID(AssetGUID guid, out AssetEntry entry)
@@ -44,7 +52,7 @@ namespace UnityEditor.AddressableAssets
             if (cache is null)
             {
                 cache = new Dictionary<string, AssetEntry>(Groups.Length * 64);
-                foreach (var assetGroup in Groups)
+                foreach (var assetGroup in Groups.Where(x => x.BundleId.AddressAccess()))
                 foreach (var assetEntry in assetGroup.Entries)
                 {
                     if (!string.IsNullOrEmpty(assetEntry.Address))
@@ -69,7 +77,7 @@ namespace UnityEditor.AddressableAssets
                 return cache;
 
             cache = new List<string>(Groups.Length * 64);
-            foreach (var assetGroup in Groups)
+            foreach (var assetGroup in Groups.Where(x => x.BundleId.AddressAccess()))
             foreach (var assetEntry in assetGroup.Entries)
             {
                 var address = assetEntry.Address;
@@ -84,7 +92,8 @@ namespace UnityEditor.AddressableAssets
         private void ClearCache()
         {
             L.I("[AddressableCatalog] ClearCache");
-            _cachedGroupNameToGroupMap = null;
+            _cachedGroupKeyToGroupMap = null;
+            _cachedBundleIdToGroupMap = null;
             _cachedAssetGUIDToEntryMap = null;
             _cachedAddressList = null;
         }

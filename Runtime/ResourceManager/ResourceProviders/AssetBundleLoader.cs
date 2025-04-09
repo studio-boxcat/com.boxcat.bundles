@@ -8,59 +8,52 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 {
     internal class AssetBundleLoader
     {
-        private class AssetBundleResolveContext
-        {
-            // If context reference equal to this, it means the asset bundle is fully resolved.
-            public static readonly AssetBundleResolveContext Done = new();
-
-            public AssetBundleId BundleId;
-            public List<AssetBundleCreateRequest> Reqs;
-            public List<(Action<AssetBundle, object>, object)> Callbacks;
-        }
-
-        private readonly AssetBundle[] _bundles;
-        private readonly AssetBundleResolveContext[] _contexts;
-        private readonly Dictionary<AssetBundleId, (AssetBundleCreateRequest Request, List<AssetBundleResolveContext> Requesters)> _requests = new();
-        private readonly Dictionary<AssetBundleCreateRequest, AssetBundleId> _reqToBundle = new();
-        private readonly List<AssetBundleResolveContext> _contextPool = new();
-        private readonly List<List<AssetBundleResolveContext>> _contextListPool = new();
+        private readonly AssetBundle[] _bundles; // indexed by AssetBundleIndex
+        private readonly Job[] _jobs; // indexed by AssetBundleIndex
+        private readonly IndexToId _indexToId;
+        private readonly Dictionary<AssetBundleIndex, (AssetBundleCreateRequest Request, List<Job> Jobs)> _requests = new();
+        private readonly Dictionary<AssetBundleCreateRequest, AssetBundleIndex> _reqToBundle = new();
 
 
-        public AssetBundleLoader(int bundleCount)
+        public AssetBundleLoader(int bundleCount, IndexToId indexToId)
         {
             _bundles = new AssetBundle[bundleCount];
-            _contexts = new AssetBundleResolveContext[bundleCount];
+            _jobs = new Job[bundleCount];
+            _indexToId = indexToId;
             _onLoaded = OnLoaded;
+        }
 
-            // Load the MonoScript asset bundle immediately.
-            _bundles[AssetBundleId.MonoScript.Value()]
+        public void LoadMonoScriptBundle()
+        {
+            _bundles[AssetBundleIndex.MonoScript.Value()]
                 = ReadAssetBundle(AssetBundleId.MonoScript);
         }
 
-        public AssetBundle GetResolvedBundle(AssetBundleId id)
+        public AssetBundle GetResolvedBundle(AssetBundleIndex index)
         {
-            var bundle = _bundles[id.Value()];
+            var idx = index.Value();
+            var bundle = _bundles[idx];
             Assert.IsNotNull(bundle, "AssetBundle not found");
-            Assert.AreEqual(AssetBundleResolveContext.Done, _contexts[id.Value()], "AssetBundle not fully resolved");
+            Assert.AreEqual(Job.Done, _jobs[idx], "AssetBundle not fully resolved");
             return bundle;
         }
 
-        public bool TryGetResolvedBundle(AssetBundleId bundleId, out AssetBundle bundle)
+        public bool TryGetResolvedBundle(AssetBundleIndex bundleIndex, out AssetBundle bundle)
         {
-            var bundleIndex = bundleId.Value();
-            var ctx = _contexts[bundleIndex];
+            var idx = bundleIndex.Value();
+            var job = _jobs[idx];
 
             // Never resolved.
-            if (ctx is null)
+            if (job is null)
             {
                 bundle = null;
                 return false;
             }
 
             // Fully resolved.
-            if (ReferenceEquals(ctx, AssetBundleResolveContext.Done))
+            if (ReferenceEquals(job, Job.Done))
             {
-                bundle = _bundles[bundleIndex];
+                bundle = _bundles[idx];
                 Assert.IsNotNull(bundle, "AssetBundle not found");
                 return true;
             }
@@ -70,86 +63,133 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             return false;
         }
 
-        public bool ResolveAsync(AssetBundleId bundleId, AssetBundleSpan deps, object payload, Action<AssetBundle, object> callback)
+        public bool ResolveAsync(AssetBundleIndex bundleIndex, DepSpan deps, object payload, Action<AssetBundle, object> callback)
         {
-            // When the asset bundle is currently resolving...
-            var bundleIndex = bundleId.Value();
-            var ctx = _contexts[bundleIndex];
-            if (ctx is not null)
+            // When the asset bundle is currently resolving (rare-case)
+            var idx = bundleIndex.Value();
+            var job = _jobs[idx];
+            if (job is not null)
             {
-                Assert.AreNotEqual(AssetBundleResolveContext.Done, ctx, "Please use TryGetResolved() before calling StartResolve()");
-                Assert.AreNotEqual(0, ctx.Reqs.Count, "At least one request is in progress");
-                Assert.AreNotEqual(0, ctx.Callbacks.Count, "Callback list empty");
-                ctx.Callbacks.Add((callback, payload));
+                Assert.AreNotEqual(Job.Done, job, "Please use TryGetResolved() before calling ResolveAsync()");
+                Assert.AreNotEqual(0, job.Reqs.Count, "At least one request is in progress");
+                Assert.AreNotEqual(0, job.Callbacks.Count, "Callback list empty");
+                job.Callbacks.Add((callback, payload));
                 return true;
             }
 
+            L.I($"[AssetBundleLoader] ResolveAsync: bundleIndex={bundleIndex.DebugString()}, deps: {deps.ToString()}");
 
-            // Create a new context.
-            L.I($"[AssetBundleLoader] ResolveAsync: {bundleId.Name()}, deps: {deps.ToString()}");
-            ctx = RentResolveContext(bundleId);
-            _contexts[bundleIndex] = ctx;
+            // Create a new job.
+            job = Job.Rent(bundleIndex);
+            _jobs[idx] = job;
 
             // Request asset bundles.
-            Assert.IsFalse(deps.Contains(bundleId), "AssetBundle depends on itself");
+            Assert.IsFalse(deps.Contains(bundleIndex), "AssetBundle depends on itself");
             var depCount = deps.Count;
             for (var i = 0; i < depCount; i++)
-                LoadAssetBundle(deps[i], ctx);
-            LoadAssetBundle(bundleId, ctx);
+            {
+                var dep = deps[i];
+                Assert.AreNotEqual(AssetBundleIndex.MonoScript, dep,
+                    "MonoScript asset bundle should be loaded immediately");
+                QueueAssetBundleLoad(dep, job);
+            }
+            QueueAssetBundleLoad(bundleIndex, job);
 
             // If there were no request made, consider as fully resolved.
-            if (ctx.Reqs.Count is 0)
+            if (job.Reqs.Count is 0)
             {
-                Assert.IsFalse(_requests.Values.Any(x => x.Requesters.Contains(ctx)), "AssetBundleResolveContext still in the list");
-                _contexts[bundleIndex] = AssetBundleResolveContext.Done; // Mark as fully resolved.
-                ReturnResolveContext(ctx);
+                Assert.IsFalse(_requests.Values.Any(x => x.Jobs.Contains(job)), "AssetBundleResolveContext still in the list");
+                _jobs[idx] = Job.Done; // Mark as fully resolved.
+                Job.Return(job);
                 return false;
             }
 
-            ctx.Callbacks.Add((callback, payload));
+            job.Callbacks.Add((callback, payload));
             return true;
+
+            void QueueAssetBundleLoad(AssetBundleIndex bundleIndex, Job job)
+            {
+                Assert.AreNotEqual(Job.Done, job, "Invalid job");
+
+                var bundle = _bundles[bundleIndex.Value()];
+
+                // No need to load at all.
+                if (bundle is not null)
+                    return;
+
+                // When request already made, add the job to the list.
+                if (_requests.TryGetValue(bundleIndex, out var data))
+                {
+                    var (oldReq, oldRequesters) = data;
+                    Assert.IsFalse(oldRequesters.Contains(job), "AssetBundleResolveContext already in the list");
+                    oldRequesters.Add(job);
+                    Assert.IsFalse(job.Reqs.Contains(oldReq), "AssetBundleCreateRequest already in the list");
+                    job.Reqs.Add(oldReq);
+                    return;
+                }
+
+                // When request not made yet...
+                var bundleId = _indexToId[bundleIndex];
+                var req = ReadAssetBundleAsync(bundleId);
+                Assert.IsFalse(req.isDone, "AssetBundle already loaded");
+
+                // Register request accordingly.
+                var requesters = Job.RentList();
+                requesters.Add(job);
+                _requests.Add(bundleIndex, (req, requesters)); // Request -> Context
+                _reqToBundle.Add(req, bundleIndex); // Request -> Bundle
+                job.Reqs.Add(req); // Context -> Request
+
+                // Finally, register the callback.
+                // This should be the last operation to prevent reentrancy.
+                req.completed += _onLoaded;
+            }
         }
 
-        public AssetBundle ResolveImmediate(AssetBundleId bundleId, AssetBundleSpan deps)
+        public AssetBundle ResolveImmediate(AssetBundleIndex bundleIndex, DepSpan deps, IndexToId indexToId)
         {
-            var bundleIndex = bundleId.Value();
-            var ctx = _contexts[bundleIndex];
+            var idx = bundleIndex.Value();
+            var job = _jobs[idx];
 
             // Fully resolved.
-            if (ReferenceEquals(ctx, AssetBundleResolveContext.Done))
+            if (ReferenceEquals(job, Job.Done))
             {
-                var bundle = _bundles[bundleIndex];
+                var bundle = _bundles[idx];
                 Assert.IsNotNull(bundle, "AssetBundle not found");
                 return bundle;
             }
 
             // Currently resolving.
-            if (ctx is not null)
+            if (job is not null)
             {
-                CompleteResolveImmediate(bundleId);
-                Assert.AreEqual(AssetBundleResolveContext.Done, _contexts[bundleIndex], "AssetBundle not fully resolved");
-                var bundle = _bundles[bundleIndex];
+                CompleteResolveImmediate(bundleIndex);
+                Assert.AreEqual(Job.Done, _jobs[idx], "AssetBundle not fully resolved");
+                var bundle = _bundles[idx];
                 Assert.IsNotNull(bundle, "AssetBundle not found");
                 return bundle;
             }
 
             // Never resolved.
-
-            L.I($"[AssetBundleLoader] ResolveImmediate: {bundleId.Name()}, deps: {deps.ToString()}");
+            L.I($"[AssetBundleLoader] ResolveImmediate: {bundleIndex.DebugString()}, deps: {deps.ToString()}");
 
             // First, load the dependent asset bundles.
             var depCount = deps.Count;
             for (var i = 0; i < depCount; i++)
-                LoadBundle(deps[i]);
+            {
+                var dep = deps[i];
+                Assert.AreNotEqual(AssetBundleIndex.MonoScript, dep,
+                    "MonoScript asset bundle should be loaded immediately");
+                LoadBundle(dep);
+            }
 
             // Then, load the target asset bundle itself.
-            return LoadBundle(bundleId);
+            return LoadBundle(bundleIndex);
 
 
-            AssetBundle LoadBundle(AssetBundleId bundleId)
+            AssetBundle LoadBundle(AssetBundleIndex bundleIndex)
             {
-                var bundleIndex = bundleId.Value();
-                var bundle = _bundles[bundleIndex];
+                var idx = bundleIndex.Value();
+                var bundle = _bundles[idx];
 
                 // No need to load at all.
                 if (bundle is not null)
@@ -157,81 +197,44 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     return bundle;
                 }
                 // If the dependent asset bundle is currently loading, complete it immediately.
-                else if (_requests.TryGetValue(bundleId, out var data))
+                else if (_requests.TryGetValue(bundleIndex, out var data))
                 {
                     var (req, _) = data;
                     bundle = req.WaitForComplete();
-                    Assert.IsNotNull(_bundles[bundleId.Value()], "AssetBundle not found");
+                    Assert.IsNotNull(_bundles[idx], "AssetBundle not found");
                     Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
                     return bundle;
                 }
                 // Otherwise, load it immediately.
                 else
                 {
-                    // No need to deal with the context as it will be fully resolved immediately.
+                    // No need to deal with the job as it will be fully resolved immediately.
+                    var bundleId = indexToId[bundleIndex];
                     bundle = ReadAssetBundle(bundleId);
-                    _bundles[bundleId.Value()] = bundle;
+                    _bundles[idx] = bundle;
                     L.I($"[AssetBundleLoader] LoadBundle: {bundleId.Name()} ({bundle.name})");
                     return bundle;
                 }
             }
         }
 
-        private void LoadAssetBundle(AssetBundleId bundleId, AssetBundleResolveContext ctx)
+        public void CompleteResolveImmediate(AssetBundleIndex bundleIndex)
         {
-            Assert.AreNotEqual(AssetBundleResolveContext.Done, ctx, "Invalid context");
-
-            var bundleIndex = bundleId.Value();
-            var bundle = _bundles[bundleIndex];
-
-            // No need to load at all.
-            if (bundle is not null)
-                return;
-
-            // When request already made, add the context to the list.
-            if (_requests.TryGetValue(bundleId, out var data))
-            {
-                var (oldReq, oldRequesters) = data;
-                Assert.IsFalse(oldRequesters.Contains(ctx), "AssetBundleResolveContext already in the list");
-                oldRequesters.Add(ctx);
-                Assert.IsFalse(ctx.Reqs.Contains(oldReq), "AssetBundleCreateRequest already in the list");
-                ctx.Reqs.Add(oldReq);
-                return;
-            }
-
-            // When request not made yet...
-            var req = ReadAssetBundleAsync(bundleId);
-            Assert.IsFalse(req.isDone, "AssetBundle already loaded");
-
-            // Register request accordingly.
-            var requesters = RentRequesters();
-            requesters.Add(ctx);
-            _requests.Add(bundleId, (req, requesters)); // Request -> Context
-            _reqToBundle.Add(req, bundleId); // Request -> Bundle
-            ctx.Reqs.Add(req); // Context -> Request
-
-            // Finally, register the callback.
-            // This should be the last operation to prevent reentrancy.
-            req.completed += _onLoaded;
-        }
-
-        public void CompleteResolveImmediate(AssetBundleId bundleId)
-        {
-            var bundleIndex = bundleId.Value();
-            var ctx = _contexts[bundleIndex];
-            Assert.IsNotNull(ctx, "AssetBundle is not resolving");
+            var idx = bundleIndex.Value();
+            var job = _jobs[idx];
+            Assert.IsNotNull(job, "AssetBundle is not resolving");
 
             // If the asset bundle is already fully resolved, OnLoaded() will be manually called.
-            if (ReferenceEquals(ctx, AssetBundleResolveContext.Done))
+            if (ReferenceEquals(job, Job.Done))
             {
-                Assert.IsNotNull(_bundles[bundleIndex], "AssetBundle not found");
+                Assert.IsNotNull(_bundles[idx], "AssetBundle not found");
                 return;
             }
 
             // When we access assetBundle property,
             // there could be multiple asset bundles loaded at the same time.
             // So here we use while loop instead of for loop.
-            var reqs = ctx.Reqs;
+            var reqs = job.Reqs;
             reqs.Add(null); // Add a dummy request to prevent reentrancy.
             Assert.AreNotEqual(0, reqs.Count, "AssetBundle not loading");
             while (true)
@@ -243,7 +246,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Assert.IsTrue(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not found");
                 _ = req.WaitForComplete();
 
-                Assert.AreEqual(bundleId, ctx.BundleId, "AssetBundleResolveContext is recycled while resolving");
+                Assert.AreEqual(bundleIndex, job.BundleIndex, "AssetBundleResolveContext is recycled while resolving");
                 Assert.IsFalse(_reqToBundle.ContainsKey(req), "AssetBundleCreateRequest not removed");
                 Assert.IsTrue(reqs.Count < count, "AssetBundleCreateRequest not removed");
             }
@@ -251,12 +254,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             // All requests must be done.
             Assert.AreEqual(1, reqs.Count, "AssetBundle not fully loaded");
             Assert.IsNull(reqs[0], "Only the dummy request should be left");
-            Assert.AreEqual(ctx, _contexts[bundleIndex], "AssetBundleResolveContext is recycled while resolving");
+            Assert.AreEqual(job, _jobs[idx], "AssetBundleResolveContext is recycled while resolving");
             reqs.Clear();
-            OnResolved(ctx);
+            OnResolved(job);
 
-            Assert.AreEqual(AssetBundleResolveContext.Done, _contexts[bundleIndex], "AssetBundle not fully resolved");
-            Assert.IsFalse(_requests.Values.Any(x => x.Requesters.Contains(ctx)), "AssetBundleResolveContext still in the list");
+            Assert.AreEqual(Job.Done, _jobs[idx], "AssetBundle not fully resolved");
+            Assert.IsFalse(_requests.Values.Any(x => x.Jobs.Contains(job)), "AssetBundleResolveContext still in the list");
         }
 
         private readonly Action<AsyncOperation> _onLoaded;
@@ -266,64 +269,59 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             Assert.IsTrue(op.isDone, "Operation is not done");
             var req = (AssetBundleCreateRequest) op;
             // First, set the asset bundle to the array to prevent reentrancy.
-            var found = _reqToBundle.Remove(req, out var bundleId);
+            var found = _reqToBundle.Remove(req, out var bundleIndex);
             Assert.IsTrue(found, "AssetBundleCreateRequest not found");
 
             var bundle = req.assetBundle;
             if (bundle is null)
-            {
-                L.E($"[AssetBundleLoader] OnLoaded: {bundleId.Name()} failed");
-                bundle = AssetBundle.GetAllLoadedAssetBundles().FirstOrDefault(x => x.name == bundleId.Name());
-                if (bundle is null)
-                    throw new Exception($"AssetBundleCreateRequest failed: {bundleId.Name()}");
-            }
+                throw new Exception($"AssetBundleCreateRequest failed: {bundleIndex.DebugString()}");
 
-            _bundles[bundleId.Value()] = bundle;
-            L.I($"[AssetBundleLoader] OnLoaded: {bundleId.Name()} ({bundle.name} assets)");
+            _bundles[bundleIndex.Value()] = bundle;
+            L.I($"[AssetBundleLoader] OnLoaded: {bundleIndex.DebugString()} ({bundle.name} assets)");
 
             // Get requesters.
-            found = _requests.Remove(bundleId, out var data);
+            found = _requests.Remove(bundleIndex, out var data);
             Assert.IsTrue(found, "AssetBundleCreateRequest not found");
             Assert.AreEqual(req, data.Request, "AssetBundleCreateRequest not matched");
-            var requesters = data.Requesters;
-            Assert.AreNotEqual(0, requesters.Count, "No requester found");
+            var jobs = data.Jobs;
+            Assert.AreNotEqual(0, jobs.Count, "No requester found");
 
             // Remove the request from the requesters.
-            foreach (var ctx in requesters)
+            foreach (var job in jobs)
             {
-                found = ctx.Reqs.Remove(req);
+                found = job.Reqs.Remove(req);
                 Assert.IsTrue(found, "AssetBundleCreateRequest not found in the requester.");
 
                 // If all requests are done, mark as fully resolved.
-                if (ctx.Reqs.Count is 0)
-                    OnResolved(ctx);
+                if (job.Reqs.Count is 0)
+                    OnResolved(job);
             }
 
             // Return the requesters to the pool.
-            requesters.Clear();
-            ReturnRequesters(requesters);
+            jobs.Clear();
+            Job.Return(jobs);
         }
 
-        private void OnResolved(AssetBundleResolveContext ctx)
+        private void OnResolved(Job job)
         {
-            L.I($"[AssetBundleLoader] OnResolved: {ctx.BundleId.Name()}");
+            L.I($"[AssetBundleLoader] OnResolved: {job.BundleIndex.DebugString()}");
 
-            Assert.AreNotEqual(AssetBundleResolveContext.Done, ctx, "AssetBundle already resolved");
-            Assert.IsNotNull(ctx, "AssetBundleResolveContext not found");
-            Assert.AreEqual(ctx.Reqs.Count, 0, "AssetBundle not fully loaded");
-            Assert.IsFalse(_requests.Values.Any(x => x.Requesters.Contains(ctx)), "AssetBundleResolveContext still in the list");
+            Assert.AreNotEqual(Job.Done, job, "AssetBundle already resolved");
+            Assert.IsNotNull(job, "AssetBundleResolveContext not found");
+            Assert.AreEqual(job.Reqs.Count, 0, "AssetBundle not fully loaded");
+            Assert.IsFalse(_requests.Values.Any(x => x.Jobs.Contains(job)), "AssetBundleResolveContext still in the list");
 
 
             // Mark as fully resolved before invoking callbacks to ensure reentrancy.
-            var bundleIndex = ctx.BundleId.Value();
-            _contexts[bundleIndex] = AssetBundleResolveContext.Done;
+            var idx = job.BundleIndex.Value();
+            _jobs[idx] = Job.Done;
 
             // Get the asset bundle.
-            var bundle = _bundles[bundleIndex];
+            var bundle = _bundles[idx];
             Assert.IsNotNull(bundle, "AssetBundle not found");
 
             // Invoke all callbacks.
-            var callbacks = ctx.Callbacks;
+            var callbacks = job.Callbacks;
             Assert.AreNotEqual(0, callbacks.Count, "No callback to invoke");
             foreach (var (callback, payload) in callbacks)
             {
@@ -338,8 +336,8 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             }
             callbacks.Clear();
 
-            // Return the context to the pool.
-            ReturnResolveContext(ctx);
+            // Return the job to the pool.
+            Job.Return(job);
         }
 
         private static AssetBundle ReadAssetBundle(AssetBundleId bundleId)
@@ -354,12 +352,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
         private static AssetBundleCreateRequest ReadAssetBundleAsync(AssetBundleId bundleId)
         {
+            L.I($"[AssetBundleLoader] ReadAssetBundleAsync: {bundleId.Name()}");
             var path = PathConfig.GetAssetBundleLoadPath(bundleId);
             var op = AssetBundle.LoadFromFileAsync(path);
             Assert.IsNotNull(op, "AssetBundleCreateRequest not found");
-            L.I($"[AssetBundleLoader] ReadAssetBundleAsync: {bundleId.Name()}");
 #if DEBUG
-            _debug_AllRequests.Add(op);
             op.completed += op =>
             {
                 var bundle = ((AssetBundleCreateRequest) op).assetBundle;
@@ -377,67 +374,111 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         }
 
 #if DEBUG
-        private static readonly List<AssetBundleCreateRequest> _debug_AllRequests = new();
-
-        public static void Debug_UnloadAllAssetBundles()
+        public void Dispose()
         {
-            // Before unload all asset bundles, wait for all async operations to complete.
-            // (AssetBundle.Unload was called while the asset bundle had an async load operation in progress. The main thread will wait for the async load operation to complete.)
-            var reqs = _debug_AllRequests;
-            while (reqs.Count > 0)
+            // store reqBundles before unloading.
+            var reqBundles = _requests.Keys.ToHashSet();
+
+            // wait for all requests to complete.
+            var reqs = _requests.Values.Select(x => x.Request).ToArray(); // Copy to prevent modifying the collection.
+            foreach (var req in reqs)
             {
-                var req = reqs[0];
-                reqs.RemoveAt(0);
-                req.WaitForComplete();
-                req.assetBundle.Unload(true);
+                if (!req.isDone)
+                    req.WaitForComplete();
+            }
+
+            // unload all asset bundles.
+            for (var i = 0; i < _bundles.Length; i++)
+            {
+                var bundle = _bundles[i];
+                var index = (AssetBundleIndex) i;
+
+                if (bundle)
+                {
+                    L.I($"[AssetBundleLoader] Unload: {bundle.name}");
+                    bundle.Unload(true);
+                    reqBundles.Remove(index);
+                }
+                else
+                {
+                    L.W($"[AssetBundleLoader] Already unloaded: {_indexToId[index].Name()}");
+                }
+            }
+
+            // there are still some asset bundles loaded.
+            var allBundles = AssetBundle.GetAllLoadedAssetBundles()
+                .ToDictionary(x => x.name, x => x);
+            foreach (var reqBundle in reqBundles)
+            {
+                var name = _indexToId[reqBundle].Name();
+                if (allBundles.TryGetValue(name, out var bundle))
+                {
+                    L.W($"[AssetBundleLoader] Unload: {name} (still loaded)");
+                    bundle.Unload(true);
+                }
             }
         }
 #endif
 
-        private AssetBundleResolveContext RentResolveContext(AssetBundleId bundleId)
+        private class Job
         {
-            var count = _contextPool.Count;
-            if (count is 0)
+            public AssetBundleIndex BundleIndex;
+            public List<AssetBundleCreateRequest> Reqs;
+            public List<(Action<AssetBundle, object>, object)> Callbacks;
+
+
+            // If job reference equal to this, it means the asset bundle is fully resolved.
+            public static readonly Job Done = new();
+
+
+            private static readonly List<Job> _jobPool = new();
+            private static readonly List<List<Job>> _jobListPool = new();
+
+            public static Job Rent(AssetBundleIndex bundleIndex)
             {
-                return new AssetBundleResolveContext
+                var count = _jobPool.Count;
+                if (count is 0)
                 {
-                    BundleId = bundleId,
-                    Reqs = new List<AssetBundleCreateRequest>(),
-                    Callbacks = new List<(Action<AssetBundle, object>, object)>()
-                };
+                    return new Job
+                    {
+                        BundleIndex = bundleIndex,
+                        Reqs = new List<AssetBundleCreateRequest>(),
+                        Callbacks = new List<(Action<AssetBundle, object>, object)>()
+                    };
+                }
+
+                var job = _jobPool[count - 1];
+                _jobPool.RemoveAt(count - 1);
+                Assert.AreEqual(0, job.Reqs.Count, "AssetBundleResolveContext not reset");
+                Assert.AreEqual(0, job.Callbacks.Count, "AssetBundleResolveContext not reset");
+
+                job.BundleIndex = bundleIndex;
+                return job;
             }
 
-            var ctx = _contextPool[count - 1];
-            _contextPool.RemoveAt(count - 1);
-            Assert.AreEqual(0, ctx.Reqs.Count, "AssetBundleResolveContext not reset");
-            Assert.AreEqual(0, ctx.Callbacks.Count, "AssetBundleResolveContext not reset");
+            public static void Return(Job job)
+            {
+                Assert.AreEqual(0, job.Reqs.Count, "AssetBundleResolveContext not reset");
+                Assert.AreEqual(0, job.Callbacks.Count, "AssetBundleResolveContext not reset");
+                _jobPool.Add(job);
+            }
 
-            ctx.BundleId = bundleId;
-            return ctx;
-        }
+            public static List<Job> RentList()
+            {
+                var count = _jobListPool.Count;
+                if (count is 0) return new List<Job>();
 
-        private void ReturnResolveContext(AssetBundleResolveContext ctx)
-        {
-            Assert.AreEqual(0, ctx.Reqs.Count, "AssetBundleResolveContext not reset");
-            Assert.AreEqual(0, ctx.Callbacks.Count, "AssetBundleResolveContext not reset");
-            _contextPool.Add(ctx);
-        }
+                var list = _jobListPool[count - 1];
+                _jobListPool.RemoveAt(count - 1);
+                Assert.AreEqual(0, list.Count, "Requesters list not reset");
+                return list;
+            }
 
-        private List<AssetBundleResolveContext> RentRequesters()
-        {
-            var count = _contextListPool.Count;
-            if (count is 0) return new List<AssetBundleResolveContext>();
-
-            var list = _contextListPool[count - 1];
-            _contextListPool.RemoveAt(count - 1);
-            Assert.AreEqual(0, list.Count, "Requesters list not reset");
-            return list;
-        }
-
-        private void ReturnRequesters(List<AssetBundleResolveContext> list)
-        {
-            Assert.AreEqual(0, list.Count, "Requesters list not reset");
-            _contextListPool.Add(list);
+            public static void Return(List<Job> list)
+            {
+                Assert.AreEqual(0, list.Count, "Requesters list not reset");
+                _jobListPool.Add(list);
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -12,10 +13,12 @@ namespace UnityEditor.AddressableAssets
     public class AssetGroup : ISelfValidator
     {
         [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditNameEnabled))]
-        public string _key;
+        [SerializeField]
+        private string _key;
         public GroupKey Key => new(_key);
 
-        [LabelText("$Entries_LabelText"), TableList(ShowPaging = false)]
+        [LabelText("$Entries_LabelText")]
+        [TableList(ShowIndexLabels = true, ShowPaging = false)]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
@@ -29,13 +32,9 @@ namespace UnityEditor.AddressableAssets
         {
             _key = key;
             Entries = entries;
-
-            foreach (var entry in Entries)
-            {
-                if (string.IsNullOrEmpty(entry.ResolveAssetPath()))
-                    throw new ArgumentException($"Asset not found: address={entry.Address}, guid={entry.GUID.Value}");
-            }
         }
+
+        public AssetEntry this[AssetIndex index] => Entries[(int) index];
 
         private Dictionary<string, Object> _cachedAddressToAssetMap;
 
@@ -49,11 +48,14 @@ namespace UnityEditor.AddressableAssets
 
         public AssetBundleBuild GenerateAssetBundleBuild()
         {
+            var assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray();
+            var addressableNames = Entries.Select(e => ResolveAddressString(this, e)).ToArray();
+
             return new AssetBundleBuild
             {
                 assetBundleName = _key,
-                assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray(),
-                addressableNames = Entries.Select(e => AddressUtils.Hash(e.Address).Name()).ToArray()
+                assetNames = assetNames,
+                addressableNames = addressableNames,
             };
         }
 
@@ -71,6 +73,24 @@ namespace UnityEditor.AddressableAssets
         {
             if (BundleId is AssetBundleId.MonoScript)
                 result.AddError("MonoScript is reserved for built-in MonoScript bundles.");
+        }
+
+        [CanBeNull]
+        internal static string ResolveAddressString(AssetGroup g, AssetEntry e)
+        {
+            if (string.IsNullOrEmpty(e.Address)) return null;
+            return g.BundleId.AddressAccess()
+                ? AddressUtils.Hash(e.Address).Name()
+                : ((AssetIndex) int.Parse(e.Address)).Name();
+        }
+
+        [CanBeNull]
+        internal static Address? ResolveAddressNumeric(AssetGroup g, AssetEntry e)
+        {
+            if (string.IsNullOrEmpty(e.Address)) return null;
+            return g.BundleId.AddressAccess()
+                ? AddressUtils.Hash(e.Address)
+                : (Address) int.Parse(e.Address);
         }
     }
 }

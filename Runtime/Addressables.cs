@@ -2,7 +2,6 @@ using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
 using UnityEngine.AddressableAssets.AsyncOperations;
-using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;
 
@@ -15,18 +14,7 @@ namespace UnityEngine.AddressableAssets
     {
         [CanBeNull]
         private static IAddressablesImpl _implCache;
-        private static IAddressablesImpl _impl
-        {
-            get
-            {
-                if (_implCache is not null) return _implCache;
-#if UNITY_EDITOR
-                _implCache = EditorAddressablesImplFactory.Create();
-                if (_implCache is not null) return _implCache;
-#endif
-                return _implCache = new AddressablesImpl(LoadCatalog());
-            }
-        }
+        private static IAddressablesImpl _impl => _implCache ??= new AddressablesImpl(LoadCatalog());
 
         [MustUseReturnValue]
         public static IAssetOp<TObject> LoadAssetAsync<TObject>(string key) where TObject : Object
@@ -44,6 +32,25 @@ namespace UnityEngine.AddressableAssets
         {
             L.I($"[Addressables] Load: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             return _impl.LoadAsset<TObject>(key);
+        }
+
+        [MustUseReturnValue]
+        public static IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object
+        {
+            L.I($"[Addressables] Load Start: {loc} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            var op = _impl.LoadAssetAsync<TObject>(loc);
+#if DEBUG
+            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), loc);
+#endif
+            return op;
+        }
+
+
+        [MustUseReturnValue]
+        public static TObject LoadAsset<TObject>(AssetLocation loc) where TObject : Object
+        {
+            L.I($"[Addressables] Load: {loc} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            return _impl.LoadAsset<TObject>(loc);
         }
 
         public static IAssetOp<Scene> LoadSceneAsync(string key)
@@ -82,27 +89,10 @@ namespace UnityEngine.AddressableAssets
         }
 
 #if UNITY_EDITOR
-        static Addressables()
+        internal static void ForceSetImpl(IAddressablesImpl impl)
         {
-            UnityEditor.EditorApplication.playModeStateChanged += change =>
-            {
-                if (change is UnityEditor.PlayModeStateChange.EnteredEditMode
-                    or UnityEditor.PlayModeStateChange.ExitingEditMode)
-                {
-                    Purge();
-                }
-            };
-        }
-
-        internal static void Purge()
-        {
-            if (_implCache is null)
-                return;
-
-            L.I("[Addressables] Purge");
-            _implCache = null;
-
-            AssetBundleLoader.Debug_UnloadAllAssetBundles();
+            (_implCache as AddressablesImpl)?.Dispose();
+            _implCache = impl;
         }
 #endif
     }

@@ -1,26 +1,25 @@
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
     internal class BundledAssetProvider : IResourceProvider
     {
-        public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
+        public AsyncOperation LoadAsync<T>(AssetBundle bundle, string assetName)
         {
-            var name = address.Name();
 #if DEBUG
             var startTime = Time.unscaledTime;
-            L.I($"[Addressables] AssetBundle.LoadAssetAsync: key={name}, bundle={bundle.name}, address={address}, startTime={startTime}");
+            L.I($"[Addressables] AssetBundle.LoadAssetAsync: name={assetName}, bundle={bundle.name}, startTime={startTime}");
 #endif
-            Assert.IsTrue(bundle.Contains(name), $"Bundle does not contain asset: {name}");
+            Assert.IsTrue(bundle.Contains(assetName),
+                $"Bundle does not contain asset: bundle={bundle.name}, assetName={assetName}, allAssets={string.Join(", ", bundle.GetAllAssetNames())}");
 
-            var op = bundle.LoadAssetAsync(name, typeof(T));
+            var op = bundle.LoadAssetAsync(assetName, typeof(T));
 #if DEBUG
             op.completed += op2 =>
             {
                 var deltaTime = Time.unscaledTime - startTime;
                 L.I("[Addressables] AssetBundle.LoadAssetAsync completed: " +
-                    $"key={name}, asset={((AssetBundleRequest) op2).asset}, bundle={bundle.name}, address={address}, time={deltaTime}");
+                    $"name={assetName}, asset={((AssetBundleRequest) op2).asset}, bundle={bundle.name}, time={deltaTime}");
             };
 #endif
             return op;

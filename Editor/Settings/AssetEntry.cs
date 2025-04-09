@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
@@ -29,6 +30,8 @@ namespace UnityEditor.AddressableAssets
             }
             set
             {
+                Assert.IsTrue(AssetDatabase.IsMainAsset(value),
+                    $"The asset '{value.name}' is not a main asset. Please assign a main asset.");
                 _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
                 _assetCache = value;
             }
@@ -50,8 +53,11 @@ namespace UnityEditor.AddressableAssets
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            var path = AssetDatabase.GetAssetPath(Asset);
-            if (IsPathValidForEntry(path))
+            var asset = Asset;
+            if (!asset) return;
+
+            var path = AssetDatabase.GetAssetPath(asset);
+            if (!IsPathValidForEntry(path))
                 result.AddError($"The asset '{path}' is not valid for Addressable Asset Group '{Address}'.");
         }
 

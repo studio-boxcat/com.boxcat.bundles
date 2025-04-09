@@ -6,17 +6,16 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 {
     internal class SceneProvider : IResourceProvider
     {
-        public AsyncOperation LoadAsync<T>(AssetBundle bundle, Address address)
+        public AsyncOperation LoadAsync<T>(AssetBundle bundle, string assetName)
         {
-            var name = address.Name();
 #if DEBUG
             var startTime = Time.unscaledTime;
-            L.I($"[Addressables] SceneManager.LoadSceneAsync: key={name}, bundle={bundle.name}, startTime={startTime}");
+            L.I($"[Addressables] SceneManager.LoadSceneAsync: name={assetName}, bundle={bundle.name}, startTime={startTime}");
 #endif
             Assert.AreEqual(typeof(Scene), typeof(T));
-            Assert.IsTrue(bundle.Contains(name), $"Bundle does not contain scene: {name}");
+            Assert.IsTrue(bundle.Contains(assetName), $"Bundle does not contain scene: {assetName}");
 
-            var op = SceneManager.LoadSceneAsync(name, LoadSceneMode.Additive);
+            var op = SceneManager.LoadSceneAsync(assetName, LoadSceneMode.Additive);
             op.allowSceneActivation = true;
             var scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             AsyncOpPayloads.SetScene(op, scene);
@@ -25,7 +24,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             {
                 var deltaTime = Time.unscaledTime - startTime;
                 L.I("[Addressables] SceneManager.LoadAssetAsync completed: " +
-                    $"key={name}, bundle={bundle.name}, time={deltaTime}");
+                    $"name={assetName}, bundle={bundle.name}, time={deltaTime}");
             };
 #endif
             return op;

@@ -15,9 +15,26 @@ using BuildCompression = UnityEngine.BuildCompression;
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     /// <summary>
+    /// Contains information about the status of the build.
+    /// </summary>
+    [Serializable]
+    public class DataBuildResult
+    {
+        /// <summary>
+        /// Duration of build, in seconds.
+        /// </summary>
+        public double Duration;
+
+        /// <summary>
+        /// Error that caused the build to fail.
+        /// </summary>
+        public string Error;
+    }
+
+    /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
-    internal class BuildScriptPackedMode : BuildScriptBase
+    internal class BuildScriptPackedMode
     {
         private const bool _generateBuildReport = false;
 
@@ -25,8 +42,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         // and isn't needed for most tests.
         private const bool _skipCompilePlayerScripts = false;
 
-        /// <inheritdoc />
-        protected override DataBuildResult BuildDataImplementation(AddressableCatalog catalog, BuildTarget target)
+        public DataBuildResult BuildData(AddressableCatalog catalog, BuildTarget target)
         {
             var aaContext = new AddressableAssetsBuildContext(catalog) { buildStartTime = DateTime.Now };
             var result = DoBuild(aaContext, target);
@@ -170,23 +186,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return dstPath;
         }
 
-        /// <inheritdoc />
-        public override void ClearCachedData()
-        {
-            if (Directory.Exists(PathConfig.BuildPath) is false)
-                return;
-
-            try
-            {
-                DeleteFile(PathConfig.BuildPath_CatalogBin);
-                Directory.Delete(PathConfig.BuildPath, true);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-        }
-
         public static IBundleBuildParameters GetBuildParameter(BuildTarget target, string outputFolder)
         {
             var result = new BundleBuildParameters(
@@ -212,6 +211,29 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             result.ContentBuildFlags |= ContentBuildFlags.StripUnityVersion;
             return result;
+        }
+
+        /// <summary>
+        /// Utility method to write a file.  The directory will be created if it does not exist.
+        /// </summary>
+        /// <param name="path">The path of the file to write.</param>
+        /// <param name="content">The content of the file.</param>
+        /// <returns>True if the file was written.</returns>
+        private static bool WriteFile(string path, byte[] content)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllBytes(path, content);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                L.E(ex);
+                return false;
+            }
         }
     }
 }

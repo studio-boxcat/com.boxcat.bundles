@@ -58,16 +58,19 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             out Dictionary<GroupKey, HashSet<GroupKey>> bundleToImmediateBundleDependencies,
             out Dictionary<GroupKey, HashSet<GroupKey>> bundleToExpandedBundleDependencies)
         {
-            entries = catalog.Groups.SelectMany(g => g.Entries).ToDictionary(
-                e => e.GUID,
-                e =>
+            entries = catalog.Groups
+                .SelectMany(g =>
                 {
-                    var guid = e.GUID;
-                    var deps = assetToFiles[guid];
-                    var bundle = deps[0]; // First bundle is the containing bundle.
-                    Address? address = string.IsNullOrEmpty(e.Address) ? null : AddressUtils.Hash(e.Address);
-                    return new EntryDef(guid, address, bundle, deps.ToHashSet());
-                });
+                    return g.Entries.Select(e =>
+                    {
+                        var guid = e.GUID;
+                        var deps = assetToFiles[guid];
+                        var bundle = deps[0]; // First bundle is the containing bundle.
+                        var address = AssetGroup.ResolveAddressNumeric(g, e);
+                        return new EntryDef(guid, address, bundle, deps.ToHashSet());
+                    });
+                })
+                .ToDictionary(e => e.GUID, e => e);
 
             // Build bundle deps.
             bundleToImmediateBundleDependencies = entries.Values

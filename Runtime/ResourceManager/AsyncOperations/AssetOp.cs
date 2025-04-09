@@ -8,8 +8,8 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
 {
     internal class AssetOpBlock
     {
-        public Address Address;
-        public AssetBundleId Bundle;
+        public string AssetName;
+        public AssetBundleIndex Bundle;
         public IResourceProvider Provider;
 
         public readonly ResourceCatalog Catalog;
@@ -27,9 +27,9 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             _pool = pool;
         }
 
-        public void Init(Address address, AssetBundleId bundle, IResourceProvider provider)
+        public void Init(string assetName, AssetBundleIndex bundle, IResourceProvider provider)
         {
-            Address = address;
+            AssetName = assetName;
             Bundle = bundle;
             Provider = provider;
         }
@@ -53,8 +53,8 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             _b = b;
 
             // If the main asset bundle is already fully loaded, we can start the asset load operation immediately.
-            var bundleId = _b.Bundle;
-            if (_b.Loader.TryGetResolvedBundle(bundleId, out var bundle))
+            var bundleIndex = _b.Bundle;
+            if (_b.Loader.TryGetResolvedBundle(bundleIndex, out var bundle))
             {
                 OnDepLoaded(bundle);
                 return;
@@ -62,16 +62,17 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
 
             // Possible to be resolved while StartResolve() is called.
             // In this case, callbackRegistered will be false, so we can call OnDepLoaded immediately.
-            var deps = _b.Catalog.GetDependencies(bundleId);
-            var callbackRegistered = _b.Loader.ResolveAsync(bundleId, deps, this, _onDepLoaded);
+            var deps = _b.Catalog.GetDependencies(bundleIndex);
+            var indexToId = _b.Catalog.IndexToId;
+            var callbackRegistered = _b.Loader.ResolveAsync(bundleIndex, deps, this, _onDepLoaded);
             if (callbackRegistered is false)
-                OnDepLoaded(_b.Loader.GetResolvedBundle(bundleId));
+                OnDepLoaded(_b.Loader.GetResolvedBundle(bundleIndex));
         }
 
         public override string ToString()
         {
             if (_b is null) return "AssetOp:" + _result + " (Loaded)";
-            return "AssetOp:" + _b.Address.ReadableString() + " (Loading)";
+            return "AssetOp:" + _b.AssetName + " (Loading)";
         }
 
         public bool TryGetResult(out TResult result)
@@ -132,7 +133,7 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             Assert.IsNull(_op, "Operation should be null before execution");
             Assert.IsNotNull(_b, "Block should not be null before execution");
 
-            _op = _b.Provider.LoadAsync<TResult>(bundle, _b.Address);
+            _op = _b.Provider.LoadAsync<TResult>(bundle, _b.AssetName);
 
             if (_op.isDone)
             {
