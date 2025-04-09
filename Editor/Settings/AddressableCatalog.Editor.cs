@@ -106,6 +106,13 @@ namespace UnityEditor.AddressableAssets
                 return cmp != 0 ? cmp : string.CompareOrdinal(x.Key.Value, y.Key.Value);
             });
 
+            // keep original bundle id
+            generatedGroups.ForEach(x =>
+            {
+                if (TryGetGroup(x.Key, out var orgGroup))
+                    x.BundleId = orgGroup.BundleId;
+            });
+
             groups.AddRange(generatedGroups);
             Groups = groups.ToArray();
             ClearCache();
