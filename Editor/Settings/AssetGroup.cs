@@ -15,7 +15,7 @@ namespace UnityEditor.AddressableAssets
         public string _key;
         public GroupKey Key => new(_key);
 
-        [LabelText("@_key"), TableList(ShowPaging = false)]
+        [LabelText("$Entries_LabelText"), TableList(ShowPaging = false)]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
@@ -55,6 +55,11 @@ namespace UnityEditor.AddressableAssets
                 assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray(),
                 addressableNames = Entries.Select(e => AddressUtils.Hash(e.Address).Name()).ToArray()
             };
+        }
+
+        private string Entries_LabelText()
+        {
+            return $"{_key} ({BundleId.Name()})";
         }
 
         private void Entries_OnValueChanged()
