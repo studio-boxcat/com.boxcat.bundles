@@ -16,10 +16,10 @@ namespace UnityEngine.AddressableAssets
         private readonly List<AssetOpBlock> _opBlockPool = new();
 
 
-        public AddressablesImpl(ResourceCatalog catalog)
+        public AddressablesImpl(string catalogUri)
         {
-            _catalog = catalog;
-            _loader = new AssetBundleLoader(catalog.GetBundleCount(), catalog.IndexToId);
+            _catalog = ResourceCatalog.Load(catalogUri);
+            _loader = new AssetBundleLoader(_catalog.GetBundleCount(), _catalog.IndexToId);
             _loader.LoadMonoScriptBundle(); // load mono script bundle immediately
         }
 
@@ -101,7 +101,11 @@ namespace UnityEngine.AddressableAssets
         }
 
 #if UNITY_EDITOR
-        public void Dispose() => _loader.Dispose();
+        public void Dispose()
+        {
+            _loader.Dispose();
+            _catalog.Dispose(); // catalog must be disposed at the end. _loader internally holds a reference to it.
+        }
 #endif
     }
 }

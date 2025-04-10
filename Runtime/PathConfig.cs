@@ -2,7 +2,7 @@ namespace UnityEngine.AddressableAssets
 {
     public static class PathConfig
     {
-        public const string RuntimeStreamingAssetsSubFolder = "aa";
+        public const string StreamingAssetsSubFolder = "aa";
 
         private static string _runtimePath
         {
@@ -12,11 +12,21 @@ namespace UnityEngine.AddressableAssets
                 return Application.dataPath + "/../" + BuildPath_BundleRoot;
 #endif
 
-                return Application.streamingAssetsPath + "/" + RuntimeStreamingAssetsSubFolder;
+                return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder;
             }
         }
 
-        public static string RuntimePath_CatalogBin => _runtimePath + "/catalog.bin";
+        public static string CatalogUri
+        {
+            get
+            {
+                return
+#if UNITY_EDITOR || !UNITY_ANDROID
+                    "file://" +
+#endif
+                    _runtimePath + "/catalog.bin";
+            }
+        }
 
         private static char[] _bundlePathFormat;
 

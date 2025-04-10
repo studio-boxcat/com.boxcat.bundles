@@ -1,3 +1,5 @@
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets
@@ -11,11 +13,11 @@ namespace UnityEngine.AddressableAssets
     /// </summary>
     internal readonly struct DepSpan
     {
-        private readonly byte[] _data; // The entire catalog data buffer
+        private readonly NativeArray<byte>.ReadOnly _data; // The entire catalog data buffer
         private readonly ushort _pointer; // Index in the ushort[] portion of the entire buffer
         private readonly ushort _count; // How many dependencies
 
-        public DepSpan(byte[] data, ushort pointer, ushort count)
+        public DepSpan(NativeArray<byte>.ReadOnly data, ushort pointer, ushort count)
         {
             _data = data;
             _pointer = pointer;
@@ -26,7 +28,7 @@ namespace UnityEngine.AddressableAssets
         {
             get
             {
-                Assert.IsNotNull(_data, "Span not initialized");
+                Assert.IsTrue(_data.IsCreated, "Span not initialized");
                 return _count;
             }
         }
@@ -36,14 +38,12 @@ namespace UnityEngine.AddressableAssets
             if (_count == 0) return string.Empty;
 
             var list = new string[_count];
-            fixed (byte* b = _data)
+            var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+            var p = (AssetBundleIndex*) (b + _pointer);
+            for (int i = 0; i < _count; i++)
             {
-                var p = (AssetBundleIndex*) (b + _pointer);
-                for (int i = 0; i < _count; i++)
-                {
-                    var val = p[i];
-                    list[i] = val.DebugString();
-                }
+                var val = p[i];
+                list[i] = val.DebugString();
             }
             return string.Join(", ", list);
         }
@@ -52,27 +52,23 @@ namespace UnityEngine.AddressableAssets
         {
             get
             {
-                Assert.IsNotNull(_data, "Span not initialized");
+                Assert.IsTrue(_data.IsCreated, "Span not initialized");
                 Assert.IsTrue(index >= 0 && index < _count, "Index out of range");
-                fixed (byte* b = _data)
-                {
-                    var p = (AssetBundleIndex*) (b + _pointer);
-                    return p[index];
-                }
+                var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+                var p = (AssetBundleIndex*) (b + _pointer);
+                return p[index];
             }
         }
 
         public unsafe bool Contains(AssetBundleIndex index)
         {
-            Assert.IsNotNull(_data, "Span not initialized");
-            fixed (byte* b = _data)
+            Assert.IsTrue(_data.IsCreated, "Span not initialized");
+            var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+            var p = (AssetBundleIndex*) (b + _pointer);
+            for (int i = 0; i < _count; i++)
             {
-                var p = (AssetBundleIndex*) (b + _pointer);
-                for (int i = 0; i < _count; i++)
-                {
-                    if (p[i] == index)
-                        return true;
-                }
+                if (p[i] == index)
+                    return true;
             }
             return false;
         }

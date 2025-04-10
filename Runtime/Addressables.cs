@@ -1,8 +1,4 @@
 using JetBrains.Annotations;
-using UnityEngine.Assertions;
-using UnityEngine.Networking;
-using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets
@@ -14,7 +10,7 @@ namespace UnityEngine.AddressableAssets
     {
         [CanBeNull]
         private static IAddressablesImpl _implCache;
-        private static IAddressablesImpl _impl => _implCache ??= new AddressablesImpl(LoadCatalog());
+        private static IAddressablesImpl _impl => _implCache ??= new AddressablesImpl(PathConfig.CatalogUri);
 
         [MustUseReturnValue]
         public static IAssetOp<TObject> LoadAssetAsync<TObject>(string key) where TObject : Object
@@ -61,31 +57,6 @@ namespace UnityEngine.AddressableAssets
             op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key);
 #endif
             return op;
-        }
-
-        private static ResourceCatalog LoadCatalog()
-        {
-#if DEBUG
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-#endif
-
-            var url = PathConfig.RuntimePath_CatalogBin;
-#if UNITY_EDITOR || !UNITY_ANDROID
-            url = "file://" + url;
-#endif
-            L.I("[Addressables] LoadCatalog: " + url);
-            var req = UnityWebRequest.Get(url).SendWebRequest();
-            req.WaitForComplete();
-            Assert.AreEqual(req.webRequest.result, UnityWebRequest.Result.Success, "Failed to load catalog.");
-            var catalog = new ResourceCatalog(req.webRequest.downloadHandler.data);
-
-#if DEBUG
-            sw.Stop();
-            L.I("[Addressables] LoadCatalog: " + sw.ElapsedMilliseconds + "ms");
-#endif
-
-            return catalog;
         }
 
 #if UNITY_EDITOR

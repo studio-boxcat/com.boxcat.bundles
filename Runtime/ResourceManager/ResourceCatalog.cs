@@ -1,5 +1,10 @@
+using System;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
+using UnityEngine.Networking;
 
 namespace UnityEngine.AddressableAssets
 {
@@ -14,7 +19,8 @@ namespace UnityEngine.AddressableAssets
     // AssetBundleDepData: ushort[] - list of AssetBundleIds, index=AssetBundleIndex
     internal class ResourceCatalog
     {
-        private readonly byte[] _data;
+        private readonly IDisposable _buf;
+        private readonly NativeArray<byte>.ReadOnly _data;
 
         private readonly int _bundleCount;
         private readonly int _assetCount;
@@ -26,16 +32,16 @@ namespace UnityEngine.AddressableAssets
 
         public readonly IndexToId IndexToId;
 
-        public unsafe ResourceCatalog(byte[] data)
+        private unsafe ResourceCatalog(DownloadHandlerBuffer buf)
         {
-            _data = data;
-            fixed (byte* b = data)
-            {
-                // Read the counts from the first 4 bytes (2 ushorts)
-                var header = (ushort*) b;
-                _bundleCount = header[0];
-                _assetCount = header[1];
-            }
+            _buf = buf;
+            _data = buf.nativeData;
+
+            // Read the counts from the first 4 bytes (2 ushorts)
+            var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+            var header = (ushort*) b;
+            _bundleCount = header[0];
+            _assetCount = header[1];
 
             var offset = 4; // skip 2 ushorts
 
@@ -57,7 +63,7 @@ namespace UnityEngine.AddressableAssets
             _assetBundleIdsOffset = offset;
             IndexToId = new IndexToId(_data, _assetBundleIdsOffset);
 
-            L.I("[ResourceCatalog] data=" + data.Length + " bytes\n"
+            L.I("[ResourceCatalog] data=" + _data.Length + " bytes\n"
                 + "-- header --\n"
                 + "  AssetBundleCount: " + _bundleCount + "\n"
                 + "  AssetCount: " + _assetCount + "\n"
@@ -72,26 +78,29 @@ namespace UnityEngine.AddressableAssets
                 + "  AssetBundleIds offset: " + _assetBundleIdsOffset + "\n");
         }
 
+        public void Dispose()
+        {
+            _buf.Dispose();
+        }
+
         public int GetBundleCount() => _bundleCount;
 
         public unsafe AssetBundleIndex GetBundleIndex(AssetBundleId id)
         {
-            fixed (byte* b = _data)
-            {
-                // We read AssetBundleIds as a ushort[] starting at _assetBundleIdsOffset
-                var d = (ushort*) (b + _assetBundleIdsOffset);
-                var v = id.Value();
+            // We read AssetBundleIds as a ushort[] starting at _assetBundleIdsOffset
+            var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+            var d = (ushort*) (b + _assetBundleIdsOffset);
+            var v = id.Value();
 
-                int l = 0;
-                int r = _bundleCount - 1;
-                while (l <= r)
-                {
-                    var m = (l + r) >> 1;
-                    var cur = d[m];
-                    if (cur < v) l = m + 1;
-                    else if (cur > v) r = m - 1;
-                    else return (AssetBundleIndex) m; // Found the index
-                }
+            int l = 0;
+            int r = _bundleCount - 1;
+            while (l <= r)
+            {
+                var m = (l + r) >> 1;
+                var cur = d[m];
+                if (cur < v) l = m + 1;
+                else if (cur > v) r = m - 1;
+                else return (AssetBundleIndex) m; // Found the index
             }
 
             throw new KeyNotFoundException("AssetBundleId not found in ResourceCatalog: " + id.Name());
@@ -112,25 +121,23 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public unsafe AssetBundleIndex GetContainingBundle(Address address)
         {
-            fixed (byte* b = _data)
-            {
-                // We read addresses as a uint[] starting at _addressesOffset
-                var d = (uint*) (b + _addressesOffset);
-                var v = address.Value();
+            // We read addresses as a uint[] starting at _addressesOffset
+            var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+            var d = (uint*) (b + _addressesOffset);
+            var v = address.Value();
 
-                int l = 0;
-                int r = _assetCount - 1;
-                while (l <= r)
+            int l = 0;
+            int r = _assetCount - 1;
+            while (l <= r)
+            {
+                var m = (l + r) >> 1;
+                var cur = d[m];
+                if (cur < v) l = m + 1;
+                else if (cur > v) r = m - 1;
+                else // Found the address
                 {
-                    var m = (l + r) >> 1;
-                    var cur = d[m];
-                    if (cur < v) l = m + 1;
-                    else if (cur > v) r = m - 1;
-                    else // Found the address
-                    {
-                        var cPtr = (AssetBundleIndex*) (b + _correspondingBundlesOffset);
-                        return cPtr[m];
-                    }
+                    var cPtr = (AssetBundleIndex*) (b + _correspondingBundlesOffset);
+                    return cPtr[m];
                 }
             }
 
@@ -150,18 +157,42 @@ namespace UnityEngine.AddressableAssets
             var idx = (int) bundleIndex;
             Assert.IsTrue(idx < _bundleCount, $"Invalid bundle index: {idx}");
 
-            fixed (byte* b = _data)
-            {
-                // Each bundle's DepSpan is 4 bytes (2 ushorts).
-                // So the offset in bytes for 'bundle' is _depSpanOffset + (idx * 4).
-                var d = (ushort*) (b + _depSpanOffset + (idx * 4));
+            // Each bundle's DepSpan is 4 bytes (2 ushorts).
+            // So the offset in bytes for 'bundle' is _depSpanOffset + (idx * 4).
+            var b = (byte*) _data.GetUnsafeReadOnlyPtr();
+            var d = (ushort*) (b + _depSpanOffset + (idx * 4));
 
-                // The 'start' is an index in the DepData (ushort[]) portion, i.e.
-                // offset = _depDataOffset + 2 * start
-                // but we only need to store it in the AssetBundleSpan. We'll interpret it
-                // at runtime via pointer arithmetic.
-                return new DepSpan(_data, d[0], d[1]);
-            }
+            // The 'start' is an index in the DepData (ushort[]) portion, i.e.
+            // offset = _depDataOffset + 2 * start
+            // but we only need to store it in the AssetBundleSpan. We'll interpret it
+            // at runtime via pointer arithmetic.
+            return new DepSpan(_data, d[0], d[1]);
+        }
+
+        public static ResourceCatalog Load(string uri)
+        {
+#if DEBUG
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+#endif
+
+            L.I("[ResourceCatalog] Load: " + uri);
+
+            var buf = new DownloadHandlerBuffer();
+            using var req = new UnityWebRequest(uri, "GET", buf, null)
+            {
+                disposeDownloadHandlerOnDispose = false // we'll dispose it ourselves
+            };
+            req.SendWebRequest().WaitForComplete(); // complete immediately
+            Assert.AreEqual(req.result, UnityWebRequest.Result.Success, "Failed to load catalog.");
+            var catalog = new ResourceCatalog(buf);
+
+#if DEBUG
+            sw.Stop();
+            L.I("[ResourceCatalog] Load done: " + sw.ElapsedMilliseconds + "ms");
+#endif
+
+            return catalog;
         }
     }
 }

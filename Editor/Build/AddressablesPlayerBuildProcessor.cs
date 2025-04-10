@@ -28,7 +28,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
         if (Directory.Exists(PathConfig.BuildPath_BundleRoot))
         {
             buildPlayerContext.AddAdditionalPathToStreamingAssets(
-                PathConfig.BuildPath_BundleRoot, PathConfig.RuntimeStreamingAssetsSubFolder);
+                PathConfig.BuildPath_BundleRoot, PathConfig.StreamingAssetsSubFolder);
         }
         else
         {
