@@ -16,7 +16,7 @@ namespace UnityEngine.AddressableAssets
         {
             GroupName = groupName;
             Assets = assetPaths
-                .Select((path, i) => (i.D2(), path))
+                .Select((path, i) => (i.ToStringSmallNumber(), path))
                 .ToArray();
             BundleMinor = bundleMinor;
         }

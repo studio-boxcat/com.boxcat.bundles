@@ -81,7 +81,7 @@ namespace UnityEditor.AddressableAssets
             if (string.IsNullOrEmpty(e.Address)) return null;
             return g.BundleId.AddressAccess()
                 ? AddressUtils.Hash(e.Address).Name()
-                : ((AssetIndex) int.Parse(e.Address)).Name();
+                : e.Address;
         }
 
         [CanBeNull]
