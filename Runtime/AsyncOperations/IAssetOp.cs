@@ -9,6 +9,10 @@ namespace UnityEngine.AddressableAssets
         TResult WaitForCompletion();
         void AddOnComplete(Action<TResult> onComplete);
         void AddOnComplete(Action<TResult, object> onComplete, object payload);
+        void AddOnComplete(Action<TResult, int> onComplete, int payload) =>
+            AddOnComplete(obj => onComplete(obj, payload)); // default implementation: box the payload.
+        void AddOnComplete(Action<TResult, object, int> onComplete, object payloadObj, int payloadInt) =>
+            AddOnComplete(obj => onComplete(obj, payloadObj, payloadInt)); // default implementation: box the payload.
         void AddOnComplete(Action<IAssetOp<TResult>, TResult, object> onComplete, object payload);
     }
 

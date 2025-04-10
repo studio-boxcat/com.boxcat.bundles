@@ -21,6 +21,8 @@ namespace UnityEngine.AddressableAssets
 
         public void AddOnComplete(Action<TResult> onComplete) => onComplete(_result);
         public void AddOnComplete(Action<TResult, object> onComplete, object payload) => onComplete(_result, payload);
+        public void AddOnComplete(Action<TResult, int> onComplete, int payload) => onComplete(_result, payload);
+        public void AddOnComplete(Action<TResult, object, int> onComplete, object payloadObj, int payloadInt) => onComplete(_result, payloadObj, payloadInt);
         public void AddOnComplete(Action<IAssetOp<TResult>, TResult, object> onComplete, object payload) => onComplete(this, _result, payload);
     }
 }

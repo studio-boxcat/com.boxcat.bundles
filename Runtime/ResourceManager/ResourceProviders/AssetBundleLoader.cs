@@ -74,7 +74,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Assert.AreNotEqual(0, job.Reqs.Count, "At least one request is in progress");
                 Assert.AreNotEqual(0, job.Callbacks.Count, "Callback list empty");
                 job.Callbacks.Add((callback, payload));
-                return true;
+                return false;
             }
 
             L.I($"[AssetBundleLoader] ResolveAsync: bundleIndex={bundleIndex.DebugString()}, deps: {deps.ToString()}");
@@ -101,11 +101,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Assert.IsFalse(_requests.Values.Any(x => x.Jobs.Contains(job)), "AssetBundleResolveContext still in the list");
                 _jobs[idx] = Job.Done; // Mark as fully resolved.
                 Job.Return(job);
-                return false;
+                return true;
             }
 
             job.Callbacks.Add((callback, payload));
-            return true;
+            return false;
 
             void QueueAssetBundleLoad(AssetBundleIndex bundleIndex, Job job)
             {

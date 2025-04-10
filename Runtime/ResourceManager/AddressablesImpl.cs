@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.SceneManagement;
 
@@ -74,6 +73,7 @@ namespace UnityEngine.AddressableAssets
             AssetOpBlock b;
             if (count is 0)
             {
+                // returned by AssetOpBlock.Return()
                 b = new AssetOpBlock(_catalog, _loader, _opBlockPool);
             }
             else
