@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets
                 throw new Exception("Search pattern is empty. Please set a search pattern.");
 
             // Issue new bundle id
-            var bundleIdStart = (int) AssetBundleId.BuiltInShader + 1;
+            var bundleIdStart = (int) AssetBundleId.BuiltInShaders + 1;
             var bundleIdMax = (int) AssetBundleIdUtils.MaxForNormalBundle();
             var bundleIdCandidates = Enumerable.Range(bundleIdStart, bundleIdMax - bundleIdStart + 1).ToHashSet();
             foreach (var group in Groups) bundleIdCandidates.Remove((int) group.BundleId);

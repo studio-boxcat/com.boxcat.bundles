@@ -16,7 +16,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var allBundles = keyToId.Values.ToArray();
             Array.Sort(allBundles);
             Assert.IsTrue(allBundles[0] == AssetBundleId.MonoScript, "MonoScript bundle not first in sorted list.");
-            Assert.IsTrue(allBundles[1] == AssetBundleId.BuiltInShader, "BuiltInShaders bundle not second in sorted list.");
+            Assert.IsTrue(allBundles[1] == AssetBundleId.BuiltInShaders, "BuiltInShaders bundle not second in sorted list.");
 
             // Map from old AssetBundleId -> new canonical index (0..bundleCount-1)
             var idToIndex = allBundles
@@ -132,8 +132,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var groups = catalog.Groups;
             var keyToId = new Dictionary<GroupKey, AssetBundleId>(catalog.Groups.Length + 2)
             {
-                { (GroupKey) BundleNames.MonoScript, AssetBundleId.MonoScript },
-                { (GroupKey) BundleNames.BuiltInShaders, AssetBundleId.BuiltInShader }
+                { BundleNames.MonoScriptGroupKey, AssetBundleId.MonoScript },
+                { BundleNames.BuiltInShadersGroupKey, AssetBundleId.BuiltInShaders }
             };
             foreach (var g in groups)
                 keyToId.Add(g.Key, g.BundleId);

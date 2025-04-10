@@ -4,7 +4,6 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 {
@@ -35,7 +34,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Build AssetGUID -> BundleKey dictionary.
             var assetToFiles = m_WriteData.AssetToFiles.ToDictionary(
                 x => (AssetGUID) x.Key,
-                x => x.Value.Select(y => (GroupKey) m_WriteData.FileToBundle[y]).ToList());
+                x => x.Value.Select(y => BundleNames.ParseGroupKey(m_WriteData.FileToBundle[y])).ToList());
 
             var ctx = m_AaBuildContext;
             Process(
@@ -82,8 +81,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 .ToDictionary(g => g.Key, g => g.Select(x => x.y).ToHashSet());
 
             // Add builtin bundles.
-            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.BuiltInShaders);
-            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.MonoScript);
+            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.MonoScriptGroupKey);
+            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.BuiltInShadersGroupKey);
 
             // Expand bundle deps.
             bundleToExpandedBundleDependencies = new Dictionary<GroupKey, HashSet<GroupKey>>();
@@ -105,10 +104,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return;
 
 
-            static void AddBuiltInBundles(Dictionary<GroupKey, HashSet<GroupKey>> dict, string bundleName)
+            static void AddBuiltInBundles(Dictionary<GroupKey, HashSet<GroupKey>> dict, GroupKey bundleName)
             {
-                dict.Add((GroupKey) bundleName,
-                    new HashSet<GroupKey> { (GroupKey) bundleName });
+                dict.Add(bundleName, new HashSet<GroupKey> { bundleName });
             }
         }
     }

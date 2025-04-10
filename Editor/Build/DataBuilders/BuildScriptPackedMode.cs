@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Sirenix.Utilities;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
 using UnityEditor.Build.Content;
@@ -34,7 +36,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
-    internal class BuildScriptPackedMode
+    internal static class BuildScriptPackedMode
     {
         private const bool _generateBuildReport = false;
 
@@ -42,18 +44,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         // and isn't needed for most tests.
         private const bool _skipCompilePlayerScripts = false;
 
-        public DataBuildResult BuildData(AddressableCatalog catalog, BuildTarget target)
+        public static DataBuildResult BuildData(AddressableCatalog catalog, BuildTarget target)
         {
-            var aaContext = new AddressableAssetsBuildContext(catalog) { buildStartTime = DateTime.Now };
-            var result = DoBuild(aaContext, target);
-
-            if (result != null)
-            {
-                var span = DateTime.Now - aaContext.buildStartTime;
-                result.Duration = span.TotalSeconds;
-            }
-
-            if (result != null && !Application.isBatchMode && _generateBuildReport)
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            var result = DoBuild(catalog, target);
+            result.Duration = sw.Elapsed.TotalSeconds;
+            if (!Application.isBatchMode && _generateBuildReport)
                 BuildReportWindow.ShowWindowAfterBuild();
             return result;
         }
@@ -84,59 +81,47 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <summary>
         /// The method that does the actual building after all the groups have been processed.
         /// </summary>
-        protected DataBuildResult DoBuild(AddressableAssetsBuildContext aaContext, BuildTarget buildTarget)
+        private static DataBuildResult DoBuild(AddressableCatalog catalog, BuildTarget buildTarget)
         {
             var result = new DataBuildResult();
             var extractData = new ExtractDataTask();
 
+            var ctx = new AddressableAssetsBuildContext(catalog);
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
-                return CreateErrorResult("Unsaved scenes", aaContext);
+                return CreateErrorResult("Unsaved scenes", ctx);
 
-            var catalog = aaContext.Catalog;
-            var buildParams = GetBuildParameter(buildTarget, PathConfig.TempPath_BundleRoot);
+            // cleanup old build data
+            var outDir = PathConfig.BuildPath;
+            if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            var buildParams = GetBuildParameter(buildTarget, outDir);
             buildParams.WriteLinkXML = true; // See GenerateLinkXml.cs
 
             L.I("[BuildScriptPackedMode] ContentPipeline.BuildAssetBundles");
-            IBundleBuildResults results;
             using (new SBPSettingsOverwriterScope(_generateBuildReport)) // build layout generation requires full SBP write results
             {
                 var buildContent = new BundleBuildContent(catalog.GenerateBundleBuilds());
                 var buildTasks = RuntimeDataBuildTasks();
                 buildTasks.Add(extractData);
 
-                var exitCode = ContentPipeline.BuildAssetBundles(buildParams, buildContent, out results, buildTasks, aaContext);
+                var exitCode = ContentPipeline.BuildAssetBundles(buildParams, buildContent, out _, buildTasks, ctx);
                 if (exitCode < ReturnCode.Success)
-                    return CreateErrorResult("SBP Error" + exitCode, aaContext);
+                    return CreateErrorResult("SBP Error" + exitCode, ctx);
             }
 
             var bundleIds = ResourceCatalogBuilder.BuildBundleIdMap(catalog);
 
-            L.I("[BuildScriptPackedMode] Copy to Output Folder");
-            using (var progressTracker = new ProgressTracker())
+            L.I("[BuildScriptPackedMode] Copy link.xml");
             {
-                progressTracker.UpdateTask("Copy to Output Folder");
-
-                // bundles
-                foreach (var bundleKey in bundleIds.Keys)
-                {
-                    // L.I(bundleKey.ToString());
-                    Overwrite(
-                        Path.Combine(PathConfig.TempPath_BundleRoot, bundleKey.Value),
-                        Path.Combine(PathConfig.BuildPath_BundleRoot, bundleIds[bundleKey].Name()));
-                }
-
-                // link.xml
-                {
-                    Overwrite(
-                        Path.Combine(PathConfig.TempPath_BundleRoot, "link.xml"),
-                        Path.Combine(Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))!, "link.xml"));
-                }
+                var srcPath = outDir + "/link.xml";
+                var dstPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))! + "/link.xml";
+                AssetDatabase.DeleteAsset(dstPath);
+                File.Copy(srcPath, dstPath);
             }
 
+            L.I("[BuildScriptPackedMode] Generate Binary Catalog");
             {
-                L.I("[BuildScriptPackedMode] Generate Binary Catalog");
-                var bytes = ResourceCatalogBuilder.Build(aaContext.entries.Values, bundleIds);
-                WriteFile(PathConfig.BuildPath_CatalogBin, bytes);
+                var bytes = ResourceCatalogBuilder.Build(ctx.entries.Values, bundleIds);
+                File.WriteAllBytes(outDir + "/catalog.bin", bytes); // if this file exists, overwrite it
             }
 
             if (_generateBuildReport && extractData.BuildContext != null)
@@ -169,21 +154,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             // add GenerateLocationListsTask to the end of the list
             buildTasks.Add(new GenerateLocationListsTask());
 
+            // modify tasks
+            buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = BundleNames.MonoScriptBundleName;
+            buildTasks.FilterCast<CreateBuiltInShadersBundle>().First().ShaderBundleName = BundleNames.BuiltInShadersBundleName;
             return buildTasks;
-        }
-
-        private static string Overwrite(string srcPath, string dstPath)
-        {
-            // L.I($"Move File: {srcPath} -> {dstPath}");
-
-            var directory = Path.GetDirectoryName(dstPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-            else if (File.Exists(dstPath))
-                File.Delete(dstPath);
-            File.Copy(srcPath, dstPath);
-
-            return dstPath;
         }
 
         public static IBundleBuildParameters GetBuildParameter(BuildTarget target, string outputFolder)
@@ -211,29 +185,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             result.ContentBuildFlags |= ContentBuildFlags.StripUnityVersion;
             return result;
-        }
-
-        /// <summary>
-        /// Utility method to write a file.  The directory will be created if it does not exist.
-        /// </summary>
-        /// <param name="path">The path of the file to write.</param>
-        /// <param name="content">The content of the file.</param>
-        /// <returns>True if the file was written.</returns>
-        private static bool WriteFile(string path, byte[] content)
-        {
-            try
-            {
-                var dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-                File.WriteAllBytes(path, content);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                L.E(ex);
-                return false;
-            }
         }
     }
 }

@@ -58,7 +58,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         protected internal ReturnCode RefreshBuild(AddressableAssetsBuildContext buildContext)
         {
             var buildParams = BuildScriptPackedMode.GetBuildParameter(
-                EditorUserBuildSettings.activeBuildTarget, PathConfig.TempPath_BundleRoot);
+                EditorUserBuildSettings.activeBuildTarget, PathConfig.TempPath);
             var buildTasks = RuntimeDataBuildTasks();
             m_ExtractData = new ExtractDataTask();
             buildTasks.Add(m_ExtractData);

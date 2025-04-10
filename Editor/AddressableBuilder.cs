@@ -1,8 +1,5 @@
 using System;
-using System.IO;
-using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 
 namespace UnityEditor.AddressableAssets
@@ -17,20 +14,7 @@ namespace UnityEditor.AddressableAssets
         {
             Assert.IsNotNull(catalog, "AddressableAssetSettings must not be null");
 
-            if (Directory.Exists(PathConfig.BuildPath))
-            {
-                try
-                {
-                    Directory.Delete(PathConfig.BuildPath, true);
-                }
-                catch (Exception e)
-                {
-                    L.E(e);
-                }
-            }
-
-            var builder = new BuildScriptPackedMode();
-            var result = builder.BuildData(catalog, target);
+            var result = BuildScriptPackedMode.BuildData(catalog, target);
             if (!string.IsNullOrEmpty(result.Error))
             {
                 L.E(result.Error);

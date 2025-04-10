@@ -26,7 +26,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             deps.Remove(bundle);
 
             // Remove MonoScript bundle from deps as it will be loaded manually.
-            deps.Remove((GroupKey) BundleNames.MonoScript);
+            deps.Remove(BundleNames.MonoScriptGroupKey);
 
             L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Value}: {string.Join(", ", deps.Select(x => x.Value))}");
 

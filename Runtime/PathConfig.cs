@@ -9,7 +9,7 @@ namespace UnityEngine.AddressableAssets
             get
             {
 #if UNITY_EDITOR
-                return Application.dataPath + "/../" + BuildPath_BundleRoot;
+                return Application.dataPath + "/../" + BuildPath;
 #endif
 
                 return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder;
@@ -40,14 +40,10 @@ namespace UnityEngine.AddressableAssets
 #if UNITY_EDITOR
         public const string LibraryPath = "Library/com.boxcat.addressables/";
         public const string BuildReportPath = "Library/com.boxcat.addressables/BuildReports/";
-        public const string TempPath_BundleRoot = "Temp/com.boxcat.addressables/AssetBundles";
+        public const string TempPath = "Library/com.boxcat.addressables/Temp/";
 
         private static string _buildPath;
-        public static string BuildPath => _buildPath ??=
-            $"{LibraryPath}{UnityEditor.EditorUserBuildSettings.activeBuildTarget}";
-
-        public static string BuildPath_BundleRoot => BuildPath + "/AssetBundles";
-        public static string BuildPath_CatalogBin => BuildPath + "/AssetBundles/catalog.bin";
+        public static string BuildPath => _buildPath ??= $"{LibraryPath}{UnityEditor.EditorUserBuildSettings.activeBuildTarget}";
 #endif
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using UnityEditor.AddressableAssets.Build;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Object = UnityEngine.Object;
@@ -53,7 +54,7 @@ namespace UnityEditor.AddressableAssets
 
             return new AssetBundleBuild
             {
-                assetBundleName = _key,
+                assetBundleName = BundleNames.Format(BundleId, Key),
                 assetNames = assetNames,
                 addressableNames = addressableNames,
             };

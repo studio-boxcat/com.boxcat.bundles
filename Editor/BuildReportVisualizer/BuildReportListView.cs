@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEngine;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
