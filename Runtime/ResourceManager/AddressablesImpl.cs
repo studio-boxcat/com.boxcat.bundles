@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using UnityEngine.AddressableAssets.AsyncOperations;
+using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.SceneManagement;
 

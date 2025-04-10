@@ -15,7 +15,7 @@ namespace UnityEngine.AddressableAssets
 
         public override string ToString()
         {
-            return $"({BundleId.Name()}:{AssetIndex.Name()})";
+            return $"${BundleId.Name()}:{AssetIndex.Name()}";
         }
     }
 

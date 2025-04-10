@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets.AsyncOperations
+namespace UnityEngine.AddressableAssets
 {
     internal readonly struct CompleteCallback
     {

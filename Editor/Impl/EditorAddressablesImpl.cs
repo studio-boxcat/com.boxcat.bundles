@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.AsyncOperations;
 using UnityEngine.SceneManagement;
 
 namespace UnityEditor.AddressableAssets

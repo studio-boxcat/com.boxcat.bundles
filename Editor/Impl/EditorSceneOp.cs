@@ -1,6 +1,6 @@
 using System;
 using UnityEngine;
-using UnityEngine.AddressableAssets.AsyncOperations;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 
-namespace UnityEngine.AddressableAssets.AsyncOperations
+namespace UnityEngine.AddressableAssets
 {
     public interface IAssetOp<TResult>
     {

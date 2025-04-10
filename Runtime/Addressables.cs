@@ -1,7 +1,7 @@
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
-using UnityEngine.AddressableAssets.AsyncOperations;
+using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;
 
@@ -35,22 +35,22 @@ namespace UnityEngine.AddressableAssets
         }
 
         [MustUseReturnValue]
-        public static IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object
+        public static IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation key) where TObject : Object
         {
-            L.I($"[Addressables] Load Start: {loc} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
-            var op = _impl.LoadAssetAsync<TObject>(loc);
+            L.I($"[Addressables] Load Start: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            var op = _impl.LoadAssetAsync<TObject>(key);
 #if DEBUG
-            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), loc);
+            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key);
 #endif
             return op;
         }
 
 
         [MustUseReturnValue]
-        public static TObject LoadAsset<TObject>(AssetLocation loc) where TObject : Object
+        public static TObject LoadAsset<TObject>(AssetLocation key) where TObject : Object
         {
-            L.I($"[Addressables] Load: {loc} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
-            return _impl.LoadAsset<TObject>(loc);
+            L.I($"[Addressables] Load: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            return _impl.LoadAsset<TObject>(key);
         }
 
         public static IAssetOp<Scene> LoadSceneAsync(string key)

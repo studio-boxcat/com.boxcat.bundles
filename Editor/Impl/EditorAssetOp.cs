@@ -2,7 +2,6 @@
 using System;
 using System.Threading.Tasks;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.AsyncOperations;
 using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 

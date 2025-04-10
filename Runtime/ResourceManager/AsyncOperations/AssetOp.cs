@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.AddressableAssets.Util;
 
-namespace UnityEngine.AddressableAssets.AsyncOperations
+namespace UnityEngine.AddressableAssets
 {
     internal class AssetOpBlock
     {
@@ -63,7 +63,6 @@ namespace UnityEngine.AddressableAssets.AsyncOperations
             // Possible to be resolved while StartResolve() is called.
             // In this case, callbackRegistered will be false, so we can call OnDepLoaded immediately.
             var deps = _b.Catalog.GetDependencies(bundleIndex);
-            var indexToId = _b.Catalog.IndexToId;
             var callbackRegistered = _b.Loader.ResolveAsync(bundleIndex, deps, this, _onDepLoaded);
             if (callbackRegistered is false)
                 OnDepLoaded(_b.Loader.GetResolvedBundle(bundleIndex));
