@@ -825,24 +825,5 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             s_LayoutCompleteCallback?.Invoke(destinationPath, layout);
             return ReturnCode.Success;
         }
-
-        /// <summary>
-        /// Creates an Error report for the error provided
-        /// </summary>
-        /// <param name="error">Build error string</param>
-        /// <param name="aaContext">The current build context</param>
-        public static void GenerateErrorReport(string error, AddressableAssetsBuildContext aaContext)
-        {
-            Assert.IsNotNull(aaContext);
-            Assert.IsNotNull(aaContext.Catalog);
-
-            var layout = new BuildLayout();
-            layout.BuildStart = aaContext.buildStartTime;
-            layout.BuildError = error;
-            SetLayoutMetaData(layout);
-
-            string destinationPath = TimeStampedReportPath(layout.BuildStart);
-            layout.WriteToFile(destinationPath, k_PrettyPrint);
-        }
     }
 }
