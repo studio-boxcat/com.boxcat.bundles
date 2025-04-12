@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets
 
         public GroupKey ResolveGroupKeyForDisplay(AssetBundleId bundleId)
         {
-            return bundleId is AssetBundleId.MonoScript or AssetBundleId.BuiltInShaders
+            return bundleId is AssetBundleId.MonoScript
                 ? (GroupKey) bundleId.ToString() // Catalog doesn't have a group for these built-in bundles.
                 : GetGroup(bundleId).Key;
         }

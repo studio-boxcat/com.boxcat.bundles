@@ -38,7 +38,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             foreach (var (bundleIndex, bundleDeps) in deps)
             {
                 var id = bundles[(int) bundleIndex];
-                if (id is AssetBundleId.MonoScript or AssetBundleId.BuiltInShaders) continue;
+                if (id is AssetBundleId.MonoScript) continue;
                 var group = ctx.Catalog.GetGroup(id);
                 group.LastDependency = string.Join(", ", bundleDeps.Select(x => indexToName[x]));
                 L.I($"[ResourceCatalogBuilder] Dependencies of {indexToName[bundleIndex]}: {group.LastDependency}");
@@ -64,7 +64,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             // Build a sorted list of all bundle IDs => define "canonical" index
             Array.Sort(bundles);
             Assert.IsTrue(bundles[0] == AssetBundleId.MonoScript, "MonoScript bundle not first in sorted list.");
-            Assert.IsTrue(bundles[1] == AssetBundleId.BuiltInShaders, "BuiltInShaders bundle not second in sorted list.");
 
             // Build DepSpan and DepData.
             var bundleCount = bundles.Length;

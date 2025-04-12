@@ -145,7 +145,6 @@ namespace UnityEditor.AddressableAssets
 
             // modify tasks
             buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = AssetBundleId.MonoScript.Name();
-            buildTasks.FilterCast<CreateBuiltInShadersBundle>().First().ShaderBundleName = AssetBundleId.BuiltInShaders.Name();
 
             return buildTasks;
         }

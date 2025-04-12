@@ -538,7 +538,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             foreach (var b in lookup.Bundles.Values)
             {
                 layout.Groups.Add(b);
-                if (b.Id is AssetBundleId.MonoScript or AssetBundleId.BuiltInShaders)
+                if (b.Id is AssetBundleId.MonoScript)
                     layout.BuiltInBundles.Add(b);
 
                 var filePath = PathConfig.GetAssetBundleLoadPath(b.Id);

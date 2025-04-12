@@ -7,14 +7,12 @@ namespace UnityEngine.AddressableAssets
     public enum AssetBundleId : ushort
     {
         MonoScript = 0, // reserved for MonoScript.
-        BuiltInShaders = 1, // reserved for BuiltInShaders.
     }
 
     // canonical index of AssetBundles in the ResourceCatalog
     internal enum AssetBundleIndex : ushort
     {
         MonoScript = 0,
-        BuiltInShader = 1,
     }
 
     public static class AssetBundleIdUtils

@@ -82,8 +82,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 .ToDictionary(g => g.Key, g => g.Select(x => x.y).ToHashSet());
 
             // Add builtin bundles.
-            AddBuiltInBundles(bundleToImmediateBundleDependencies, AssetBundleId.MonoScript);
-            AddBuiltInBundles(bundleToImmediateBundleDependencies, AssetBundleId.BuiltInShaders);
+            bundleToImmediateBundleDependencies.Add(AssetBundleId.MonoScript, new HashSet<AssetBundleId> { AssetBundleId.MonoScript });
 
             // Expand bundle deps.
             bundleToExpandedBundleDependencies = new Dictionary<AssetBundleId, HashSet<AssetBundleId>>();
@@ -100,14 +99,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         stack.Push(dep);
                 }
                 bundleToExpandedBundleDependencies.Add(bundle, visited);
-            }
-
-            return;
-
-
-            static void AddBuiltInBundles(Dictionary<AssetBundleId, HashSet<AssetBundleId>> dict, AssetBundleId bundleName)
-            {
-                dict.Add(bundleName, new HashSet<AssetBundleId> { bundleName });
             }
         }
     }
