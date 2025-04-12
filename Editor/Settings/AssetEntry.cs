@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -36,6 +37,10 @@ namespace UnityEditor.AddressableAssets
                 _assetCache = value;
             }
         }
+
+        // Used by Odin Inspector
+        [UsedImplicitly]
+        public AssetEntry() { }
 
         public AssetEntry(string guid, string address)
         {

@@ -42,11 +42,11 @@ namespace UnityEngine.AddressableAssets
 
         public static bool AddressAccess(this AssetBundleId id) => ((int) id >> 10) == 0; // MSB 6 bits = bundleMajor
 
-        public static AssetBundleId PackBundleId(byte bundleMajor, byte bundleMinor)
+        public static AssetBundleId PackBundleId(AssetBundleMajor bundleMajor, byte bundleMinor)
         {
             Assert.IsTrue(bundleMajor is not 0, "bundleMajor must be greater than 0");
-            Assert.IsTrue(bundleMajor < (1 << 6), "bundleMajor must be less than 64"); // MSB 6 bits
-            return (AssetBundleId) ((bundleMajor << 10) | bundleMinor);
+            Assert.IsTrue((int) bundleMajor < (1 << 6), "bundleMajor must be less than 64"); // MSB 6 bits
+            return (AssetBundleId) (((int) bundleMajor << 10) | bundleMinor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

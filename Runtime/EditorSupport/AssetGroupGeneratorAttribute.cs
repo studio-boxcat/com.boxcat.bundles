@@ -8,7 +8,7 @@ namespace UnityEngine.AddressableAssets
 {
     public readonly struct AssetGroupGenerationDef
     {
-        public readonly string GroupName;
+        [CanBeNull] public readonly string GroupName;
         public readonly (string Address, string Path)[] Assets;
         public readonly byte? BundleMinor; // BundleMajor + BundleMinor = BundleId
 
@@ -35,18 +35,15 @@ namespace UnityEngine.AddressableAssets
     [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
     public class AssetGroupGeneratorAttribute : Attribute
     {
-        public readonly string GeneratorId;
-        public readonly byte? BundleMajor; // if set, can access bundle directly
+        public readonly AssetBundleMajor? BundleMajor; // if set, can access bundle directly
 
-        public AssetGroupGeneratorAttribute(string generatorId)
+        public AssetGroupGeneratorAttribute()
         {
-            GeneratorId = generatorId;
             BundleMajor = null;
         }
 
-        public AssetGroupGeneratorAttribute(string generatorId, byte bundleMajor)
+        public AssetGroupGeneratorAttribute(AssetBundleMajor bundleMajor)
         {
-            GeneratorId = generatorId;
             BundleMajor = bundleMajor;
         }
     }

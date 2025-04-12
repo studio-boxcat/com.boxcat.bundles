@@ -155,8 +155,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             buildTasks.Add(new GenerateLocationListsTask());
 
             // modify tasks
-            buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = BundleNames.MonoScriptBundleName;
-            buildTasks.FilterCast<CreateBuiltInShadersBundle>().First().ShaderBundleName = BundleNames.BuiltInShadersBundleName;
+            buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = BundleNames.MonoScript;
+            buildTasks.FilterCast<CreateBuiltInShadersBundle>().First().ShaderBundleName = BundleNames.BuiltInShaders;
             return buildTasks;
         }
 

@@ -17,7 +17,7 @@ namespace UnityEditor.AddressableAssets
         private static string _searchPattern;
 
         [ShowInInspector, LabelText("Groups"), HideReferenceObjectPicker]
-        [ListDrawerSettings(DefaultExpandedState = true, DraggableItems = false, ShowPaging = false,
+        [ListDrawerSettings(ShowPaging = false,
             CustomAddFunction = nameof(AddNewGroup),
             CustomRemoveElementFunction = nameof(RemoveGroup))]
         [OnValueChanged(nameof(ClearCache), includeChildren: true)]
@@ -87,7 +87,7 @@ namespace UnityEditor.AddressableAssets
                 .ToArray();
         }
 
-        [Button, ButtonGroup(order: -1)]
+        [Button("Generate"), ButtonGroup(order: -1)]
         private void GenerateGroups()
         {
             var groups = Groups.Where(x => !x.IsGenerated).ToList(); // keep normal groups
@@ -96,10 +96,11 @@ namespace UnityEditor.AddressableAssets
             var methods = TypeCache.GetMethodsWithAttribute<AssetGroupGeneratorAttribute>();
             foreach (var method in methods)
             {
-                L.I($"[AddressableCatalog] Generating groups from {method.Name}");
+                var generatorName = method.Name;
+                L.I($"[AddressableCatalog] Generating groups from {generatorName}");
                 var meta = method.GetCustomAttribute<AssetGroupGeneratorAttribute>();
                 var defs = (IEnumerable<AssetGroupGenerationDef>) method.Invoke(null, null);
-                gen.AddRange(defs.Select(def => BuildAssetGroup(def, meta)));
+                gen.AddRange(defs.Select(def => BuildAssetGroup(def, meta, generatorName)));
             }
 
             // keep original bundle id, if bundle id is not set. (means no direct bundle access)
@@ -118,7 +119,7 @@ namespace UnityEditor.AddressableAssets
             {
                 var cmp = x.BundleId.CompareTo(y.BundleId);
                 if (cmp != 0) return cmp;
-                cmp = string.CompareOrdinal(x.GeneratorId, y.GeneratorId);
+                cmp = string.CompareOrdinal(x.GeneratorName, y.GeneratorName);
                 return cmp != 0 ? cmp : string.CompareOrdinal(x.Key.Value, y.Key.Value);
             });
 
@@ -127,19 +128,26 @@ namespace UnityEditor.AddressableAssets
             ClearCache();
             return;
 
-            static AssetGroup BuildAssetGroup(AssetGroupGenerationDef def, AssetGroupGeneratorAttribute meta)
+            static AssetGroup BuildAssetGroup(AssetGroupGenerationDef def, AssetGroupGeneratorAttribute meta, string generatorName)
             {
-                var group = new AssetGroup(def.GroupName, BuildAssetEntries(def)) { GeneratorId = meta.GeneratorId, };
+                var groupName = def.GroupName;
+                if (groupName is null)
+                {
+                    Assert.IsTrue(def.Assets.Length is 1, $"Group name is not set, but multiple assets are provided - {generatorName}");
+                    groupName = $"{generatorName}_{Path.GetFileNameWithoutExtension(def.Assets[0].Path)}";
+                }
+
+                var group = new AssetGroup(groupName, BuildAssetEntries(def)) { GeneratorName = generatorName, };
                 Assert.AreEqual(meta.BundleMajor.HasValue, def.BundleMinor.HasValue,
-                    $"BundleStart and BundleSubId must be set together - {meta.GeneratorId}");
+                    $"BundleStart and BundleSubId must be set together - {generatorName}");
                 if (!def.BundleMinor.HasValue)
                 {
-                    L.I($"[AssetGroupGenerationDef] Group created: {def.GroupName}, {meta.GeneratorId}");
+                    L.I($"[AddressableCatalog] Group created: {groupName}");
                     return group;
                 }
 
                 group.BundleId = AssetBundleIdUtils.PackBundleId(meta.BundleMajor!.Value, def.BundleMinor.Value);
-                L.I($"[AssetGroupGenerationDef] Group created: {def.GroupName}, {meta.GeneratorId}, {group.BundleId.Name()}");
+                L.I($"[AddressableCatalog] Group created: {groupName}, {group.BundleId.Name()}");
                 return group;
             }
 
@@ -158,6 +166,20 @@ namespace UnityEditor.AddressableAssets
             }
         }
 
+        [Button("Sort"), ButtonGroup]
+        private void SortEntries()
+        {
+            foreach (var group in Groups.Where(x => !x.IsGenerated))
+                group.SortEntries();
+            ClearCache();
+        }
+
+        internal static bool EditMode;
+
+        [Button("$ToggleEditMode_Label"), ButtonGroup]
+        private static void ToggleEditMode() => EditMode = !EditMode;
+        private static string ToggleEditMode_Label() => EditMode ? "Edit Done" : "Edit";
+
         [ContextMenu("Reset Hint Name")]
         private void ResetHintName()
         {
@@ -165,11 +187,5 @@ namespace UnityEditor.AddressableAssets
             foreach (var entry in group.Entries)
                 entry.HintName = Path.GetFileName(entry.ResolveAssetPath());
         }
-
-        internal static bool EditNameEnabled;
-
-        [Button("$ToggleEditName_Label"), ButtonGroup]
-        private static void ToggleEditName() => EditNameEnabled = !EditNameEnabled;
-        private static string ToggleEditName_Label() => EditNameEnabled ? "Edit Name Done" : "Edit Name";
     }
 }

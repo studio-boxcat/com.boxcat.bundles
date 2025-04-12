@@ -34,7 +34,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Build AssetGUID -> BundleKey dictionary.
             var assetToFiles = m_WriteData.AssetToFiles.ToDictionary(
                 x => (AssetGUID) x.Key,
-                x => x.Value.Select(y => BundleNames.ParseGroupKey(m_WriteData.FileToBundle[y])).ToList());
+                x => x.Value.Select(y => (GroupKey) m_WriteData.FileToBundle[y]).ToList());
 
             var ctx = m_AaBuildContext;
             Process(
@@ -81,8 +81,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 .ToDictionary(g => g.Key, g => g.Select(x => x.y).ToHashSet());
 
             // Add builtin bundles.
-            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.MonoScriptGroupKey);
-            AddBuiltInBundles(bundleToImmediateBundleDependencies, BundleNames.BuiltInShadersGroupKey);
+            AddBuiltInBundles(bundleToImmediateBundleDependencies, (GroupKey) BundleNames.MonoScript);
+            AddBuiltInBundles(bundleToImmediateBundleDependencies, (GroupKey) BundleNames.BuiltInShaders);
 
             // Expand bundle deps.
             bundleToExpandedBundleDependencies = new Dictionary<GroupKey, HashSet<GroupKey>>();

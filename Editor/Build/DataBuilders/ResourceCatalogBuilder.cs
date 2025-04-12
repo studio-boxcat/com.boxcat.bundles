@@ -132,8 +132,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var groups = catalog.Groups;
             var keyToId = new Dictionary<GroupKey, AssetBundleId>(catalog.Groups.Length + 2)
             {
-                { BundleNames.MonoScriptGroupKey, AssetBundleId.MonoScript },
-                { BundleNames.BuiltInShadersGroupKey, AssetBundleId.BuiltInShaders }
+                { (GroupKey) BundleNames.MonoScript, AssetBundleId.MonoScript },
+                { (GroupKey) BundleNames.BuiltInShaders, AssetBundleId.BuiltInShaders }
             };
             foreach (var g in groups)
                 keyToId.Add(g.Key, g.BundleId);

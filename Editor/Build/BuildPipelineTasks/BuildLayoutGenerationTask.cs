@@ -710,7 +710,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             static void ApplyAddressablesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AssetEntry rootEntry)
             {
                 rootAsset.AddressableName = rootEntry.Address;
-                rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.Asset.GetType());
+                rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(
+                    AssetDatabase.GetMainAssetTypeFromGUID((GUID) rootAsset.Guid));
 
                 Assert.IsNotNull(rootAsset.Bundle, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
 

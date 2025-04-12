@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
-using UnityEditor.AddressableAssets.Build;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
@@ -13,21 +13,23 @@ namespace UnityEditor.AddressableAssets
     [Serializable]
     public class AssetGroup : ISelfValidator
     {
-        [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditNameEnabled))]
+        [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditMode))]
         [SerializeField]
         private string _key;
         public GroupKey Key => new(_key);
 
         [LabelText("$Entries_LabelText")]
-        [TableList(ShowIndexLabels = true, ShowPaging = false)]
+        [TableList(ShowIndexLabels = true, ShowPaging = true, DrawScrollView = false)]
+        [ListDrawerSettings(CustomAddFunction = nameof(AddEntry))]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
         [HideInInspector]
         public AssetBundleId BundleId;
 
-        [SerializeField, HideInInspector] internal string GeneratorId;
-        public bool IsGenerated => !string.IsNullOrEmpty(GeneratorId);
+        [FormerlySerializedAs("GeneratorId")]
+        [SerializeField, HideInInspector] internal string GeneratorName;
+        public bool IsGenerated => !string.IsNullOrEmpty(GeneratorName);
 
         public AssetGroup(string key, AssetEntry[] entries)
         {
@@ -47,14 +49,33 @@ namespace UnityEditor.AddressableAssets
             return _cachedAddressToAssetMap.TryGetValue(address, out asset);
         }
 
-        public AssetBundleBuild GenerateAssetBundleBuild()
+        private void AddEntry() => Entries = Entries.CloneAdd(new AssetEntry());
+
+        internal void SortEntries()
+        {
+            Array.Sort(Entries, (a, b) =>
+            {
+                var hasAddressA = !string.IsNullOrEmpty(a.Address);
+                var hasAddressB = !string.IsNullOrEmpty(b.Address);
+                if (hasAddressA != hasAddressB)
+                    return hasAddressA ? -1 : 1;
+
+                var pathA = a.ResolveAssetPath();
+                var pathB = b.ResolveAssetPath();
+                return string.CompareOrdinal(pathA, pathB);
+            });
+
+            // no need to clear cache, as the address is not changed
+        }
+
+        internal AssetBundleBuild GenerateAssetBundleBuild()
         {
             var assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray();
             var addressableNames = Entries.Select(e => ResolveAddressString(this, e)).ToArray();
 
             return new AssetBundleBuild
             {
-                assetBundleName = BundleNames.Format(BundleId, Key),
+                assetBundleName = _key,
                 assetNames = assetNames,
                 addressableNames = addressableNames,
             };
