@@ -100,6 +100,23 @@ namespace UnityEditor.AddressableAssets
             }
 
             {
+                L.I("[AddressableBuilder] Rename bundle files");
+                var bundles = catalog.Groups
+                    .Select(x => (x.BundleId, x.Key.Value))
+                    .Concat(new[]
+                    {
+                        (AssetBundleId.MonoScript, BundleNames.MonoScript),
+                        (AssetBundleId.BuiltInShaders, BundleNames.BuiltInShaders)
+                    });
+                foreach (var (bundleId, orgBundleName) in bundles)
+                {
+                    var srcPath = $"{outDir}/{orgBundleName}";
+                    var dstPath = $"{outDir}/{bundleId.Name()}";
+                    File.Move(srcPath, dstPath);
+                }
+            }
+
+            {
                 L.I("[AddressableBuilder] Generate Binary Catalog");
                 var bytes = ResourceCatalogBuilder.Build(
                     ctx.entries.Values,
