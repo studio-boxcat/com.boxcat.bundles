@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets

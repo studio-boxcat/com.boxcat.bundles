@@ -2,7 +2,7 @@ using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
-namespace UnityEngine.AddressableAssets.ResourceProviders
+namespace UnityEngine.AddressableAssets
 {
     internal class SceneProvider : IResourceProvider
     {

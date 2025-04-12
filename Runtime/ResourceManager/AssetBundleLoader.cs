@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.Util;
 
-namespace UnityEngine.AddressableAssets.ResourceProviders
+namespace UnityEngine.AddressableAssets
 {
     internal class AssetBundleLoader
     {

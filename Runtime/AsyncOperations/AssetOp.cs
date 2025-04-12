@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine.Assertions;
-using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.AddressableAssets.Util;
 
 namespace UnityEngine.AddressableAssets

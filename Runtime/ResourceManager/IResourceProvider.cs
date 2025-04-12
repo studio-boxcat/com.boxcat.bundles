@@ -1,4 +1,4 @@
-namespace UnityEngine.AddressableAssets.ResourceProviders
+namespace UnityEngine.AddressableAssets
 {
     internal interface IResourceProvider
     {
