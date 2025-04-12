@@ -411,18 +411,18 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         [Serializable]
         public class Bundle
         {
-            public Bundle(GroupKey key, AssetBundleId id)
+            public Bundle(AssetBundleId id, GroupKey name)
             {
-                Key = key;
                 Id = id;
+                Name = name;
             }
+
+            public AssetBundleId Id;
 
             /// <summary>
             /// The name of the AssetBundle
             /// </summary>
-            public GroupKey Key;
-
-            public AssetBundleId Id;
+            public GroupKey Name;
 
             /// <summary>
             /// The file size of the AssetBundle on disk, in bytes
@@ -579,7 +579,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             }
 
 
-            public string LoadPath => Key.Value;
+            public string LoadPath => Name.Value;
 
             /// <summary>
             /// List of the Files referenced by the AssetBundle
@@ -616,11 +616,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The name of the sub-file
             /// </summary>
             public string Name;
-
-            /// <summary>
-            /// If the main File is a serialized file, this will be true.
-            /// </summary>
-            public bool IsSerializedFile;
 
             /// <summary>
             /// The size of the sub-file, in bytes
@@ -716,21 +711,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// FileId of Object in Asset File
             /// </summary>
             public long LocalIdentifierInFile;
-
-            /// <summary>
-            /// Type of Object
-            /// </summary>
-            public AssetType AssetType;
-
-            /// <summary>
-            /// The size of the file on disk.
-            /// </summary>
-            public ulong SerializedSize;
-
-            /// <summary>
-            /// The size of the streamed Asset.
-            /// </summary>
-            public ulong StreamedSize;
         }
 
         /// <summary>
@@ -918,7 +898,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// <summary>
         /// The default AssetBundle name to the Bundle data map.
         /// </summary>
-        public Dictionary<GroupKey, BuildLayout.Bundle> Bundles = new();
+        public Dictionary<AssetBundleId, BuildLayout.Bundle> Bundles = new();
 
         /// <summary>
         /// File name to File data map.

@@ -69,5 +69,27 @@ namespace UnityEngine.AddressableAssets.Util
             }
             return new string(_hexBuf, 0, 8);
         }
+
+#if UNITY_EDITOR
+        public static unsafe ushort Parse4(string hex)
+        {
+            Assert.IsTrue(hex.Length == 4, "hex string length must be 4");
+
+            fixed (char* p = hex)
+            {
+                return (ushort) (
+                    (CharToHex(p[0]) << 12)
+                    | (CharToHex(p[1]) << 8)
+                    | (CharToHex(p[2]) << 4)
+                    | CharToHex(p[3]));
+            }
+
+            static uint CharToHex(char c)
+            {
+                Assert.IsTrue(c is >= '0' and <= 'f', "char is out of range");
+                return (uint) (c < 'a' ? (c - '0') : (c - 'a' + 10));
+            }
+        }
+#endif
     }
 }

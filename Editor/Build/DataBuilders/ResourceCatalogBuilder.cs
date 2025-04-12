@@ -8,12 +8,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     internal static partial class ResourceCatalogBuilder
     {
-        public static unsafe byte[] Build(ICollection<EntryDef> entries, Dictionary<GroupKey, AssetBundleId> keyToId)
+        public static unsafe byte[] Build(ICollection<EntryDef> entries, AssetBundleId[] allBundles)
         {
             L.I("[ResourceCatalogBuilder] Building ResourceCatalog...");
 
             // Build a sorted list of all bundle IDs => define "canonical" index
-            var allBundles = keyToId.Values.ToArray();
             Array.Sort(allBundles);
             Assert.IsTrue(allBundles[0] == AssetBundleId.MonoScript, "MonoScript bundle not first in sorted list.");
             Assert.IsTrue(allBundles[1] == AssetBundleId.BuiltInShaders, "BuiltInShaders bundle not second in sorted list.");
@@ -22,14 +21,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var idToIndex = allBundles
                 .Select((id, i) => KeyValuePair.Create(id, (AssetBundleIndex) i))
                 .ToDictionary();
-            var keyToIndex = keyToId
-                .ToDictionary(x => x.Key, x => idToIndex[x.Value]);
 
             // Build AssetBundle dependency data.
-            var bundleKeys = keyToId.Keys;
-            var deps = bundleKeys.ToDictionary(
-                x => keyToIndex[x],
-                x => CollectDeps(x, entries, keyToIndex));
+            var deps = allBundles.ToDictionary(
+                x => idToIndex[x],
+                x => CollectDeps(x, entries, idToIndex));
 
             // Build DepSpan and DepData.
             var bundleCount = allBundles.Length;
@@ -39,8 +35,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             // Gather addresses + the raw (old) bundle ID for each address
             var assetInfo = entries
                 .Where(x => x.Address.HasValue)
-                .Where(x => keyToId[x.Bundle].AddressAccess()) // don't write addresses for direct access bundles.
-                .Select(x => new AssetInfo(x.Address.Value, keyToIndex[x.Bundle]))
+                .Where(x => x.Bundle.AddressAccess()) // don't write addresses for direct access bundles.
+                .Select(x => new AssetInfo(x.Address.Value, idToIndex[x.Bundle]))
                 .OrderBy(x => x.Address)
                 .ToList();
 
@@ -127,17 +123,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return data;
         }
 
-        public static Dictionary<GroupKey, AssetBundleId> BuildBundleIdMap(AddressableCatalog catalog)
+        public static Dictionary<AssetBundleId, GroupKey> BuildBundleNameMap(AddressableCatalog catalog)
         {
             var groups = catalog.Groups;
-            var keyToId = new Dictionary<GroupKey, AssetBundleId>(catalog.Groups.Length + 2)
+            var idToName = new Dictionary<AssetBundleId, GroupKey>(catalog.Groups.Length + 2)
             {
-                { (GroupKey) BundleNames.MonoScript, AssetBundleId.MonoScript },
-                { (GroupKey) BundleNames.BuiltInShaders, AssetBundleId.BuiltInShaders }
+                { AssetBundleId.MonoScript, (GroupKey) nameof(AssetBundleId.MonoScript) },
+                { AssetBundleId.BuiltInShaders, (GroupKey) nameof(AssetBundleId.BuiltInShaders) }
             };
             foreach (var g in groups)
-                keyToId.Add(g.Key, g.BundleId);
-            return keyToId;
+                idToName.Add(g.BundleId, g.Key);
+            return idToName;
         }
 
         private readonly struct AssetInfo

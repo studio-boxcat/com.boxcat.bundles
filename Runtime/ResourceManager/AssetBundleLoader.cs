@@ -391,18 +391,10 @@ namespace UnityEngine.AddressableAssets
             for (var i = 0; i < _bundles.Length; i++)
             {
                 var bundle = _bundles[i];
-                var index = (AssetBundleIndex) i;
-
-                if (bundle)
-                {
-                    L.I($"[AssetBundleLoader] Unload: {bundle.name}");
-                    bundle.Unload(true);
-                    reqBundles.Remove(index);
-                }
-                else
-                {
-                    // L.W($"[AssetBundleLoader] Already unloaded: {_indexToId[index].Name()}");
-                }
+                if (!bundle) continue;
+                L.I($"[AssetBundleLoader] Unload: {bundle.name}");
+                bundle.Unload(true);
+                reqBundles.Remove((AssetBundleIndex) i);
             }
 
             // there are still some asset bundles loaded.
@@ -414,7 +406,16 @@ namespace UnityEngine.AddressableAssets
                 if (allBundles.TryGetValue(name, out var bundle))
                 {
                     L.W($"[AssetBundleLoader] Unload: {name} (still loaded)");
-                    bundle.Unload(true);
+
+                    try
+                    {
+                        bundle.Unload(true);
+                    }
+                    catch
+                    {
+                        // Ignore the exception.
+                        // InvalidOperationException: This method should not be used after the AssetBundle has been unloaded.
+                    }
                 }
             }
         }

@@ -36,10 +36,10 @@ namespace UnityEditor.AddressableAssets
     {
         public readonly AssetGUID GUID;
         public readonly Address? Address;
-        public readonly GroupKey Bundle;
-        public readonly HashSet<GroupKey> Dependencies;
+        public readonly AssetBundleId Bundle;
+        public readonly HashSet<AssetBundleId> Dependencies;
 
-        public EntryDef(AssetGUID guid, Address? address, GroupKey bundle, HashSet<GroupKey> dependencies)
+        public EntryDef(AssetGUID guid, Address? address, AssetBundleId bundle, HashSet<AssetBundleId> dependencies)
         {
             GUID = guid;
             Address = address;

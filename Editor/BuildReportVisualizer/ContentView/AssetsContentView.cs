@@ -11,8 +11,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public string Name { get; set; }
 
-        public GroupKey? BundleName => Bundle?.Key;
-
         public ulong FileSizePlusRefs { get; set; }
 
         public ulong FileSizeUncompressed { get; set; }
@@ -113,7 +111,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public AssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
-            Name = (string) bundle.Key;
+            Name = (string) bundle.Name;
             Bundle = bundle;
             BundleSize = bundle.FileSize;
             FileSizePlusRefs = bundle.FileSize;

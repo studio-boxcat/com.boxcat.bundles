@@ -100,27 +100,10 @@ namespace UnityEditor.AddressableAssets
             }
 
             {
-                L.I("[AddressableBuilder] Rename bundle files");
-                var bundles = catalog.Groups
-                    .Select(x => (x.BundleId, x.Key.Value))
-                    .Concat(new[]
-                    {
-                        (AssetBundleId.MonoScript, BundleNames.MonoScript),
-                        (AssetBundleId.BuiltInShaders, BundleNames.BuiltInShaders)
-                    });
-                foreach (var (bundleId, orgBundleName) in bundles)
-                {
-                    var srcPath = $"{buildPath}/{orgBundleName}";
-                    var dstPath = $"{buildPath}/{bundleId.Name()}";
-                    File.Move(srcPath, dstPath);
-                }
-            }
-
-            {
                 L.I("[AddressableBuilder] Generate Binary Catalog");
-                var bytes = ResourceCatalogBuilder.Build(
-                    ctx.entries.Values,
-                    ResourceCatalogBuilder.BuildBundleIdMap(catalog));
+                var allBundles = ctx.entries.Values.SelectMany(x => x.Dependencies)
+                    .ToHashSet().OrderBy(x => x).ToArray();
+                var bytes = ResourceCatalogBuilder.Build(ctx.entries.Values, allBundles);
                 File.WriteAllBytes(buildPath + "/catalog.bin", bytes); // if this file exists, overwrite it
             }
 
@@ -164,8 +147,8 @@ namespace UnityEditor.AddressableAssets
                 buildTasks.Add(new BuildLayoutGenerationTask());
 
             // modify tasks
-            buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = BundleNames.MonoScript;
-            buildTasks.FilterCast<CreateBuiltInShadersBundle>().First().ShaderBundleName = BundleNames.BuiltInShaders;
+            buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = AssetBundleId.MonoScript.Name();
+            buildTasks.FilterCast<CreateBuiltInShadersBundle>().First().ShaderBundleName = AssetBundleId.BuiltInShaders.Name();
 
             return buildTasks;
         }

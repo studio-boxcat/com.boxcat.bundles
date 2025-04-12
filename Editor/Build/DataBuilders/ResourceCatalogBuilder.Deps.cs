@@ -9,11 +9,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     internal static partial class ResourceCatalogBuilder
     {
         private static HashSet<AssetBundleIndex> CollectDeps(
-            GroupKey bundle,
+            AssetBundleId bundle,
             ICollection<EntryDef> entries,
-            Dictionary<GroupKey, AssetBundleIndex> keyToIndex)
+            Dictionary<AssetBundleId, AssetBundleIndex> keyToIndex)
         {
-            var deps = new HashSet<GroupKey>();
+            var deps = new HashSet<AssetBundleId>();
 
             // Collect all dependencies of the bundle.
             foreach (var entry in entries)
@@ -26,9 +26,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             deps.Remove(bundle);
 
             // Remove MonoScript bundle from deps as it will be loaded manually.
-            deps.Remove((GroupKey) BundleNames.MonoScript);
+            deps.Remove(AssetBundleId.MonoScript);
 
-            L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Value}: {string.Join(", ", deps.Select(x => x.Value))}");
+            L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Name()}: {string.Join(", ", deps.Select(x => x.Name()))}");
 
             // Map to AssetBundleId.
             return deps.Select(x => keyToIndex[x]).ToHashSet();

@@ -88,7 +88,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public BundlesViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
             Bundle = bundle;
-            Name = (string) bundle.Key;
+            Name = (string) bundle.Name;
             foreach (var file in bundle.Files)
                 RefsTo += file.Assets.Count + file.OtherAssets.Count;
             RefsBy = bundle.DependentBundles.Count;

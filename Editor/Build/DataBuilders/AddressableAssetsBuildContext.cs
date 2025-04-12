@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor.Build.Pipeline.Interfaces;
+using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -15,11 +15,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public readonly AddressableCatalog Catalog;
 
         /// <summary>
-        /// The time the build started
-        /// </summary>
-        public DateTime buildStartTime;
-
-        /// <summary>
         /// A mapping of Asset GUID's to resulting ResourceLocation entries.
         /// </summary>
         internal Dictionary<AssetGUID, EntryDef> entries;
@@ -27,12 +22,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <summary>
         /// Mapping of AssetBundle to the direct dependencies.
         /// </summary>
-        public Dictionary<GroupKey, HashSet<GroupKey>> bundleToImmediateBundleDependencies;
+        public Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleToImmediateBundleDependencies;
 
         /// <summary>
         /// A mapping of AssetBundle to the full dependency tree, flattened into a single list.
         /// </summary>
-        public Dictionary<GroupKey, HashSet<GroupKey>> bundleToExpandedBundleDependencies;
+        public Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleToExpandedBundleDependencies;
 
 
         public AddressableAssetsBuildContext(AddressableCatalog catalog)

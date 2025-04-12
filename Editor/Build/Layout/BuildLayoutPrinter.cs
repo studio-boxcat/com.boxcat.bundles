@@ -156,13 +156,13 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             ulong bundleSize = archive.Files.First(x => x.BundleObjectInfo != null).BundleObjectInfo.Size;
             attr.AddSize("Asset Bundle Object Size", bundleSize);
 
-            using (writer.IndentScope($"Archive {(string) archive.Key} {attr}"))
+            using (writer.IndentScope($"Archive {(string) archive.Name} {attr}"))
             {
                 if (archive.Dependencies != null)
-                    writer.WriteLine("Bundle Dependencies: " + string.Join(", ", archive.Dependencies.Select(x => (string) x.Key)));
+                    writer.WriteLine("Bundle Dependencies: " + string.Join(", ", archive.Dependencies.Select(x => (string) x.Name)));
 
                 if (archive.ExpandedDependencies != null)
-                    writer.WriteLine("Expanded Bundle Dependencies: " + string.Join(", ", archive.ExpandedDependencies.Select(x => (string) x.Key)));
+                    writer.WriteLine("Expanded Bundle Dependencies: " + string.Join(", ", archive.ExpandedDependencies.Select(x => (string) x.Name)));
 
                 using (writer.IndentScope($"Explicit Assets"))
                 {
@@ -191,7 +191,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             attr.AddSize("Total Size", grp.FileSize);
             attr.Add("Explicit Asset Count", explicitAssetCount.ToString());
 
-            using (writer.IndentScope($"Group {grp.Key} {attr}"))
+            using (writer.IndentScope($"Group {grp.Name} {attr}"))
             {
                 PrintArchive(writer, grp);
             }

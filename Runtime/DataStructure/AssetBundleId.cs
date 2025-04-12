@@ -35,6 +35,13 @@ namespace UnityEngine.AddressableAssets
             return Hex.To4(id.Value());
         }
 
+#if UNITY_EDITOR
+        public static AssetBundleId Parse(string name)
+        {
+            return (AssetBundleId) Hex.Parse4(name);
+        }
+#endif
+
         public static AssetBundleId MaxForNormalBundle()
         {
             return (AssetBundleId) ((1 << 10) - 1);

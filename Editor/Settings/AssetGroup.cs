@@ -70,12 +70,17 @@ namespace UnityEditor.AddressableAssets
 
         internal AssetBundleBuild GenerateAssetBundleBuild()
         {
+            var assetBundleName = BundleId.Name();
             var assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray();
             var addressableNames = Entries.Select(e => ResolveAddressString(this, e)).ToArray();
 
+            L.I(string.Format(
+                $"[AddressableCatalog] Build {assetBundleName} ({_key}):\n"
+                + string.Join("\n", addressableNames.Select((x, i) => $"{x} -> {assetNames[i]}"))));
+
             return new AssetBundleBuild
             {
-                assetBundleName = _key,
+                assetBundleName = assetBundleName,
                 assetNames = assetNames,
                 addressableNames = addressableNames,
             };

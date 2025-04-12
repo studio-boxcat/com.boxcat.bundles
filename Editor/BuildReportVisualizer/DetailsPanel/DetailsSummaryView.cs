@@ -52,7 +52,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 return;
 
             DetailsSummaryBuilder builder = new DetailsSummaryBuilder()
-                .With(BuildReportUtility.GetIcon(BuildReportUtility.GetAssetBundleIconPath()), (string) bundle.Key)
+                .With(BuildReportUtility.GetIcon(BuildReportUtility.GetAssetBundleIconPath()), (string) bundle.Name)
                 .With("Uncompressed", $"{ BuildReportUtility.GetDenominatedBytesString(bundle.UncompressedFileSize)}")
                 .With("Bundle fizesize", $"{BuildReportUtility.GetDenominatedBytesString(bundle.FileSize)}")
                 .With("Total size (+ refs)", $"{BuildReportUtility.GetDenominatedBytesString(bundle.FileSize + bundle.DependencyFileSize + bundle.ExpandedDependencyFileSize)}")
@@ -63,13 +63,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DetailsSummary.Add(CreateButtonRow(
                 BuildReportUtility.CreateButton("Search in this view", () =>
                 {
-                    string newSearchValue = (string) bundle.Key;
+                    string newSearchValue = (string) bundle.Name;
                     m_Window.m_ActiveContentView.m_SearchField.Q<TextField>().value = newSearchValue;
                 }),
                 BuildReportUtility.CreateButton("Select in Group", () =>
                 {
                     m_Window.NavigateToView(ContentViewType.GroupsView);
-                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(bundle.Key.Value), true);
+                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(bundle.Name.Value), true);
                 })));
         }
 
@@ -85,8 +85,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             {
                 foreach (BuildLayout.Bundle bundle in reportAsset.Bundles)
                 {
-                    builder.With("Bundle", (string) bundle.Key)
-                           .With("Load Path", bundle.Key.Value);
+                    builder.With("Bundle", (string) bundle.Name)
+                           .With("Load Path", bundle.Name.Value);
                 }
             }
 
@@ -109,7 +109,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DetailsSummary.Add(CreateButtonRow(BuildReportUtility.CreateButton("Select in Bundle", () =>
                 {
                     m_Window.NavigateToView(ContentViewType.BundleView);
-                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash((string) reportAsset.ExplicitAsset.Bundle.Key, reportAsset.ExplicitAsset.AddressableName));
+                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash((string) reportAsset.ExplicitAsset.Bundle.Name, reportAsset.ExplicitAsset.AddressableName));
                 })));
         }
 

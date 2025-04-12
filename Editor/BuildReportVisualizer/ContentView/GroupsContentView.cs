@@ -86,7 +86,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public GroupsViewBuildReportGroup(BuildLayout.Bundle group)
         {
-            Name = group.Key.Value;
+            Name = group.Name.Value;
             Group = group;
             FileSizePlusRefs = 0;
             FileSizeBundle = 0;
@@ -145,7 +145,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     {
         public GroupsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
-            Name = (string) bundle.Key;
+            Name = (string) bundle.Name;
             Bundle = bundle;
             FileSizeBundle = bundle.FileSize;
             FileSizeUncompressed = bundle.UncompressedFileSize;
@@ -290,7 +290,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             if (children.Count > 0 || EntryAppearsInSearch(bundleReportItem, m_SearchValue))
             {
                 var bundleItem = new TreeViewItemData<GroupsViewBuildReportItem>(++id, bundleReportItem, children);
-                m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(group.Name, (string) bundle.Key), new TreeDataReportItem(id, bundleItem.data));
+                m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(group.Name, (string) bundle.Name), new TreeDataReportItem(id, bundleItem.data));
                 bundlesUnderGroup.Add(bundleItem);
             }
 
