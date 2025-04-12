@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using Sirenix.Utilities;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
@@ -19,6 +20,16 @@ using BuildCompression = UnityEngine.BuildCompression;
 
 namespace UnityEditor.AddressableAssets
 {
+    [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
+    public class AddressablePreBuildCallbackAttribute : Attribute { }
+
+    [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
+    public class AddressablePostBuildCallbackAttribute : Attribute
+    {
+        [RequiredSignature, UsedImplicitly]
+        private static void Signature(BuildTarget buildTarget, bool result) { }
+    }
+
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
@@ -28,11 +39,15 @@ namespace UnityEditor.AddressableAssets
         /// Runs the active player data build script to create runtime data.
         /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
         /// </summary>
-        public static string Build(
+        public static bool Build(
             AddressableCatalog catalog, BuildTarget target,
             bool generateReport = false)
         {
+            L.I("[AddressableBuilder] Build start");
+
             Assert.IsNotNull(catalog, "AddressableAssetSettings must not be null");
+
+            AddressablesUtils.InvokeAllMethodsWithAttribute<AddressablePreBuildCallbackAttribute>();
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -42,10 +57,13 @@ namespace UnityEditor.AddressableAssets
             if (!Application.isBatchMode && generateReport)
                 BuildReportWindow.ShowWindowAfterBuild();
 
-            var resultCode = error == null ? "success" : "error";
+            var resultCode = error is null ? "success" : "error";
             L.I($"[AddressableBuilder] Build {resultCode} (duration : {TimeSpan.FromSeconds(duration):g})");
             if (!string.IsNullOrEmpty(error)) L.E(error);
-            return error;
+
+            AddressablesUtils.InvokeAllMethodsWithAttribute<AddressablePostBuildCallbackAttribute>(
+                target, error is null);
+            return error == null;
         }
 
         private static string DoBuild(
@@ -58,7 +76,7 @@ namespace UnityEditor.AddressableAssets
 
             // cleanup old build data
             var outDir = PathConfig.BuildPath;
-            if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            AddressablesUtils.DeleteDirectory(outDir);
             var buildParams = GetBuildParameter(target, outDir);
             buildParams.WriteLinkXML = true; // See GenerateLinkXml.cs
 
@@ -69,9 +87,8 @@ namespace UnityEditor.AddressableAssets
                 var buildTasks = PopulateBuildTasks(
                     generateBuildLayout: generateReport,
                     skipCompilePlayerScripts: skipCompilePlayerScripts);
-
                 var exitCode = ContentPipeline.BuildAssetBundles(buildParams, buildContent, out _, buildTasks, ctx);
-                if (exitCode < ReturnCode.Success)
+                if (exitCode < ReturnCode.Success) // Success Codes are Positive!
                     return "SBP Error: " + exitCode;
             }
 
@@ -79,8 +96,7 @@ namespace UnityEditor.AddressableAssets
                 L.I("[AddressableBuilder] Copy link.xml");
                 var srcPath = outDir + "/link.xml";
                 var dstPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))! + "/link.xml";
-                AssetDatabase.DeleteAsset(dstPath);
-                File.Copy(srcPath, dstPath);
+                AddressablesUtils.ReplaceFile(srcPath, dstPath);
             }
 
             {

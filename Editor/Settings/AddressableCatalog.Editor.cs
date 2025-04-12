@@ -93,7 +93,7 @@ namespace UnityEditor.AddressableAssets
             AddressableBuilder.Build(this, EditorUserBuildSettings.activeBuildTarget);
         }
 
-        [Button("Generate")]
+        [Button("Generate"), ButtonGroup]
         private void GenerateGroups()
         {
             var groups = Groups.Where(x => !x.IsGenerated).ToList(); // keep normal groups
