@@ -31,8 +31,6 @@ namespace UnityEditor.AddressableAssets
             }
             set
             {
-                Assert.IsTrue(AssetDatabase.IsMainAsset(value),
-                    $"The asset '{value.name}' is not a main asset. Please assign a main asset.");
                 _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
                 _assetCache = value;
             }
@@ -60,6 +58,9 @@ namespace UnityEditor.AddressableAssets
         {
             var asset = Asset;
             if (!asset) return;
+
+            if (!AssetDatabase.IsMainAsset(asset))
+                result.AddError($"The asset '{asset.name}' is not a main asset. Please assign a main asset.");
 
             var path = AssetDatabase.GetAssetPath(asset);
             if (!IsPathValidForEntry(path))
