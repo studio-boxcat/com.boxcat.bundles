@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets.Util;
@@ -342,6 +343,8 @@ namespace UnityEngine.AddressableAssets
 
         private static AssetBundle ReadAssetBundle(AssetBundleId bundleId)
         {
+            EditorUnloadAlreadyLoadedAssetBundle(bundleId.Name());
+
             var path = PathConfig.GetAssetBundleLoadPath(bundleId);
             var bundle = AssetBundle.LoadFromFile(path);
             Assert.IsNotNull(bundle, "AssetBundle failed to load: " + bundleId.Name());
@@ -352,6 +355,8 @@ namespace UnityEngine.AddressableAssets
 
         private static AssetBundleCreateRequest ReadAssetBundleAsync(AssetBundleId bundleId)
         {
+            EditorUnloadAlreadyLoadedAssetBundle(bundleId.Name());
+
             L.I($"[AssetBundleLoader] ReadAssetBundleAsync: {bundleId.Name()}");
             var path = PathConfig.GetAssetBundleLoadPath(bundleId);
             var op = AssetBundle.LoadFromFileAsync(path);
@@ -371,6 +376,26 @@ namespace UnityEngine.AddressableAssets
             };
 #endif
             return op;
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        private static void EditorUnloadAlreadyLoadedAssetBundle(string name)
+        {
+            var bundle = AssetBundle.GetAllLoadedAssetBundles()
+                .FirstOrDefault(x => x.name == name);
+            if (bundle is null)
+                return;
+
+            L.E($"[AssetBundleLoader] Unload: {name}");
+            try
+            {
+                bundle.Unload(true);
+            }
+            catch
+            {
+                // Ignore the exception.
+                // InvalidOperationException: This method should not be used after the AssetBundle has been unloaded.
+            }
         }
 
 #if DEBUG

@@ -148,8 +148,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             foreach (var bundleIdStr in m_WriteData.FileToBundle.Values.Distinct())
             {
                 var bundleId = AssetBundleIdUtils.Parse(bundleIdStr);
-                var bundleName = bundleId is AssetBundleId.MonoScript or AssetBundleId.BuiltInShaders
-                    ? (GroupKey) bundleId.ToString() : aaContext.Catalog.GetGroup(bundleId).Key;
+                var bundleName = aaContext.Catalog.ResolveGroupKeyForDisplay(bundleId);
                 var bundle = new BuildLayout.Bundle(bundleId, bundleName);
                 lookup.Bundles.Add(bundleId, bundle);
             }

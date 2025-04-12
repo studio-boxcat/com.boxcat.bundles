@@ -101,10 +101,7 @@ namespace UnityEditor.AddressableAssets
 
             {
                 L.I("[AddressableBuilder] Generate Binary Catalog");
-                var allBundles = ctx.entries.Values.SelectMany(x => x.Dependencies)
-                    .ToHashSet().OrderBy(x => x).ToArray();
-                var bytes = ResourceCatalogBuilder.Build(ctx.entries.Values, allBundles);
-                File.WriteAllBytes(buildPath + "/catalog.bin", bytes); // if this file exists, overwrite it
+                ResourceCatalogBuilder.Build(ctx, buildPath + "/catalog.bin");
             }
 
             return null;

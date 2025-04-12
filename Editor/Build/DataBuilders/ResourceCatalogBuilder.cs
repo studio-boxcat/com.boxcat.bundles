@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
@@ -8,44 +9,74 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     internal static partial class ResourceCatalogBuilder
     {
-        public static unsafe byte[] Build(ICollection<EntryDef> entries, AssetBundleId[] allBundles)
+        public static void Build(AddressableAssetsBuildContext ctx, string outputPath)
         {
-            L.I("[ResourceCatalogBuilder] Building ResourceCatalog...");
+            var bundles = ctx.entries.Values.SelectMany(x => x.Dependencies)
+                .ToHashSet().OrderBy(x => x).ToArray();
 
-            // Build a sorted list of all bundle IDs => define "canonical" index
-            Array.Sort(allBundles);
-            Assert.IsTrue(allBundles[0] == AssetBundleId.MonoScript, "MonoScript bundle not first in sorted list.");
-            Assert.IsTrue(allBundles[1] == AssetBundleId.BuiltInShaders, "BuiltInShaders bundle not second in sorted list.");
-
-            // Map from old AssetBundleId -> new canonical index (0..bundleCount-1)
-            var idToIndex = allBundles
+            // Map from AssetBundleId -> AssetBundleIndex
+            var idToIndex = bundles
                 .Select((id, i) => KeyValuePair.Create(id, (AssetBundleIndex) i))
                 .ToDictionary();
 
+            // Build AssetInfo data.
+            var assetInfo = BuildAssetInfos(ctx.entries, idToIndex);
+
             // Build AssetBundle dependency data.
-            var deps = allBundles.ToDictionary(
+            var deps = bundles.ToDictionary(
                 x => idToIndex[x],
-                x => CollectDeps(x, entries, idToIndex));
+                x => CollectDeps(x, ctx.entries.Values, idToIndex));
 
-            // Build DepSpan and DepData.
-            var bundleCount = allBundles.Length;
-            var (spanData, depData) = BuildDepSpan(deps);
-            Assert.AreEqual(bundleCount, spanData.Length, "Invalid span data length.");
+            // Write the catalog to disk.
+            var bytes = DoBuild(bundles, assetInfo, deps);
+            File.WriteAllBytes(outputPath, bytes); // if this file exists, overwrite it
 
+            // Store dependency data in the catalog.
+            var indexToName = bundles
+                .Select((x, i) => KeyValuePair.Create((AssetBundleIndex) i, ctx.Catalog.ResolveGroupKeyForDisplay(x).Value))
+                .ToDictionary();
+            foreach (var (bundleIndex, bundleDeps) in deps)
+            {
+                var id = bundles[(int) bundleIndex];
+                if (id is AssetBundleId.MonoScript or AssetBundleId.BuiltInShaders) continue;
+                var group = ctx.Catalog.GetGroup(id);
+                group.LastDependency = string.Join(", ", bundleDeps.Select(x => indexToName[x]));
+                L.I($"[ResourceCatalogBuilder] Dependencies of {indexToName[bundleIndex]}: {group.LastDependency}");
+            }
+            EditorUtility.SetDirty(ctx.Catalog);
+        }
+
+        private static AssetInfo[] BuildAssetInfos(Dictionary<AssetGUID, EntryDef> entries, Dictionary<AssetBundleId, AssetBundleIndex> idToIndex)
+        {
             // Gather addresses + the raw (old) bundle ID for each address
-            var assetInfo = entries
+            return entries.Values
                 .Where(x => x.Address.HasValue)
                 .Where(x => x.Bundle.AddressAccess()) // don't write addresses for direct access bundles.
                 .Select(x => new AssetInfo(x.Address.Value, idToIndex[x.Bundle]))
                 .OrderBy(x => x.Address)
-                .ToList();
+                .ToArray();
+        }
+
+        private static unsafe byte[] DoBuild(AssetBundleId[] bundles, AssetInfo[] assets, Dictionary<AssetBundleIndex, AssetBundleIndex[]> deps)
+        {
+            L.I("[ResourceCatalogBuilder] Building ResourceCatalog...");
+
+            // Build a sorted list of all bundle IDs => define "canonical" index
+            Array.Sort(bundles);
+            Assert.IsTrue(bundles[0] == AssetBundleId.MonoScript, "MonoScript bundle not first in sorted list.");
+            Assert.IsTrue(bundles[1] == AssetBundleId.BuiltInShaders, "BuiltInShaders bundle not second in sorted list.");
+
+            // Build DepSpan and DepData.
+            var bundleCount = bundles.Length;
+            var (spanData, depData) = BuildDepSpan(deps);
+            Assert.AreEqual(bundleCount, spanData.Length, "Invalid span data length.");
 
             L.I("[ResourceCatalogBuilder] All addresses: " + string.Join(", ",
-                assetInfo.Select(x => x.Address.ReadableString())));
-            Assert.AreEqual(assetInfo.Count, assetInfo.Select(x => x.Address).Distinct().Count(),
+                assets.Select(x => x.Address.ReadableString())));
+            Assert.AreEqual(assets.Length, assets.Select(x => x.Address).Distinct().Count(),
                 "Duplicate address found.");
 
-            var assetCount = assetInfo.Count;
+            var assetCount = assets.Length;
             var addressesSize = 4 * assetCount;
             var depSpanSize = 4 * bundleCount;
             var correspondingBundlesSize = 2 * assetCount;
@@ -72,7 +103,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 p += 2;
 
                 // Addresses (4 bytes each)
-                foreach (var addressInfo in assetInfo)
+                foreach (var addressInfo in assets)
                 {
                     *(uint*) p = addressInfo.Address.Value();
                     p += 4;
@@ -90,14 +121,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
 
                 // CorrespondingAssetBundles (2 bytes each) => store the canonical index of each asset's bundle
-                foreach (var addressInfo in assetInfo)
+                foreach (var addressInfo in assets)
                 {
                     *(ushort*) p = (ushort) addressInfo.BundleIndex;
                     p += 2;
                 }
 
                 // AssetBundleIds (2 bytes each), sorted ascending
-                foreach (var bundleId in allBundles)
+                foreach (var bundleId in bundles)
                 {
                     *(ushort*) p = bundleId.Value();
                     p += 2;
@@ -121,19 +152,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 + $"  AssetBundleDepData: {depDataSize} bytes");
 
             return data;
-        }
-
-        public static Dictionary<AssetBundleId, GroupKey> BuildBundleNameMap(AddressableCatalog catalog)
-        {
-            var groups = catalog.Groups;
-            var idToName = new Dictionary<AssetBundleId, GroupKey>(catalog.Groups.Length + 2)
-            {
-                { AssetBundleId.MonoScript, (GroupKey) nameof(AssetBundleId.MonoScript) },
-                { AssetBundleId.BuiltInShaders, (GroupKey) nameof(AssetBundleId.BuiltInShaders) }
-            };
-            foreach (var g in groups)
-                idToName.Add(g.BundleId, g.Key);
-            return idToName;
         }
 
         private readonly struct AssetInfo

@@ -25,6 +25,13 @@ namespace UnityEditor.AddressableAssets
             return _cachedBundleIdToGroupMap[bundleId];
         }
 
+        public GroupKey ResolveGroupKeyForDisplay(AssetBundleId bundleId)
+        {
+            return bundleId is AssetBundleId.MonoScript or AssetBundleId.BuiltInShaders
+                ? (GroupKey) bundleId.ToString() // Catalog doesn't have a group for these built-in bundles.
+                : GetGroup(bundleId).Key;
+        }
+
         public bool TryGetEntryByGUID(AssetGUID guid, out AssetEntry entry)
         {
             ref var cache = ref _cachedAssetGUIDToEntryMap;

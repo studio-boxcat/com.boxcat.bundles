@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     internal static partial class ResourceCatalogBuilder
     {
-        private static HashSet<AssetBundleIndex> CollectDeps(
+        private static AssetBundleIndex[] CollectDeps(
             AssetBundleId bundle,
             ICollection<EntryDef> entries,
             Dictionary<AssetBundleId, AssetBundleIndex> keyToIndex)
@@ -28,10 +28,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             // Remove MonoScript bundle from deps as it will be loaded manually.
             deps.Remove(AssetBundleId.MonoScript);
 
-            L.I($"[ResourceCatalogBuilder] Dependencies of {bundle.Name()}: {string.Join(", ", deps.Select(x => x.Name()))}");
-
             // Map to AssetBundleId.
-            return deps.Select(x => keyToIndex[x]).ToHashSet();
+            return deps.Select(x => keyToIndex[x]).OrderBy(x => x).ToArray();
         }
 
         private readonly struct DepSpan
@@ -55,13 +53,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             public DepNode Parent;
             public readonly List<DepNode> Children = new();
 
-            public DepNode(KeyValuePair<AssetBundleIndex, HashSet<AssetBundleIndex>> bundle)
+            public DepNode(KeyValuePair<AssetBundleIndex, AssetBundleIndex[]> bundle)
             {
                 Bundle = (int) bundle.Key;
-                Deps = bundle.Value
-                    .OrderBy(x => x)
-                    .Select(x => (int) x)
-                    .ToArray();
+                Deps = bundle.Value.Select(x => (int) x).ToArray();
             }
         }
 
@@ -71,7 +66,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         ///   DepData: the flattened dependency IDs in the order determined by the SpanData.
         /// </summary>
         private static (DepSpan[] SpanData, AssetBundleIndex[] DepData) BuildDepSpan(
-            Dictionary<AssetBundleIndex, HashSet<AssetBundleIndex>> bundleDeps)
+            Dictionary<AssetBundleIndex, AssetBundleIndex[]> bundleDeps)
         {
             var nodes = bundleDeps
                 .Select(x => new DepNode(x))
@@ -155,9 +150,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             foreach (var (bundleId, depsSet) in bundleDeps)
             {
                 var span = spanData[(int) bundleId];
-                var subset = depData.Skip(span.Start).Take(span.Count).ToHashSet();
-                Assert.IsTrue(depsSet.SetEquals(subset),
-                    $"Invalid span data: {bundleId} (canonical index), " +
+                var subset = depData.Skip(span.Start).Take(span.Count).ToArray();
+                Assert.IsTrue(depsSet.SequenceEqual(subset),
+                    $"Invalid span data: {bundleId.DebugString()}, " +
                     $"[{string.Join(", ", depsSet)}] != [{string.Join(", ", subset)}]");
             }
 

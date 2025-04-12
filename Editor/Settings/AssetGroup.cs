@@ -13,12 +13,11 @@ namespace UnityEditor.AddressableAssets
     [Serializable]
     public class AssetGroup : ISelfValidator
     {
-        [ShowIf("@" + nameof(AddressableCatalog) + "." + nameof(AddressableCatalog.EditMode))]
-        [SerializeField]
+        [SerializeField, ShowIf("EditMode")]
         private string _key;
         public GroupKey Key => new(_key);
 
-        [LabelText("$Entries_LabelText")]
+        [LabelText("$Entries_LabelText"), PropertyOrder(100)]
         [TableList(ShowIndexLabels = true, ShowPaging = true, DrawScrollView = false)]
         [ListDrawerSettings(CustomAddFunction = nameof(AddEntry))]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
@@ -30,6 +29,9 @@ namespace UnityEditor.AddressableAssets
         [FormerlySerializedAs("GeneratorId")]
         [SerializeField, HideInInspector] internal string GeneratorName;
         public bool IsGenerated => !string.IsNullOrEmpty(GeneratorName);
+
+        [SerializeField, ShowIf("EditMode")]
+        internal string LastDependency;
 
         public AssetGroup(string key, AssetEntry[] entries)
         {
@@ -88,13 +90,17 @@ namespace UnityEditor.AddressableAssets
 
         private string Entries_LabelText()
         {
-            return $"{_key} ({BundleId.Name()})";
+            return EditMode()
+                ? "Entries"
+                : $"{_key} ({BundleId.Name()})";
         }
 
         private void Entries_OnValueChanged()
         {
             _cachedAddressToAssetMap = null;
         }
+
+        private static bool EditMode() => AddressableCatalog.EditMode;
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {

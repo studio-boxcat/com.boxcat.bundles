@@ -31,7 +31,7 @@ namespace UnityEditor.AddressableAssets
                 Directory.Delete(path, true);
         }
 
-        internal static void CleanUpDirectory(string path)
+        private static void CleanUpDirectory(string path)
         {
             if (!Directory.Exists(path)) return;
             Directory.Delete(path, true);
