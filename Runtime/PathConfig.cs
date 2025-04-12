@@ -1,18 +1,26 @@
 namespace UnityEngine.AddressableAssets
 {
-    public static class PathConfig
+    internal static class PathConfig
     {
-        public const string StreamingAssetsSubFolder = "aa";
+        public const string AA = "aa";
 
-        private static string _runtimePath
+        private static string _loadPath
         {
             get
             {
 #if UNITY_EDITOR
-                return Application.dataPath + "/../" + BuildPath;
+                const string platform =
+#if UNITY_ANDROID
+                    "Android";
+#elif UNITY_IOS
+                    "iOS";
+#else
+                    NOT_SUPPORTED
 #endif
-
-                return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder;
+                return Application.dataPath + "/../" + LibraryPath + platform;
+#else
+                return Application.streamingAssetsPath + "/" + AA;
+#endif
             }
         }
 
@@ -24,7 +32,7 @@ namespace UnityEngine.AddressableAssets
 #if UNITY_EDITOR || !UNITY_ANDROID
                     "file://" +
 #endif
-                    _runtimePath + "/catalog.bin";
+                    _loadPath + "/catalog.bin";
             }
         }
 
@@ -32,7 +40,7 @@ namespace UnityEngine.AddressableAssets
 
         public static string GetAssetBundleLoadPath(AssetBundleId bundleId)
         {
-            _bundlePathFormat ??= (_runtimePath + "/XXXX").ToCharArray();
+            _bundlePathFormat ??= (_loadPath + "/XXXX").ToCharArray();
             bundleId.WriteHex4(_bundlePathFormat, _bundlePathFormat.Length - 4);
             return new string(_bundlePathFormat);
         }
@@ -43,7 +51,7 @@ namespace UnityEngine.AddressableAssets
         public const string TempPath = "Library/com.boxcat.addressables/Temp/";
 
         private static string _buildPath;
-        public static string BuildPath => _buildPath ??= $"{LibraryPath}{UnityEditor.EditorUserBuildSettings.activeBuildTarget}";
+        public static string GetBuildPath(UnityEditor.BuildTarget buildTarget) => $"{LibraryPath}{buildTarget}";
 #endif
     }
 }

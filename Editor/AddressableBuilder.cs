@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets
     public class AddressablePostBuildCallbackAttribute : Attribute
     {
         [RequiredSignature, UsedImplicitly]
-        private static void Signature(BuildTarget buildTarget, bool result) { }
+        private static void Signature(bool result, BuildTarget buildTarget, string buildPath) { }
     }
 
     /// <summary>
@@ -51,7 +51,8 @@ namespace UnityEditor.AddressableAssets
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            var error = DoBuild(catalog, target,
+            var buildPath = PathConfig.GetBuildPath(target);
+            var error = DoBuild(catalog, target, buildPath,
                 generateReport: generateReport, skipCompilePlayerScripts: false);
             var duration = sw.Elapsed.TotalSeconds;
             if (!Application.isBatchMode && generateReport)
@@ -62,12 +63,12 @@ namespace UnityEditor.AddressableAssets
             if (!string.IsNullOrEmpty(error)) L.E(error);
 
             AddressablesUtils.InvokeAllMethodsWithAttribute<AddressablePostBuildCallbackAttribute>(
-                target, error is null);
+                error is null, target, buildPath);
             return error == null;
         }
 
         private static string DoBuild(
-            AddressableCatalog catalog, BuildTarget target,
+            AddressableCatalog catalog, BuildTarget target, string buildPath,
             bool generateReport, bool skipCompilePlayerScripts)
         {
             var ctx = new AddressableAssetsBuildContext(catalog);
@@ -75,9 +76,8 @@ namespace UnityEditor.AddressableAssets
                 return "Unsaved scenes";
 
             // cleanup old build data
-            var outDir = PathConfig.BuildPath;
-            AddressablesUtils.DeleteDirectory(outDir);
-            var buildParams = GetBuildParameter(target, outDir);
+            AddressablesUtils.DeleteDirectory(buildPath);
+            var buildParams = GetBuildParameter(target, buildPath);
             buildParams.WriteLinkXML = true; // See GenerateLinkXml.cs
 
             using (new SBPSettingsOverwriterScope(generateReport)) // build layout generation requires full SBP write results
@@ -94,7 +94,7 @@ namespace UnityEditor.AddressableAssets
 
             {
                 L.I("[AddressableBuilder] Copy link.xml");
-                var srcPath = outDir + "/link.xml";
+                var srcPath = buildPath + "/link.xml";
                 var dstPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))! + "/link.xml";
                 AddressablesUtils.ReplaceFile(srcPath, dstPath);
             }
@@ -110,8 +110,8 @@ namespace UnityEditor.AddressableAssets
                     });
                 foreach (var (bundleId, orgBundleName) in bundles)
                 {
-                    var srcPath = $"{outDir}/{orgBundleName}";
-                    var dstPath = $"{outDir}/{bundleId.Name()}";
+                    var srcPath = $"{buildPath}/{orgBundleName}";
+                    var dstPath = $"{buildPath}/{bundleId.Name()}";
                     File.Move(srcPath, dstPath);
                 }
             }
@@ -121,7 +121,7 @@ namespace UnityEditor.AddressableAssets
                 var bytes = ResourceCatalogBuilder.Build(
                     ctx.entries.Values,
                     ResourceCatalogBuilder.BuildBundleIdMap(catalog));
-                File.WriteAllBytes(outDir + "/catalog.bin", bytes); // if this file exists, overwrite it
+                File.WriteAllBytes(buildPath + "/catalog.bin", bytes); // if this file exists, overwrite it
             }
 
             return null;

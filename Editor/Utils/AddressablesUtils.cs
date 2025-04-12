@@ -1,10 +1,11 @@
 using System;
 using System.IO;
+using UnityEngine.AddressableAssets;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
 {
-    internal static class AddressablesUtils
+    public static class AddressablesUtils
     {
         internal static T Load<T>(AssetGUID guid) where T : Object
         {
@@ -30,6 +31,13 @@ namespace UnityEditor.AddressableAssets
                 Directory.Delete(path, true);
         }
 
+        internal static void CleanUpDirectory(string path)
+        {
+            if (!Directory.Exists(path)) return;
+            Directory.Delete(path, true);
+            Directory.CreateDirectory(path);
+        }
+
         internal static void InvokeAllMethodsWithAttribute<T>(params object[] parameters) where T : Attribute
         {
             var methods = TypeCache.GetMethodsWithAttribute<T>();
@@ -37,6 +45,43 @@ namespace UnityEditor.AddressableAssets
             {
                 L.I("[AddressablesUtils] InvokeAllMethodsWithAttribute: " + method.Name);
                 method.Invoke(null, parameters);
+            }
+        }
+
+        public static void TryCopyToPlatformProject(BuildTarget buildTarget, string buildPath, string projDir)
+        {
+            L.I("[AddressablesUtils] TryCopyToPlatformProject");
+
+            var dstDir = ResolveDstDir(projDir, buildTarget);
+            CleanUpDirectory(dstDir);
+
+            var files = Directory.GetFiles(buildPath, "*", SearchOption.TopDirectoryOnly);
+            foreach (var file in files)
+            {
+                // Ignore hidden files and json files.
+                var fileName = Path.GetFileName(file);
+                if (fileName.StartsWith('.')
+                    || fileName == "buildlogtep.json"
+                    || fileName == "link.xml")
+                {
+                    continue;
+                }
+
+                File.Copy(file, Path.Combine(dstDir, fileName));
+            }
+
+            L.I($"[AddressablesUtils] Copy {files.Length} files to {dstDir}");
+            return;
+
+            static string ResolveDstDir(string projDir, BuildTarget buildTarget)
+            {
+                var subDirs = buildTarget switch
+                {
+                    BuildTarget.Android => "/unityLibrary/src/main/assets/",
+                    BuildTarget.iOS => "/Data/Raw/",
+                    _ => throw new ArgumentOutOfRangeException(nameof(buildTarget), buildTarget, null)
+                };
+                return projDir + subDirs + PathConfig.AA;
             }
         }
     }
