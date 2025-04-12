@@ -9,6 +9,8 @@ namespace UnityEditor.AddressableAssets.Build
         [InitializeOnLoadMethod]
         private static void Init()
         {
+            _impl = new EditorAddressablesImpl(AddressableCatalog.Default);
+            Addressables.ForceSetImpl(_impl);
             EditorApplication.playModeStateChanged += OnEditorPlayModeChanged;
         }
 
@@ -32,8 +34,7 @@ namespace UnityEditor.AddressableAssets.Build
                 L.I("[Addressables] Exiting Edit Mode, use " + (useCatalog ? "Catalog" : "AssetDatabase"));
             }
 
-            Addressables.ForceSetImpl(useCatalog ? null
-                : _impl ??= new EditorAddressablesImpl(AddressableCatalog.Default));
+            Addressables.ForceSetImpl(useCatalog ? null : _impl);
         }
 
         private const string _useCatalogKey = "it08jspS";
