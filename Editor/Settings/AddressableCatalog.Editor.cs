@@ -24,7 +24,11 @@ namespace UnityEditor.AddressableAssets
         private AssetGroup[] _normalGroups
         {
             get => FilterGroups(Groups, _searchPattern, false);
-            set => throw new NotSupportedException(); // placeholder for odin inspector
+            set
+            {
+                var generatedGroups = _generatedGroups;
+                Groups = value.Concat(generatedGroups).ToArray();
+            }
         }
 
         [ShowInInspector, LabelText("Generated Groups"), HideReferenceObjectPicker]
