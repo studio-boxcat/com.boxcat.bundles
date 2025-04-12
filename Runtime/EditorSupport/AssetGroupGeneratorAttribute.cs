@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using UnityEditor;
 
 namespace UnityEngine.AddressableAssets
 {
@@ -24,12 +25,11 @@ namespace UnityEngine.AddressableAssets
         public AssetGroupGenerationDef(string groupName, byte bundleMinor, IEnumerable<string> assetPaths)
             : this(groupName, bundleMinor, assetPaths.ToArray()) { }
 
-        public AssetGroupGenerationDef(string groupName, params (string Address, string Path)[] assets)
-        {
-            GroupName = groupName;
-            Assets = assets;
-            BundleMinor = null;
-        }
+        public AssetGroupGenerationDef(string groupName, byte bundleMinor, params Object[] assets)
+            : this(groupName, bundleMinor, assets.Select(AssetDatabase.GetAssetPath)) { }
+
+        public AssetGroupGenerationDef(byte bundleMinor, params Object[] assets)
+            : this(null, bundleMinor, assets.Select(AssetDatabase.GetAssetPath)) { }
     }
 
     [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
@@ -46,6 +46,9 @@ namespace UnityEngine.AddressableAssets
         {
             BundleMajor = bundleMajor;
         }
+
+        [RequiredSignature, UsedImplicitly]
+        private static IEnumerable<AssetGroupGenerationDef> Signature() => null;
     }
 }
 #endif
