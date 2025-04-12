@@ -79,7 +79,10 @@ namespace UnityEditor.AddressableAssets
                 .Select(x =>
                 {
                     var match = FuzzySearch.Contains(searchPattern, x.Key.Value, out var score);
-                    return (Group: x, Match: match, Score: score);
+                    if (match) return (Group: x, Match: true, Score: score);
+                    match = searchPattern == x.BundleId.Name();
+                    if (match) return (Group: x, Match: true, Score: 0);
+                    return default;
                 })
                 .Where(x => x.Match)
                 .OrderBy(x => x.Score)
