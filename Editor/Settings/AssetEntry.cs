@@ -1,9 +1,9 @@
 using System;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
@@ -14,7 +14,7 @@ namespace UnityEditor.AddressableAssets
         [SerializeField, HideInInspector]
         private string _guid;
         public AssetGUID GUID => (AssetGUID) _guid;
-        [Delayed]
+        [Delayed, TableColumnWidth(160, false)]
         public string Address;
         [HideInInspector]
         public string HintName;
@@ -32,6 +32,7 @@ namespace UnityEditor.AddressableAssets
             set
             {
                 _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
+                ResetHintName();
                 _assetCache = value;
             }
         }
@@ -47,6 +48,8 @@ namespace UnityEditor.AddressableAssets
         }
 
         public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath((GUID) GUID);
+
+        public void ResetHintName() => HintName = Path.GetFileName(ResolveAssetPath());
 
         private void Asset_OnValueChanged(Object asset)
         {

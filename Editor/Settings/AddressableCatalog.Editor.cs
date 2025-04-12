@@ -194,7 +194,7 @@ namespace UnityEditor.AddressableAssets
         {
             foreach (var group in Groups)
             foreach (var entry in group.Entries)
-                entry.HintName = Path.GetFileName(entry.ResolveAssetPath());
+                entry.ResetHintName();
         }
     }
 }
