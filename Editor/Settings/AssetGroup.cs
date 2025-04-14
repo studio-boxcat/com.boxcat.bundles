@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
@@ -38,7 +39,37 @@ namespace UnityEditor.AddressableAssets
             Entries = entries;
         }
 
-        public AssetEntry this[AssetIndex index] => Entries[(int) index];
+        public AssetEntry this[AssetIndex index]
+        {
+            get
+            {
+                Assert.IsTrue(IsGenerated, "This group is not generated.");
+
+                // If the entry at the index has same address, return it
+                var i = (int) index;
+                var count = Entries.Length;
+                if (i < count)
+                {
+                    var e = Entries[i];
+                    if (e.Address == i.ToStringSmallNumber())
+                        return e;
+                }
+
+                // Binary search
+                var l = 0;
+                var r = count - 1;
+                while (l <= r)
+                {
+                    var m = (l + r) / 2;
+                    var e = Entries[m];
+                    if (e.Address == i.ToStringSmallNumber()) return e;
+                    if (i < int.Parse(e.Address)) r = m - 1;
+                    else l = m + 1;
+                }
+
+                throw new IndexOutOfRangeException($"Entry with index '{i}' not found in group '{_key}'.");
+            }
+        }
 
         private Dictionary<string, Object> _cachedAddressToAssetMap;
 
@@ -105,6 +136,17 @@ namespace UnityEditor.AddressableAssets
         {
             if (BundleId is AssetBundleId.MonoScript)
                 result.AddError("MonoScript is reserved for built-in MonoScript bundles.");
+
+            if (IsGenerated)
+            {
+                var lastIndex = int.MinValue;
+                foreach (var e in Entries)
+                {
+                    var index = int.Parse(e.Address);
+                    if (index <= lastIndex) result.AddError($"The address '{e.Address}' is not unique. Please assign a unique address.");
+                    lastIndex = index;
+                }
+            }
         }
 
         [CanBeNull]

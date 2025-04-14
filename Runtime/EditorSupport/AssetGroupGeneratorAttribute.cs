@@ -13,14 +13,15 @@ namespace UnityEngine.AddressableAssets
         public readonly (string Address, string Path)[] Assets;
         public readonly byte? BundleMinor; // BundleMajor + BundleMinor = BundleId
 
-        public AssetGroupGenerationDef(string groupName, byte bundleMinor, params string[] assetPaths)
+        public AssetGroupGenerationDef(string groupName, byte bundleMinor, params (uint Address, string Path)[] assets)
         {
             GroupName = groupName;
-            Assets = assetPaths
-                .Select((path, i) => (i.ToStringSmallNumber(), path))
-                .ToArray();
+            Assets = assets.Select(x => (x.Address.ToString(), x.Path)).ToArray();
             BundleMinor = bundleMinor;
         }
+
+        public AssetGroupGenerationDef(string groupName, byte bundleMinor, params string[] assetPaths)
+            : this(groupName, bundleMinor, assetPaths.Select((x, i) => ((uint) i, x)).ToArray()) { }
 
         public AssetGroupGenerationDef(string groupName, byte bundleMinor, IEnumerable<string> assetPaths)
             : this(groupName, bundleMinor, assetPaths.ToArray()) { }
@@ -36,11 +37,6 @@ namespace UnityEngine.AddressableAssets
     public class AssetGroupGeneratorAttribute : Attribute
     {
         public readonly AssetBundleMajor? BundleMajor; // if set, can access bundle directly
-
-        public AssetGroupGeneratorAttribute()
-        {
-            BundleMajor = null;
-        }
 
         public AssetGroupGeneratorAttribute(AssetBundleMajor bundleMajor)
         {

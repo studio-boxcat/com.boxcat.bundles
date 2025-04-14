@@ -1,13 +1,13 @@
 namespace UnityEngine.AddressableAssets
 {
-    public enum AssetIndex : byte { }
+    public enum AssetIndex : uint { }
 
     public readonly struct AssetLocation
     {
         public readonly AssetBundleId BundleId;
         public readonly AssetIndex AssetIndex;
 
-        public AssetLocation(AssetBundleMajor bundleMajor, byte bundleMinor, byte assetIndex)
+        public AssetLocation(AssetBundleMajor bundleMajor, byte bundleMinor, uint assetIndex)
         {
             BundleId = AssetBundleIdUtils.PackBundleId(bundleMajor, bundleMinor);
             AssetIndex = (AssetIndex) assetIndex;
@@ -21,10 +21,9 @@ namespace UnityEngine.AddressableAssets
 
     public static class AssetIndexUtils
     {
-        public static string Name(this AssetIndex index)
-        {
-            return ((byte) index).ToStringSmallNumber();
-        }
+        public static uint Value(this AssetIndex index) => (uint) index;
+
+        public static string Name(this AssetIndex index) => ((int) index).ToStringSmallNumber();
 
         public static AssetLocation Locate(this AssetBundleMajor major, byte minor, byte index)
         {

@@ -143,8 +143,9 @@ namespace UnityEditor.AddressableAssets
                 var groupName = def.GroupName;
                 if (groupName is null)
                 {
-                    Assert.IsTrue(def.Assets.Length is 1, $"Group name is not set, but multiple assets are provided - {generatorName}");
-                    groupName = $"{generatorName}_{Path.GetFileNameWithoutExtension(def.Assets[0].Path)}";
+                    groupName = def.Assets.Length is 1
+                        ? $"{generatorName}_{Path.GetFileNameWithoutExtension(def.Assets[0].Path)}"
+                        : generatorName;
                 }
 
                 var group = new AssetGroup(groupName, BuildAssetEntries(def)) { GeneratorName = generatorName, };

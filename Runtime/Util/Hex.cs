@@ -73,7 +73,7 @@ namespace UnityEngine.AddressableAssets.Util
 #if UNITY_EDITOR
         public static unsafe ushort Parse4(string hex)
         {
-            Assert.IsTrue(hex.Length == 4, "hex string length must be 4");
+            Assert.IsTrue(hex.Length == 4, "hex string length must be 4: " + hex);
 
             fixed (char* p = hex)
             {
