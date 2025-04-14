@@ -18,6 +18,9 @@ namespace UnityEngine.AddressableAssets
 
     public static class AssetOpUtils
     {
+        public static bool IsDone<TResult>(this IAssetOp<TResult> op) =>
+            op.TryGetResult(out _);
+
         public static IEnumerator ToCoroutine<TResult>(this IAssetOp<TResult> op)
         {
             while (op.TryGetResult(out _) is false)
