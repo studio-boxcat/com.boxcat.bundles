@@ -77,10 +77,12 @@ namespace UnityEditor.AddressableAssets
                 : throw new KeyNotFoundException($"Entry with address '{address}' not found.");
         }
 
+        public bool ContainsAddress(string address) => TryGetEntryByAddress(address, out _);
+
         public List<string> GetAddressList()
         {
             ref var cache = ref _cachedAddressList;
-            if (cache is null)
+            if (cache is not null)
                 return cache;
 
             cache = new List<string>(Groups.Length * 64);
@@ -101,6 +103,7 @@ namespace UnityEditor.AddressableAssets
             L.I("[AddressableCatalog] ClearCache");
             _cachedGroupKeyToGroupMap = null;
             _cachedBundleIdToGroupMap = null;
+            _cachedAddressToEntryMap = null;
             _cachedAssetGUIDToEntryMap = null;
             _cachedAddressList = null;
         }

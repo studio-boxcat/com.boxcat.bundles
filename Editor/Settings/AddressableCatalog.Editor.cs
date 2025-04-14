@@ -37,9 +37,6 @@ namespace UnityEditor.AddressableAssets
 
         private void AddNewGroup()
         {
-            if (string.IsNullOrEmpty(_searchPattern))
-                throw new Exception("Search pattern is empty. Please set a search pattern.");
-
             // Issue new bundle id
             var bundleIdStart = (int) AssetBundleId.MonoScript + 1;
             var bundleIdMax = (int) AssetBundleIdUtils.MaxForNormalBundle();
@@ -57,7 +54,7 @@ namespace UnityEditor.AddressableAssets
             var insertIndex = i + 1;
 
             // Create new group
-            var newGroup = new AssetGroup(_searchPattern, Array.Empty<AssetEntry>()) { BundleId = assetBundleId };
+            var newGroup = new AssetGroup("New Group", Array.Empty<AssetEntry>()) { BundleId = assetBundleId };
             var groups = Groups.ToList();
             groups.Insert(insertIndex, newGroup);
             Groups = groups.ToArray();
@@ -182,9 +179,12 @@ namespace UnityEditor.AddressableAssets
         [Button("Sort"), ButtonGroup]
         private void SortEntries()
         {
-            foreach (var group in Groups.Where(x => !x.IsGenerated))
+            var normalGroups = Groups.Where(x => !x.IsGenerated).ToList();
+            normalGroups.Sort((a, b) => a.Key.Value.CompareToOrdinal(b.Key.Value));
+            foreach (var group in normalGroups)
                 group.SortEntries();
-            ClearCache();
+            Groups = normalGroups.Concat(Groups.Where(x => x.IsGenerated)).ToArray();
+            // ClearCache(); // no need to clear cache, as the address is not changed
         }
 
         internal static bool EditMode;

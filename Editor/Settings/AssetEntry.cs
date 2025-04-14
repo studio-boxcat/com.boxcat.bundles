@@ -15,7 +15,7 @@ namespace UnityEditor.AddressableAssets
         private string _guid;
         public AssetGUID GUID => (AssetGUID) _guid;
         [Delayed, TableColumnWidth(160, false)]
-        public string Address;
+        public string Address = "";
         [HideInInspector]
         public string HintName;
 
@@ -27,6 +27,7 @@ namespace UnityEditor.AddressableAssets
             get
             {
                 if (_assetCache) return _assetCache;
+                if (string.IsNullOrEmpty(_guid)) return null;
                 return _assetCache = AssetDatabaseUtils.LoadAssetWithGUID<Object>(_guid);
             }
             set
@@ -46,6 +47,8 @@ namespace UnityEditor.AddressableAssets
             _guid = guid;
             Address = address;
         }
+
+        public Type ResolveAssetType() => AssetDatabase.GetMainAssetTypeFromGUID((GUID) GUID);
 
         public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath((GUID) GUID);
 

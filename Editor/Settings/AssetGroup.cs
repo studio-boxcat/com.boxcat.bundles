@@ -19,7 +19,6 @@ namespace UnityEditor.AddressableAssets
 
         [LabelText("$Entries_LabelText"), PropertyOrder(100)]
         [TableList(ShowIndexLabels = true, ShowPaging = true, DrawScrollView = false)]
-        [ListDrawerSettings(CustomAddFunction = nameof(AddEntry))]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
@@ -73,7 +72,7 @@ namespace UnityEditor.AddressableAssets
         internal AssetBundleBuild GenerateAssetBundleBuild()
         {
             var assetBundleName = BundleId.Name();
-            var assetNames = Entries.Select(e => AssetDatabase.GUIDToAssetPath((GUID) e.GUID)).ToArray();
+            var assetNames = Entries.Select(e => e.ResolveAssetPath()).ToArray();
             var addressableNames = Entries.Select(e => ResolveAddressString(this, e)).ToArray();
 
             L.I(string.Format(
