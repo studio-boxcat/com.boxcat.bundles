@@ -18,13 +18,13 @@ namespace UnityEditor.AddressableAssets
             CreateAssetOp<TObject>(GetEntryByAddress(address));
 
         public TObject LoadAsset<TObject>(string address) where TObject : Object =>
-            (TObject) GetEntryByAddress(address).Asset;
+            GetEntryByAddress(address).LoadAssetWithType<TObject>();
 
         public IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object =>
             CreateAssetOp<TObject>(GetEntryByLocation(loc));
 
         public TObject LoadAsset<TObject>(AssetLocation loc) where TObject : Object =>
-            (TObject) GetEntryByLocation(loc).Asset;
+            GetEntryByLocation(loc).LoadAssetWithType<TObject>();
 
         public IAssetOp<Scene> LoadSceneAsync(string address) =>
             new EditorSceneOp(GetEntryByAddress(address).GUID);

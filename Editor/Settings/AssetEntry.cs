@@ -28,11 +28,11 @@ namespace UnityEditor.AddressableAssets
             {
                 if (_assetCache) return _assetCache;
                 if (string.IsNullOrEmpty(_guid)) return null;
-                return _assetCache = AssetDatabaseUtils.LoadAssetWithGUID<Object>(_guid);
+                return _assetCache = AssetDatabase.LoadMainAssetAtGUID(new GUID(_guid));
             }
             set
             {
-                _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out _guid, out long _);
                 ResetHintName();
                 _assetCache = value;
             }
@@ -53,6 +53,14 @@ namespace UnityEditor.AddressableAssets
         public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath((GUID) GUID);
 
         public void ResetHintName() => HintName = Path.GetFileName(ResolveAssetPath());
+
+        public TAsset LoadAssetWithType<TAsset>() where TAsset : Object
+        {
+            var asset = Asset;
+            if (asset is TAsset a) return a;
+            var path = ResolveAssetPath();
+            return AssetDatabase.LoadAssetAtPath<TAsset>(path);
+        }
 
         private void Asset_OnValueChanged(Object asset)
         {
