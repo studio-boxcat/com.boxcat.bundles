@@ -42,6 +42,11 @@ namespace UnityEditor.AddressableAssets
         [UsedImplicitly]
         public AssetEntry() { }
 
+        public AssetEntry(AssetGUID guid)
+        {
+            _guid = guid.Value;
+        }
+
         public AssetEntry(AssetGUID guid, string address)
         {
             _guid = guid.Value;

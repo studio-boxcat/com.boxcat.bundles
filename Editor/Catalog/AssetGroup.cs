@@ -21,7 +21,6 @@ namespace UnityEditor.AddressableAssets
 
         [LabelText("$Entries_LabelText"), PropertyOrder(100)]
         [TableList(ShowIndexLabels = true, ShowPaging = true, DrawScrollView = false)]
-        [ListDrawerSettings(CustomAddFunction = nameof(AddEntry))]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
@@ -83,8 +82,6 @@ namespace UnityEditor.AddressableAssets
             return _cachedAddressToAssetMap.TryGetValue(address, out asset);
         }
 
-        private void AddEntry() => Entries = Entries.CloneAdd(new AssetEntry());
-
         internal void Internal_AddEntries(AssetGUID[] guids)
         {
             var entries = new AssetEntry[guids.Length];
@@ -92,8 +89,7 @@ namespace UnityEditor.AddressableAssets
             {
                 var guid = guids[index];
                 var path = AssetDatabase.GUIDToAssetPath(guid.Value);
-                var address = Path.GetFileNameWithoutExtension(path);
-                entries[index] = new AssetEntry(guid, address) { HintName = Path.GetFileName(path) };
+                entries[index] = new AssetEntry(guid) { HintName = Path.GetFileName(path) };
             }
 
             Entries = Entries.CloneConcat(entries);

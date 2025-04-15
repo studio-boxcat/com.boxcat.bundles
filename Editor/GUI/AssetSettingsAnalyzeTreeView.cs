@@ -276,7 +276,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (objects.Count > 0)
             {
-                Selection.objects = objects.ToArray();
+                // Selection.objects = objects.ToArray();
                 foreach (Object o in objects)
                     EditorGUIUtility.PingObject(o);
             }
