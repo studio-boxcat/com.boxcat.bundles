@@ -78,15 +78,21 @@ namespace UnityEditor.AddressableAssets
                 gen.AddRange(defs.Select(def => BuildAssetGroup(def, meta, generatorName)));
             }
 
-            // keep original bundle id, if bundle id is not set. (means no direct bundle access)
-            L.I("[AddressableCatalog] Assigning original bundle id to generated groups");
+            L.I("[AddressableCatalog] Post-processing generated groups");
             gen.ForEach(x =>
             {
-                if (x.BundleId is 0 && TryGetGroup(x.Key, out var orgGroup))
+                if (TryGetGroup(x.Key, out var orgGroup) is false)
+                    return;
+
+                // keep original bundle id, if bundle id is not set. (means no direct bundle access)
+                if (x.BundleId is 0)
                 {
                     L.I($"[AddressableCatalog] Group {x.Key.Value} already exists. Using original bundle id {orgGroup.BundleId.Name()}");
                     x.BundleId = orgGroup.BundleId;
                 }
+
+                // keep LastDependency
+                x.LastDependency = orgGroup.LastDependency;
             });
 
             // sort generated groups (by bundle id, generator id, group key)
