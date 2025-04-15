@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    internal class MainToolbar : IAddressableView
+    internal class MainToolbar
     {
         private BuildReportListView m_ReportsList;
 

@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEditor.AddressableAssets.Diagnostics;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -85,8 +84,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         public static readonly string TreeViewItemName = nameof(TreeViewItemName);
         public static readonly string TreeViewItemFilePath = UxmlFilesPath + "TreeViewItem.uxml";
         public static readonly string TreeViewNavigableItemFilePath = UxmlFilesPath + "TreeViewNavigableItem.uxml";
-        public static readonly string DetailsPanelSummaryNavigableItem = UxmlFilesPath + "DetailsPanelSummaryNavigableItem.uxml";
-        public static readonly string DetailsPanelSummaryNavigableBundle = UxmlFilesPath + "DetailsPanelSummaryNavigableBundle.uxml";
         public static readonly string DrillableListViewItemPath = UxmlFilesPath + "DrillableListViewItem.uxml";
 
         public const string SummaryTabLabelElementNameFormat = "SummaryTabLabel_{0}";

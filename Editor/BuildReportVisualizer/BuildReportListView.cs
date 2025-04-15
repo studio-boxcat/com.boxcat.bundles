@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
     [Serializable]
-    internal class BuildReportListView : IAddressableView
+    internal class BuildReportListView
     {
         private BuildReportWindow m_Window;
         private ListView m_ListView;

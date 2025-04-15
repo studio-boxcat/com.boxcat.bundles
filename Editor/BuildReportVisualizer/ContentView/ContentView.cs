@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    internal abstract class ContentView : IAddressableView, IBuildReportConsumer
+    internal abstract class ContentView : IBuildReportConsumer
     {
         protected BuildLayout m_Report;
 

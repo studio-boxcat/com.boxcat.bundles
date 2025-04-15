@@ -11,7 +11,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         ReferencedBy
     }
 
-    internal class DetailsView : IAddressableView
+    internal class DetailsView
     {
         private DetailsViewTab m_ActiveContentsTab;
         private BuildReportWindow m_Window;

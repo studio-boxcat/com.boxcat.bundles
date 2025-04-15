@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-    internal class MainPanelSummaryTab : IAddressableView, IBuildReportConsumer
+    internal class MainPanelSummaryTab : IBuildReportConsumer
     {
         public VisualElement tabRootElement;
         internal ScrollView scrollbarElement;
