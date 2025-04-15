@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.GUIElements;
+using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEditor.AddressableAssets.BuildReportVisualizer.ContentView;
@@ -107,7 +108,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             BuildLayoutGenerationTask.s_LayoutCompleteCallback = (path, layout) => m_ReportListView.AddReport(path, layout);
         }
 
-        [MenuItem("Window/Asset Management/Addressables/Addressables Report", priority = 2051)]
+        [Shortcut("Addressables/Addressables Report")]
         public static void ShowWindow()
         {
             CreateWindow();

@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.AnalyzeRules;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -23,170 +21,30 @@ namespace UnityEditor.AddressableAssets.GUI
             Reload();
         }
 
-        private List<AnalyzeRuleContainerTreeViewItem> GatherAllInheritRuleContainers(TreeViewItem baseContainer)
+        private IEnumerable<AnalyzeRuleContainerTreeViewItem> AllRuleContainers()
         {
-            var retValue = new List<AnalyzeRuleContainerTreeViewItem>();
-            if (!baseContainer.hasChildren)
-                return new List<AnalyzeRuleContainerTreeViewItem>();
-
-            foreach (var child in baseContainer.children)
-            {
-                if (child is AnalyzeRuleContainerTreeViewItem)
-                {
-                    retValue.AddRange(GatherAllInheritRuleContainers(child as AnalyzeRuleContainerTreeViewItem));
-                    retValue.Add(child as AnalyzeRuleContainerTreeViewItem);
-                }
-            }
-
-            return retValue;
+            return rootItem.children
+                .OfType<AnalyzeRuleContainerTreeViewItem>();
         }
 
-        private void PerformActionForEntireRuleSelection(Action<AnalyzeRuleContainerTreeViewItem> action)
+        public void RunEntireRules()
         {
-            List<AnalyzeRuleContainerTreeViewItem> activeSelection = (from id in GetSelection()
-                let selection = FindItem(id, rootItem)
-                where selection is AnalyzeRuleContainerTreeViewItem
-                select selection as AnalyzeRuleContainerTreeViewItem).ToList();
-
-            PerformActionForRuleItems(action, activeSelection);
-        }
-
-        private void PerformActionForRuleItems(Action<AnalyzeRuleContainerTreeViewItem> action, List<AnalyzeRuleContainerTreeViewItem> activeSelection)
-        {
-            List<AnalyzeRuleContainerTreeViewItem> inheritSelection = new List<AnalyzeRuleContainerTreeViewItem>();
-            foreach (var selected in activeSelection)
-                inheritSelection.AddRange(GatherAllInheritRuleContainers(selected));
-
-            List<AnalyzeRuleContainerTreeViewItem> entireSelection = activeSelection.Union(inheritSelection).ToList();
-
-            foreach (AnalyzeRuleContainerTreeViewItem ruleContainer in entireSelection)
-            {
-                if (ruleContainer.analyzeRule != null)
-                {
-                    action(ruleContainer);
-                }
-            }
-        }
-
-        public void RunAllSelectedRules()
-        {
-            PerformActionForEntireRuleSelection((ruleContainer) =>
+            foreach (var ruleContainer in AllRuleContainers())
             {
                 var results = AnalyzeSystem.RefreshAnalysis(ruleContainer.analyzeRule);
-
                 BuildResults(ruleContainer, results);
-                Reload();
-                UpdateSelections(GetSelection());
-            });
+            }
+            Reload();
         }
 
         public void ClearAll()
         {
-            var root = rootItem.children[0] as AnalyzeRuleContainerTreeViewItem;
-            if (root == null)
-            {
-                Debug.LogError("Error: Structure of AnalyzeRule tree view is different to expected.");
-                return;
-            }
-
-            List<AnalyzeRuleContainerTreeViewItem> activeSelection = new List<AnalyzeRuleContainerTreeViewItem>(1);
-            activeSelection.Add(root);
-            PerformActionForRuleItems((ruleContainer) =>
+            foreach (var ruleContainer in AllRuleContainers())
             {
                 AnalyzeSystem.ClearAnalysis(ruleContainer.analyzeRule);
                 BuildResults(ruleContainer, new List<AnalyzeRule.AnalyzeResult>());
-            }, activeSelection);
-
+            }
             Reload();
-            UpdateSelections(GetSelection());
-        }
-
-        public void ClearAllSelectedRules()
-        {
-            PerformActionForEntireRuleSelection((ruleContainer) =>
-            {
-                AnalyzeSystem.ClearAnalysis(ruleContainer.analyzeRule);
-                BuildResults(ruleContainer, new List<AnalyzeRule.AnalyzeResult>());
-            });
-
-            Reload();
-            UpdateSelections(GetSelection());
-        }
-
-        public bool SelectionContainsRuleContainer { get; private set; }
-
-        public bool SelectionContainsErrors { get; private set; }
-
-        protected override void SelectionChanged(IList<int> selectedIds)
-        {
-            UpdateSelections(selectedIds);
-        }
-
-        private void UpdateSelections(IList<int> selectedIds)
-        {
-            var allSelectedRuleContainers = (from id in selectedIds
-                let ruleContainer = FindItem(id, rootItem) as AnalyzeRuleContainerTreeViewItem
-                where ruleContainer != null
-                select ruleContainer);
-
-            List<AnalyzeRuleContainerTreeViewItem> allRuleContainers = new List<AnalyzeRuleContainerTreeViewItem>();
-            foreach (var ruleContainer in allSelectedRuleContainers)
-            {
-                allRuleContainers.AddRange(GatherAllInheritRuleContainers(ruleContainer));
-                allRuleContainers.Add(ruleContainer);
-            }
-
-            allRuleContainers = allRuleContainers.Distinct().ToList();
-
-            SelectionContainsErrors = (from container in allRuleContainers
-                from child in container.children
-                where child is AnalyzeResultsTreeViewItem && (child as AnalyzeResultsTreeViewItem).IsError
-                select child).Any();
-
-            SelectionContainsRuleContainer = allRuleContainers.Any();
-        }
-
-        protected override void ContextClicked()
-        {
-            if (SelectionContainsRuleContainer)
-            {
-                GenericMenu menu = new GenericMenu();
-                menu.AddItem(new GUIContent("Run Analyze Rule"), false, RunAllSelectedRules);
-                menu.AddItem(new GUIContent("Clear Analyze Results"), false, ClearAllSelectedRules);
-
-                var selectedIds = GetSelection();
-                if (selectedIds.Count == 1)
-                {
-                    AnalyzeRuleContainerTreeViewItem analyzeRuleContainer = FindItem(selectedIds[0], rootItem) as AnalyzeRuleContainerTreeViewItem;
-                    if (analyzeRuleContainer != null)
-                    {
-                        foreach (var customMenuItem in analyzeRuleContainer.analyzeRule.GetCustomContextMenuItems())
-                        {
-                            if (customMenuItem.MenuEnabled)
-                                menu.AddItem(new GUIContent(customMenuItem.MenuName), customMenuItem.ToggledOn, () => customMenuItem.MenuAction());
-                            else
-                                menu.AddDisabledItem(new GUIContent(customMenuItem.MenuName));
-                        }
-                    }
-                }
-
-                menu.ShowAsContext();
-                Repaint();
-            }
-            else
-            {
-                var selectedIds = this.GetSelection();
-                List<AnalyzeResultsTreeViewItem> items = new List<AnalyzeResultsTreeViewItem>();
-                foreach (int id in selectedIds)
-                {
-                    var item = FindItem(id, rootItem) as AnalyzeResultsTreeViewItem;
-                    if (item != null)
-                        items.Add(item);
-                }
-
-                if (items.Count > 0)
-                    AnalyzeResultsTreeViewItem.ContextClicked(items);
-            }
         }
 
         protected override void DoubleClickedItem(int id)
@@ -204,25 +62,18 @@ namespace UnityEditor.AddressableAssets.GUI
 
             AnalyzeSystem.TreeView = this;
 
-            const string baseName = "Analyze Rules";
-            var baseViewItem = new AnalyzeRuleContainerTreeViewItem(baseName.GetHashCode(), m_CurrentDepth, baseName);
-            baseViewItem.children = new List<TreeViewItem>();
-
-            root.AddChild(baseViewItem);
-
-            m_CurrentDepth++;
-
+            var ruleContainers = new List<AnalyzeRuleContainerTreeViewItem>();
             foreach (var rule in AnalyzeSystem.Rules)
             {
                 var ruleContainer = new AnalyzeRuleContainerTreeViewItem(
                     rule.ruleName.GetHashCode(), m_CurrentDepth, rule);
-                baseViewItem.AddChild(ruleContainer);
+                root.AddChild(ruleContainer);
+                ruleContainers.Add(ruleContainer);
             }
 
             m_CurrentDepth++;
 
             var index = 0;
-            var ruleContainers = GatherAllInheritRuleContainers(baseViewItem);
             foreach (var ruleContainer in ruleContainers)
             {
                 if (ruleContainer == null)
@@ -392,50 +243,11 @@ namespace UnityEditor.AddressableAssets.GUI
         public MessageType severity { get; set; }
         public HashSet<AnalyzeRule.AnalyzeResult> results { get; }
 
-        public bool IsError
-        {
-            get { return !displayName.Contains("No issues found", StringComparison.Ordinal); }
-        }
-
-        public AnalyzeResultsTreeViewItem(int id, int depth, string displayName, MessageType type)
-            : base(id, depth, displayName)
-        {
-            severity = type;
-            results = new HashSet<AnalyzeRule.AnalyzeResult>();
-        }
-
         public AnalyzeResultsTreeViewItem(int id, int depth, string displayName, MessageType type, AnalyzeRule.AnalyzeResult analyzeResult)
             : base(id, depth, displayName)
         {
             severity = type;
             results = new HashSet<AnalyzeRule.AnalyzeResult>() {analyzeResult};
-        }
-
-        internal static void ContextClicked(List<AnalyzeResultsTreeViewItem> items)
-        {
-            HashSet<UnityEngine.Object> objects = new HashSet<Object>();
-
-            foreach (AnalyzeResultsTreeViewItem viewItem in items)
-            {
-                foreach (var itemResult in viewItem.results)
-                {
-                    Object o = GetResultObject(itemResult.resultName);
-                    if (o != null)
-                        objects.Add(o);
-                }
-            }
-
-            if (objects.Count > 0)
-            {
-                GenericMenu menu = new GenericMenu();
-                menu.AddItem(new GUIContent(objects.Count > 0 ? "Select Assets" : "Select Asset"), false, () =>
-                {
-                    Selection.objects = objects.ToArray();
-                    foreach (Object o in objects)
-                        EditorGUIUtility.PingObject(o);
-                });
-                menu.ShowAsContext();
-            }
         }
 
         private static UnityEngine.Object GetResultObject(string resultName)
@@ -478,13 +290,6 @@ namespace UnityEditor.AddressableAssets.GUI
         public AnalyzeRuleContainerTreeViewItem(int id, int depth, AnalyzeRule rule) : base(id, depth, rule.ruleName)
         {
             analyzeRule = rule;
-            children = new List<TreeViewItem>();
-        }
-
-        public AnalyzeRuleContainerTreeViewItem(int id, int depth, string displayName) : base(id, depth, displayName)
-        {
-            analyzeRule = new AnalyzeRule();
-            children = new List<TreeViewItem>();
         }
     }
 }

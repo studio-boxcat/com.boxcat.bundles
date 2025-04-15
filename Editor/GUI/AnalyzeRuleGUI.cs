@@ -15,10 +15,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private const float k_ButtonHeight = 20f;
 
-        private GUIContent m_AnalyzeSelectedRulesGUIContent = new GUIContent("Analyze Selected Rules", "Collect information about Addressables Groups based on the selected Rules");
-        private GUIContent m_ClearRulesGUIContent = new GUIContent("Clear", "Clear information collected for the Analyze Rules");
-        private GUIContent m_ClearSelectedRulesGUIContent = new GUIContent("Selection", "Clear information collected for the selected Rules");
-        private GUIContent m_ClearAllRulesGUIContent = new GUIContent("All", "Clear information collected for the all Rules");
+        private GUIContent m_AnalyzeGUIContent = new GUIContent("Analyze");
+        private GUIContent m_ClearGUIContent = new GUIContent("Clear");
 
         private GUIContent m_ExportJsonGUIContent = new GUIContent("Export Results", "Export a json file with the analyze results for all rules");
         private GUIContent m_ImportJsonGUIContent = new GUIContent("Import Results", "Import a json file with the analyze results for all rules, this will overwrite any existing results");
@@ -41,34 +39,25 @@ namespace UnityEditor.AddressableAssets.GUI
             buttonRect.height = k_ButtonHeight;
 
             GUILayout.BeginArea(buttonRect);
-            EditorGUI.BeginDisabledGroup(!m_Tree.SelectionContainsRuleContainer);
 
             var runRect = buttonRect;
-            float activeWidth = 170;
+            float activeWidth = 80;
             runRect.width = activeWidth;
             buttonRect.x += activeWidth;
             buttonRect.width -= activeWidth;
-            if (UnityEngine.GUI.Button(runRect, m_AnalyzeSelectedRulesGUIContent, EditorStyles.toolbarButton))
+            if (UnityEngine.GUI.Button(runRect, m_AnalyzeGUIContent, EditorStyles.toolbarButton))
             {
-                EditorApplication.delayCall += () => m_Tree.RunAllSelectedRules();
+                EditorApplication.delayCall += () => m_Tree.RunEntireRules();
             }
-
-            EditorGUI.EndDisabledGroup();
 
             var clearRect = buttonRect;
             activeWidth = 80;
             clearRect.width = activeWidth;
             buttonRect.x += activeWidth;
             buttonRect.width -= activeWidth;
-            if (EditorGUI.DropdownButton(clearRect, m_ClearRulesGUIContent, FocusType.Passive, EditorStyles.toolbarDropDown))
+            if (UnityEngine.GUI.Button(clearRect, m_ClearGUIContent, EditorStyles.toolbarButton))
             {
-                var menu = new GenericMenu();
-                if (!m_Tree.SelectionContainsRuleContainer)
-                    menu.AddDisabledItem(m_ClearSelectedRulesGUIContent, false);
-                else
-                    menu.AddItem(m_ClearSelectedRulesGUIContent, false, () => EditorApplication.delayCall += () => m_Tree.ClearAllSelectedRules());
-                menu.AddItem(m_ClearAllRulesGUIContent, false, () => EditorApplication.delayCall += () => m_Tree.ClearAll());
-                menu.DropDown(clearRect);
+                EditorApplication.delayCall += () => m_Tree.ClearAll();
             }
 
             GUIStyle m_ToolbarButtonStyle = "RL FooterButton";
@@ -100,12 +89,6 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             GUILayout.EndArea();
-
-            //TODO
-            //if (GUILayout.Button("Revert Selected"))
-            //{
-            //    m_Tree.RevertAllActiveRules();
-            //}
         }
     }
 }

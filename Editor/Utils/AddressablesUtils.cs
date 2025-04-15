@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
 {
-    internal static class AddressablesUtils
+    public static class AddressablesUtils
     {
         internal static T Load<T>(AssetGUID guid) where T : Object
         {
