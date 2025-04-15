@@ -77,8 +77,6 @@ namespace UnityEditor.AddressableAssets
                 : throw new KeyNotFoundException($"Entry with address '{address}' not found.");
         }
 
-        public bool ContainsAddress(string address) => TryGetEntryByAddress(address, out _);
-
         public List<string> GetAddressList()
         {
             ref var cache = ref _cachedAddressList;
