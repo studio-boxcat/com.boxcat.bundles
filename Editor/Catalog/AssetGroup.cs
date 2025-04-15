@@ -20,7 +20,8 @@ namespace UnityEditor.AddressableAssets
         public GroupKey Key => new(_key);
 
         [LabelText("$Entries_LabelText"), PropertyOrder(100)]
-        [TableList(ShowIndexLabels = true, ShowPaging = true, DrawScrollView = false)]
+        [TableList(ShowPaging = true, DrawScrollView = false)]
+        [ListDrawerSettings(DraggableItems = false)]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
@@ -31,7 +32,7 @@ namespace UnityEditor.AddressableAssets
         [SerializeField, HideInInspector] internal string GeneratorName;
         public bool IsGenerated => !string.IsNullOrEmpty(GeneratorName);
 
-        [SerializeField, ShowIf("EditMode")]
+        [SerializeField, ShowIf("EditMode"), DisplayAsString]
         internal string LastDependency;
 
         public AssetGroup(string key, AssetEntry[] entries)

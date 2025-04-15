@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,7 +16,7 @@ namespace UnityEditor.AddressableAssets
         private static string _searchPattern;
 
         [ShowInInspector, LabelText("Groups"), HideReferenceObjectPicker]
-        [ListDrawerSettings(ShowPaging = false,
+        [ListDrawerSettings(ShowPaging = false, DraggableItems = false,
             CustomAddFunction = nameof(AddNewGroup),
             CustomRemoveElementFunction = nameof(RemoveGroup))]
         [OnValueChanged(nameof(ClearCache), includeChildren: true)]

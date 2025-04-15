@@ -14,7 +14,7 @@ namespace UnityEditor.AddressableAssets
         [SerializeField, HideInInspector]
         private string _guid;
         public AssetGUID GUID => (AssetGUID) _guid;
-        [Delayed, TableColumnWidth(160, false)]
+        [Delayed, TableColumnWidth(200, false)]
         public string Address = "";
         [HideInInspector]
         public string HintName;
