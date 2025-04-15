@@ -157,7 +157,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
             List<TreeViewItem> allTreeViewItems = new List<TreeViewItem>();
             allTreeViewItems.Add(root);
-            allTreeViewItems.AddRange(root.children);
+            if (root.children is not null)
+                allTreeViewItems.AddRange(root.children);
 
             foreach (var node in allTreeViewItems)
                 (node as AnalyzeTreeViewItemBase)?.AddIssueCountToName();
