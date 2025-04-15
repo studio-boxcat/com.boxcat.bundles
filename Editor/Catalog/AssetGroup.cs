@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
@@ -20,6 +21,7 @@ namespace UnityEditor.AddressableAssets
 
         [LabelText("$Entries_LabelText"), PropertyOrder(100)]
         [TableList(ShowIndexLabels = true, ShowPaging = true, DrawScrollView = false)]
+        [ListDrawerSettings(CustomAddFunction = nameof(AddEntry))]
         [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
         public AssetEntry[] Entries;
 
@@ -82,6 +84,21 @@ namespace UnityEditor.AddressableAssets
         }
 
         private void AddEntry() => Entries = Entries.CloneAdd(new AssetEntry());
+
+        internal void Internal_AddEntries(AssetGUID[] guids)
+        {
+            var entries = new AssetEntry[guids.Length];
+            for (var index = 0; index < guids.Length; index++)
+            {
+                var guid = guids[index];
+                var path = AssetDatabase.GUIDToAssetPath(guid.Value);
+                var address = Path.GetFileNameWithoutExtension(path);
+                entries[index] = new AssetEntry(guid, address) { HintName = Path.GetFileName(path) };
+            }
+
+            Entries = Entries.CloneConcat(entries);
+            _cachedAddressToAssetMap = null;
+        }
 
         internal void SortEntries()
         {

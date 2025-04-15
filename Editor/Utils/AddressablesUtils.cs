@@ -1,7 +1,11 @@
 using System;
 using System.IO;
+using System.Linq;
+using UnityEditor.ShortcutManagement;
 using UnityEngine.AddressableAssets;
+using Directory = System.IO.Directory;
 using Object = UnityEngine.Object;
+using SearchOption = System.IO.SearchOption;
 
 namespace UnityEditor.AddressableAssets
 {
@@ -46,6 +50,16 @@ namespace UnityEditor.AddressableAssets
                 L.I("[AddressablesUtils] InvokeAllMethodsWithAttribute: " + method.Name);
                 method.Invoke(null, parameters);
             }
+        }
+
+        [MenuItem("Assets/Addressables/Register Selection")]
+        private static void ShowDialog()
+        {
+            var catalog = AddressableCatalog.Default;
+            var groups = catalog.Groups.Where(x => !x.IsGenerated).ToArray();
+            var options = groups.Select(x => x.Key.Value).ToArray();
+            var assetGUIDs = Selection.assetGUIDs.Distinct().Select(x => (AssetGUID) x).ToArray();
+            SingleSelectionWindow.Show("Register Selection", options, index => catalog.AddEntries(groups[index], assetGUIDs));
         }
 
         public static void TryCopyToPlatformProject(BuildTarget buildTarget, string buildPath, string projDir)
