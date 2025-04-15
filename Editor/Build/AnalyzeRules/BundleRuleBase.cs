@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Sirenix.Utilities;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.Build.Content;
@@ -47,6 +48,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 or GenerateLinkXml
                 or PostWritingCallback);
             buildTasks.Add(new GenerateLocationListsTask());
+            buildTasks.FilterCast<CreateMonoScriptBundle>().First().MonoScriptBundleName = AssetBundleId.MonoScript.Name();
             return buildTasks;
         }
 
