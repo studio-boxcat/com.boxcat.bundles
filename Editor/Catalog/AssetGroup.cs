@@ -15,7 +15,7 @@ namespace UnityEditor.AddressableAssets
     [Serializable]
     public class AssetGroup : ISelfValidator
     {
-        [SerializeField, ShowIf("EditMode")]
+        [SerializeField, ShowIf("EditMode"), Delayed]
         private string _key;
         public GroupKey Key => new(_key);
 

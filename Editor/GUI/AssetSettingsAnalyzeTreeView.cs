@@ -47,6 +47,31 @@ namespace UnityEditor.AddressableAssets.GUI
             Reload();
         }
 
+        public override void OnGUI(Rect rect)
+        {
+            base.OnGUI(rect);
+
+            var e = Event.current;
+            if (e.UseKey(KeyCode.Return))
+            {
+                var selection = GetSelection()
+                    .Select(x => FindItem(x, rootItem) as AnalyzeResultsTreeViewItem)
+                    .Where(x => x != null)
+                    .SelectMany(x => x.results)
+                    .Select(x => x.resultName.SplitLast(AnalyzeRule.kDelimiter))
+                    .Distinct()
+                    .Select(AssetDatabase.LoadMainAssetAtPath)
+                    .Where(x => x)
+                    .ToArray();
+
+                if (selection.Length is not 0)
+                {
+                    selection = Selection.objects;
+                    EditorGUIUtility.PingObject(selection[0]);
+                }
+            }
+        }
+
         protected override void DoubleClickedItem(int id)
         {
             var item = FindItem(id, rootItem) as AnalyzeResultsTreeViewItem;
