@@ -100,6 +100,13 @@ namespace UnityEditor.AddressableAssets
             _cachedAddressToAssetMap = null;
         }
 
+        public void Internal_RemoveEntries(AssetGUID[] guids)
+        {
+            var guidsSet = new HashSet<AssetGUID>(guids);
+            Entries = Entries.Where(e => !guidsSet.Contains(e.GUID)).ToArray();
+            _cachedAddressToAssetMap = null;
+        }
+
         internal void SortEntries()
         {
             Array.Sort(Entries, (a, b) =>

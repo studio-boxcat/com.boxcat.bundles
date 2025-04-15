@@ -52,6 +52,13 @@ namespace UnityEditor.AddressableAssets
         {
             Assert.IsFalse(group.IsGenerated, "Cannot add entry to generated group.");
             Undo.RecordObject(this, "Add Entries");
+
+            foreach (var g in Groups)
+            {
+                if (g == group) continue;
+                g.Internal_RemoveEntries(guids);
+            }
+
             group.Internal_AddEntries(guids);
             EditorUtility.SetDirty(this);
             ClearCache();

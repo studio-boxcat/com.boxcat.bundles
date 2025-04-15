@@ -23,6 +23,19 @@ namespace UnityEditor.AddressableAssets
                 }
             }
 
+            // Check for duplicate asset guids
+            var assetSet = new Dictionary<string, AssetGroup>(); // asset guid to string address
+            foreach (var group in Groups)
+            foreach (var entry in group.Entries)
+            {
+                var guid = entry.GUID.Value;
+                // empty guid will be reported by AssetEntry
+                if (string.IsNullOrEmpty(guid))
+                    continue;
+                if (assetSet.TryAdd(guid, group) is false)
+                    result.AddError($"Duplicate asset guid: {assetSet[guid].Key} and {group.Key} have the same asset: {entry.ResolveAssetPath()}");
+            }
+
             // Check for duplicate addresses
             var addressHashToStr = new Dictionary<Address, string>(); // hash address to string address
             foreach (var group in Groups.Where(x => x.BundleId.AddressAccess())) // check only bundles with address access.
