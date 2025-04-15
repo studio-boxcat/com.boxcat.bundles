@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using UnityEditor.ShortcutManagement;
 using UnityEngine.AddressableAssets;
 using Directory = System.IO.Directory;
 using Object = UnityEngine.Object;
