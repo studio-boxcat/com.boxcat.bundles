@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets
         [LabelText("$Entries_LabelText"), PropertyOrder(100)]
         [TableList(ShowPaging = true, DrawScrollView = false)]
         [ListDrawerSettings(DraggableItems = false)]
-        [OnValueChanged(nameof(Entries_OnValueChanged), includeChildren: true)]
+        [OnValueChanged(nameof(ClearCache), includeChildren: true)]
         public AssetEntry[] Entries;
 
         [HideInInspector]
@@ -97,6 +97,12 @@ namespace UnityEditor.AddressableAssets
             _cachedAddressToAssetMap = null;
         }
 
+        public void Internal_RemoveEntry(AssetEntry entry)
+        {
+            Entries = Entries.Where(e => e != entry).ToArray();
+            _cachedAddressToAssetMap = null;
+        }
+
         public void Internal_RemoveEntries(AssetGUID[] guids)
         {
             var guidsSet = new HashSet<AssetGUID>(guids);
@@ -146,7 +152,7 @@ namespace UnityEditor.AddressableAssets
                 : $"{_key} ({BundleId.Name()})";
         }
 
-        private void Entries_OnValueChanged()
+        public void ClearCache()
         {
             _cachedAddressToAssetMap = null;
         }

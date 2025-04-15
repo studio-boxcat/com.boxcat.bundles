@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
 {
-    [Serializable]
+    [Serializable, HideReferenceObjectPicker]
     public class AssetEntry : ISelfValidator
     {
         [SerializeField, HideInInspector]

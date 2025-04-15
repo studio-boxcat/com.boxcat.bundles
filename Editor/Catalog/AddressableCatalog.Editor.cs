@@ -1,28 +1,33 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using Sirenix.OdinInspector.Editor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using FuzzySearch = Sirenix.Utilities.Editor.FuzzySearch;
+using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets
 {
     public partial class AddressableCatalog
     {
-        [ShowInInspector]
+        [ShowInInspector, OnValueChanged("_searchPattern_OnValueChanged")]
         private static string _searchPattern;
+        private static bool _isSearching => !string.IsNullOrEmpty(_searchPattern);
 
-        [ShowInInspector, LabelText("Groups"), HideReferenceObjectPicker]
+        [ShowInInspector, LabelText("Groups"), HideReferenceObjectPicker, HideIf("_isSearching")]
         [ListDrawerSettings(ShowPaging = false, DraggableItems = false,
             CustomAddFunction = nameof(AddNewGroup),
             CustomRemoveElementFunction = nameof(RemoveGroup))]
         [OnValueChanged(nameof(ClearCache), includeChildren: true)]
         private AssetGroup[] _normalGroups
         {
-            get => FilterGroups(Groups, _searchPattern, false);
+            get => Groups.Where(x => !x.IsGenerated).ToArray();
             set
             {
                 var generatedGroups = _generatedGroups;
@@ -30,29 +35,39 @@ namespace UnityEditor.AddressableAssets
             }
         }
 
-        [ShowInInspector, LabelText("Generated Groups"), HideReferenceObjectPicker]
+        [ShowInInspector, LabelText("Generated Groups"), HideReferenceObjectPicker, HideIf("_isSearching")]
         [ListDrawerSettings(DefaultExpandedState = false, DraggableItems = false, ShowPaging = false)]
-        private AssetGroup[] _generatedGroups => FilterGroups(Groups, _searchPattern, true);
+        private AssetGroup[] _generatedGroups => Groups.Where(x => x.IsGenerated).ToArray();
 
-        private static AssetGroup[] FilterGroups(AssetGroup[] groups, string searchPattern, bool generated)
+        [ShowInInspector, LabelText("Search"), HideReferenceObjectPicker, ShowIf("_isSearching")]
+        [TableList(AlwaysExpanded = true, ShowPaging = true, NumberOfItemsPerPage = 20)]
+        [OnCollectionChanged(Before = nameof(_searchedEntries_OnCollectionChanged_Before))]
+        private List<SearchedEntry> _searchedEntries;
+
+        private void _searchPattern_OnValueChanged()
         {
-            var filtered = groups.Where(x => x.IsGenerated == generated);
-            if (string.IsNullOrEmpty(_searchPattern))
-                return filtered.ToArray();
+            _searchedEntries ??= new List<SearchedEntry>();
+            _searchedEntries.Clear();
+            foreach (var group in Groups)
+            foreach (var entry in group.Entries)
+            {
+                var content = entry.Address + entry.HintName + group.Key.Value + group.BundleId.Name();
+                var match = FuzzySearch.Contains(_searchPattern, content);
+                if (match) _searchedEntries.Add(new SearchedEntry(group, entry));
+            }
+        }
 
-            return filtered
-                .Select(x =>
-                {
-                    var match = FuzzySearch.Contains(searchPattern, x.Key.Value, out var score);
-                    if (match) return (Group: x, Match: true, Score: score);
-                    match = searchPattern == x.BundleId.Name();
-                    if (match) return (Group: x, Match: true, Score: 0);
-                    return default;
-                })
-                .Where(x => x.Match)
-                .OrderBy(x => x.Score)
-                .Select(x => x.Group)
-                .ToArray();
+        private void _searchedEntries_OnCollectionChanged_Before(CollectionChangeInfo change)
+        {
+            if (change.ChangeType is not CollectionChangeType.RemoveIndex)
+                return;
+
+            Undo.RecordObject(this, "Remove Searched Entry");
+            var e = _searchedEntries[change.Index];
+            var group = e.AssetGroup;
+            group.Internal_RemoveEntry(e.AssetEntry);
+            ClearCache();
+            EditorUtility.SetDirty(this);
         }
 
         [Button("Build"), ButtonGroup(order: -1)]
@@ -170,6 +185,55 @@ namespace UnityEditor.AddressableAssets
             foreach (var group in Groups)
             foreach (var entry in group.Entries)
                 entry.ResetHintName();
+        }
+
+        [ShowInInspector]
+        private readonly struct SearchedEntry
+        {
+            [HideInInspector]
+            public readonly AssetGroup AssetGroup;
+            [HideInInspector]
+            public readonly AssetEntry AssetEntry;
+
+            [ShowInInspector, DisplayAsString]
+            [TableColumnWidth(120, false)]
+            public string Group
+            {
+                get => AssetGroup.Key.Value;
+                // for odin inspector
+                set => throw new NotSupportedException("Cannot set group name.");
+            }
+
+            [ShowInInspector, DisplayAsString]
+            [TableColumnWidth(40, false)]
+            public string Bundle
+            {
+                get => AssetGroup.BundleId.Name();
+                // for odin inspector
+                set => throw new NotSupportedException("Cannot set bundle name.");
+            }
+
+            [ShowInInspector, OnValueChanged("ClearGroupCache")]
+            public string Address
+            {
+                get => AssetEntry.Address;
+                set => AssetEntry.Address = value;
+            }
+
+            [ShowInInspector, OnValueChanged("ClearGroupCache")]
+            public Object Asset
+            {
+                get => AssetEntry.Asset;
+                set => AssetEntry.Asset = value;
+            }
+
+            public SearchedEntry(AssetGroup group, AssetEntry entry)
+            {
+                AssetGroup = group;
+                AssetEntry = entry;
+            }
+
+            private void ClearGroupCache() => AssetGroup.ClearCache();
         }
     }
 }
