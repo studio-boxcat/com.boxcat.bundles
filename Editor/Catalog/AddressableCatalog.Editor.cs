@@ -51,9 +51,16 @@ namespace UnityEditor.AddressableAssets
             foreach (var entry in group.Entries)
             {
                 var content = entry.Address + entry.HintName + group.Key.Value + group.BundleId.Name();
-                var match = FuzzySearch.Contains(_searchPattern, content);
-                if (match) _searchedEntries.Add(new SearchedEntry(group, entry));
+                var match = FuzzySearch.Contains(_searchPattern, content, out var score);
+                if (match) _searchedEntries.Add(new SearchedEntry(group, entry, score));
             }
+
+            _searchedEntries.Sort((a, b) =>
+            {
+                var cmp = b.Score.CompareTo(a.Score);
+                if (cmp != 0) return cmp;
+                return a.AssetGroup.BundleId - b.AssetGroup.BundleId;
+            });
         }
 
         private void _searchedEntries_OnCollectionChanged_Before(CollectionChangeInfo change)
@@ -189,10 +196,9 @@ namespace UnityEditor.AddressableAssets
         [ShowInInspector]
         private readonly struct SearchedEntry
         {
-            [HideInInspector]
-            public readonly AssetGroup AssetGroup;
-            [HideInInspector]
-            public readonly AssetEntry AssetEntry;
+            [HideInInspector] public readonly AssetGroup AssetGroup;
+            [HideInInspector] public readonly AssetEntry AssetEntry;
+            [HideInInspector] public readonly int Score;
 
             [ShowInInspector, DisplayAsString]
             [TableColumnWidth(120, false)]
@@ -212,24 +218,27 @@ namespace UnityEditor.AddressableAssets
                 set => throw new NotSupportedException("Cannot set bundle name.");
             }
 
-            [ShowInInspector, OnValueChanged("ClearGroupCache")]
+            [ShowInInspector, OnValueChanged("ClearGroupCache"), DisableIf(nameof(_isGenerated))]
             public string Address
             {
                 get => AssetEntry.Address;
                 set => AssetEntry.Address = value;
             }
 
-            [ShowInInspector, OnValueChanged("ClearGroupCache")]
+            [ShowInInspector, OnValueChanged("ClearGroupCache"), DisableIf(nameof(_isGenerated))]
             public Object Asset
             {
                 get => AssetEntry.Asset;
                 set => AssetEntry.Asset = value;
             }
 
-            public SearchedEntry(AssetGroup group, AssetEntry entry)
+            private bool _isGenerated => AssetGroup.IsGenerated;
+
+            public SearchedEntry(AssetGroup group, AssetEntry entry, int score)
             {
                 AssetGroup = group;
                 AssetEntry = entry;
+                Score = score;
             }
 
             private void ClearGroupCache() => AssetGroup.ClearCache();
