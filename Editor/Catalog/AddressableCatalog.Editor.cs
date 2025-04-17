@@ -35,7 +35,7 @@ namespace UnityEditor.AddressableAssets
         }
 
         [ShowInInspector, LabelText("Generated Groups"), HideReferenceObjectPicker, HideIf("_isSearching")]
-        [ListDrawerSettings(DefaultExpandedState = false, DraggableItems = false, ShowPaging = false)]
+        [ListDrawerSettings(DefaultExpandedState = false, DraggableItems = false, ShowPaging = true)]
         private AssetGroup[] _generatedGroups => Groups.Where(x => x.IsGenerated).ToArray();
 
         [ShowInInspector, LabelText("Search"), HideReferenceObjectPicker, ShowIf("_isSearching")]
