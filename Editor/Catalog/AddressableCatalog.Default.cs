@@ -12,8 +12,7 @@ namespace UnityEditor.AddressableAssets
         {
             get
             {
-                var guid = GetGuid();
-                return AddressablesUtils.Load<AddressableCatalog>((AssetGUID) guid);
+                return _default ??= AddressablesUtils.Load<AddressableCatalog>((AssetGUID) GetGuid());
 
                 static string GetGuid()
                 {

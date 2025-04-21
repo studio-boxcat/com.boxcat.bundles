@@ -111,11 +111,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         [Shortcut("Addressables/Addressables Report")]
         public static void ShowWindow()
         {
-            CreateWindow();
-        }
-
-        private static void CreateWindow()
-        {
             // Opens the window, otherwise focuses it if it's already open.
             var window = GetWindow<BuildReportWindow>();
 
@@ -126,11 +121,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             window.minSize = new Vector2(280, 50);
 
             window.m_ReportListView.LoadNewestReport();
-        }
-
-        internal static void ShowWindowAfterBuild()
-        {
-            CreateWindow();
         }
 
         public void Consume(BuildLayout report)

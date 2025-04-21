@@ -13,6 +13,7 @@ using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
+using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
@@ -54,17 +55,36 @@ namespace UnityEditor.AddressableAssets
             var buildPath = PathConfig.GetBuildPath(target);
             var error = DoBuild(catalog, target, buildPath,
                 generateReport: generateReport, skipCompilePlayerScripts: false);
-            var duration = sw.Elapsed.TotalSeconds;
-            if (!Application.isBatchMode && generateReport)
-                BuildReportWindow.ShowWindowAfterBuild();
+            var result = error is null;
 
-            var resultCode = error is null ? "success" : "error";
-            L.I($"[AddressableBuilder] Build {resultCode} (duration : {TimeSpan.FromSeconds(duration):g})");
+            var resultCode = result ? "success" : "error";
+            L.I($"[AddressableBuilder] Build {resultCode} (duration : {sw.Elapsed:g})");
             if (!string.IsNullOrEmpty(error)) L.E(error);
 
             AddressablesUtils.InvokeAllMethodsWithAttribute<AddressablePostBuildCallbackAttribute>(
-                error is null, target, buildPath);
-            return error == null;
+                result, target, buildPath);
+
+            if (!Application.isBatchMode && generateReport && result)
+                BuildReportWindow.ShowWindow();
+            return result;
+        }
+
+        [Shortcut("Addressables/Build (No Report)")]
+        private static void Build()
+        {
+            Build(
+                AddressableCatalog.Default,
+                EditorUserBuildSettings.activeBuildTarget,
+                generateReport: false);
+        }
+
+        [Shortcut("Addressables/Build (With Report)")]
+        private static void BuildWithReport()
+        {
+            Build(
+                AddressableCatalog.Default,
+                EditorUserBuildSettings.activeBuildTarget,
+                generateReport: true);
         }
 
         private static string DoBuild(

@@ -1,3 +1,4 @@
+using UnityEditor.ShortcutManagement;
 using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.Build
@@ -38,9 +39,9 @@ namespace UnityEditor.AddressableAssets.Build
         }
 
         private const string _useCatalogKey = "it08jspS";
-        [ShortcutManagement.Shortcut("Addressables/Use AssetDatabase for Play Mode")]
+        [Shortcut("Addressables/Use AssetDatabase for Play Mode")]
         public static void UseAssetDatabaseForPlayMode() => SessionState.SetInt(_useCatalogKey, 0);
-        [ShortcutManagement.Shortcut("Addressables/Use Catalog for Play Mode")]
+        [Shortcut("Addressables/Use Catalog for Play Mode")]
         public static void UseCatalogForEditorMode() => SessionState.SetInt(_useCatalogKey, 1);
     }
 }
