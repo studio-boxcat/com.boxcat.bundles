@@ -20,8 +20,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         [SerializeField]
         private List<BuildReportListItem> m_BuildReportItems = new List<BuildReportListItem>();
 
-        private static Dictionary<BuildTarget, string> s_PlatformIconClasses = new Dictionary<BuildTarget, string>();
-
         [Serializable]
         internal class BuildReportListItem
         {
@@ -98,7 +96,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             BuildReportListItem reportListItem = m_BuildReportItems[index];
             var buildStatusImage = element.Q<Image>(BuildReportUtility.ReportsListItemBuildStatus);
-            var buildPlatformImage = element.Q<Image>(BuildReportUtility.ReportsListItemBuildPlatform);
+            var buildPlatformLabel = element.Q<Label>(BuildReportUtility.ReportsListItemBuildPlatform);
             var buildTimeStampLabel = element.Q<Label>(BuildReportUtility.ReportsListItemBuildTimestamp);
             var buildDurationLabel = element.Q<Label>(BuildReportUtility.ReportsListItemBuildDuration);
 
@@ -112,9 +110,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 buildStatusImage.image = string.IsNullOrEmpty(reportListItem.Layout.BuildError) ?
                     EditorGUIUtility.IconContent("CollabNew").image as Texture2D :
                     EditorGUIUtility.IconContent("CollabError").image as Texture2D;
-                buildPlatformImage.ClearClassList();
-                buildPlatformImage.AddToClassList("ReportsListItemPlatformIcon");
-                buildPlatformImage.AddToClassList(GetPlatformIconClass(reportListItem.Layout.BuildTarget));
+                buildPlatformLabel.text = reportListItem.Layout.BuildTarget.ToString();
                 buildTimeStampLabel.text = BuildReportUtility.TimeAgo.GetString(reportListItem.Layout.BuildStart);
                 buildDurationLabel.text = TimeSpan.FromSeconds(reportListItem.Layout.Duration).ToString("g");
             }
@@ -124,13 +120,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 evt.menu.AppendAction("Remove Report", (x) => RemoveReport(x), DropdownMenuAction.AlwaysEnabled, index);
                 evt.menu.AppendAction("Remove All Reports", (x) => RemoveAllReports(x), DropdownMenuAction.AlwaysEnabled);
             }));
-        }
-
-        private static string GetPlatformIconClass(BuildTarget target)
-        {
-            if (!s_PlatformIconClasses.ContainsKey(target))
-                s_PlatformIconClasses[target] = BuildReportUtility.GetIconClassName(target);
-            return s_PlatformIconClasses[target];
         }
 
         private void OnItemSelected(IEnumerable<object> items)

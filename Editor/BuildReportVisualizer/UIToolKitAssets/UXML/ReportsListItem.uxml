@@ -3,7 +3,7 @@
     <ui:VisualElement class="ReportsListItemContainer">
         <ui:VisualElement name="ReportsListItemContainerLefthandElements" class="ReportsListItemContainerLefthandElements">
             <ui:Image name="ReportsListItemBuildStatus" class="ReportsListItemBuildStatus" />
-            <ui:Image name="ReportsListItemBuildPlatform"/>
+            <ui:Label name="ReportsListItemBuildPlatform"/>
             <ui:Label name="ReportsListItemBuildTimestamp" text="------------" class="ReportsListItemBuildTimestamp" />
         </ui:VisualElement>
         <ui:VisualElement name="ReportsListItemContainerRighthandElements" class="ReportsListItemContainerRighthandElements">
