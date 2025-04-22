@@ -215,7 +215,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         {
             List<AnalyzeResult> results = new List<AnalyzeResult>();
 
-            if (!BuildUtility.CheckModifiedScenesAndAskToSave())
+            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });
@@ -383,7 +383,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             ClearAnalysis();
             List<AnalyzeResult> results = new List<AnalyzeResult>();
 
-            if (!BuildUtility.CheckModifiedScenesAndAskToSave())
+            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });

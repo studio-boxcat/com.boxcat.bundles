@@ -87,7 +87,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// <returns>List of results from analysis</returns>
         protected List<AnalyzeResult> CheckForDuplicateDependencies(AddressableCatalog catalog)
         {
-            if (!BuildUtility.CheckModifiedScenesAndAskToSave())
+            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 m_Results.Add(new AnalyzeResult {resultName = ruleName + "Cannot run Analyze with unsaved scenes"});

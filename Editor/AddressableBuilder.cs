@@ -92,7 +92,7 @@ namespace UnityEditor.AddressableAssets
             bool generateReport, bool skipCompilePlayerScripts)
         {
             var ctx = new AddressableAssetsBuildContext(catalog);
-            if (!BuildUtility.CheckModifiedScenesAndAskToSave())
+            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
                 return "Unsaved scenes";
 
             // cleanup old build data

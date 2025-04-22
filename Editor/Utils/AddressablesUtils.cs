@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor.SceneManagement;
 using UnityEngine.AddressableAssets;
+using UnityEngine.SceneManagement;
 using Directory = System.IO.Directory;
 using Object = UnityEngine.Object;
 using SearchOption = System.IO.SearchOption;
@@ -59,6 +62,34 @@ namespace UnityEditor.AddressableAssets
             var options = groups.Select(x => x.Key.Value).ToArray();
             var assetGUIDs = Selection.assetGUIDs.Distinct().Select(x => (AssetGUID) x).ToArray();
             SingleSelectionWindow.Show("Register Selection", options, index => catalog.AddEntries(groups[index], assetGUIDs));
+        }
+
+        /// <summary>
+        /// Used during the build to check for unsaved scenes and provide a user popup if there are any.
+        /// </summary>
+        /// <returns>True if there were no unsaved scenes, or if user hits "Save and Continue" on popup.
+        /// False if any scenes were unsaved, and user hits "Cancel" on popup.</returns>
+        public static bool CheckModifiedScenesAndAskToSave()
+        {
+            var dirtyScenes = new List<Scene>();
+            for (var i = 0; i < SceneManager.sceneCount; ++i)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.isDirty) dirtyScenes.Add(scene);
+            }
+            if (dirtyScenes.Count == 0)
+                return true;
+
+            if (EditorUtility.DisplayDialog(
+                    "Unsaved Scenes",
+                    "Modified Scenes must be saved to continue.",
+                    "Save and Continue", "Cancel") is false)
+            {
+                return false;
+            }
+
+            EditorSceneManager.SaveScenes(dirtyScenes.ToArray());
+            return true;
         }
 
         public static void TryCopyToPlatformProject(BuildTarget buildTarget, string buildPath, string projDir)
