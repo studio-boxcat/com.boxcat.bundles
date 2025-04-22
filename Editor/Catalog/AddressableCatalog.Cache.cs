@@ -59,11 +59,11 @@ namespace UnityEditor.AddressableAssets
             if (cache is null)
             {
                 cache = new Dictionary<Address, AssetEntry>(Groups.Length * 64, AddressComparer.Instance);
-                foreach (var assetGroup in Groups.Where(x => x.BundleId.AddressAccess()))
-                foreach (var assetEntry in assetGroup.Entries)
+                foreach (var g in Groups.Where(x => x.BundleId.AddressAccess()))
+                foreach (var e in g.Entries)
                 {
-                    if (!string.IsNullOrEmpty(assetEntry.Address))
-                        cache.Add(AddressUtils.Hash(assetEntry.Address), assetEntry);
+                    if (!string.IsNullOrEmpty(e.Address))
+                        cache.Add(AddressUtils.Hash(e.Address), e);
                 }
                 cache.TrimExcess();
             }
