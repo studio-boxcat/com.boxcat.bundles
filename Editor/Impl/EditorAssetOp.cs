@@ -15,12 +15,11 @@ namespace UnityEditor.AddressableAssets
         private TObject _result;
         private Action<TObject> _onComplete;
 
-        public EditorAssetOp(string path)
+        public EditorAssetOp(string path, float loadDelay)
         {
             _path = path;
 
             // load immediately if delay is 0
-            var loadDelay = SimulateDelay();
             if (loadDelay == 0)
             {
                 LoadImmediate();
@@ -107,15 +106,6 @@ namespace UnityEditor.AddressableAssets
 
         public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object> onComplete, object payload)
             => AddOnComplete(obj => onComplete(this, obj, payload));
-
-        private static float SimulateDelay()
-        {
-            if (EditorConfig.NoAssetDatabaseDelaySimulation) return 0f;
-            var noDelay = UnityEngine.Random.value < 0.05f; // 5% chance of no delay.
-            if (noDelay) return 0f;
-            var loadDelay = UnityEngine.Random.Range(0.05f, 0.15f); // 0.05s - 0.15s delay.
-            return loadDelay;
-        }
     }
 }
 

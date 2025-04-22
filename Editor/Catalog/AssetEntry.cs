@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets
         private Object _assetCache;
 
         [ShowInInspector, Required, AssetsOnly, OnValueChanged(nameof(Asset_OnValueChanged))]
-        public Object Asset
+        public Object MainAsset
         {
             get
             {
@@ -61,7 +61,7 @@ namespace UnityEditor.AddressableAssets
 
         public TAsset LoadAssetWithType<TAsset>() where TAsset : Object
         {
-            var asset = Asset;
+            var asset = MainAsset;
             if (asset is TAsset a) return a;
             var path = ResolveAssetPath();
             return AssetDatabase.LoadAssetAtPath<TAsset>(path);
@@ -69,13 +69,13 @@ namespace UnityEditor.AddressableAssets
 
         private void Asset_OnValueChanged(Object asset)
         {
-            _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(Asset));
+            _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(MainAsset));
             Address = asset.name;
         }
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            var asset = Asset;
+            var asset = MainAsset;
             if (!asset) return;
 
             if (!AssetDatabase.IsMainAsset(asset))

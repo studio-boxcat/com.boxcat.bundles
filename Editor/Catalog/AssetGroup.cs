@@ -79,7 +79,7 @@ namespace UnityEditor.AddressableAssets
         {
             _cachedAddressToAssetMap ??= Entries
                 .Where(e => !string.IsNullOrEmpty(e.Address))
-                .ToDictionary(e => e.Address, e => e.Asset);
+                .ToDictionary(e => e.Address, e => e.MainAsset);
             return _cachedAddressToAssetMap.TryGetValue(address, out asset);
         }
 

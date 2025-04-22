@@ -232,10 +232,10 @@ namespace UnityEditor.AddressableAssets
             }
 
             [ShowInInspector, OnValueChanged("ClearGroupCache"), DisableIf(nameof(_isGenerated))]
-            public Object Asset
+            public Object MainAsset
             {
-                get => AssetEntry.Asset;
-                set => AssetEntry.Asset = value;
+                get => AssetEntry.MainAsset;
+                set => AssetEntry.MainAsset = value;
             }
 
             private bool _isGenerated => AssetGroup.IsGenerated;

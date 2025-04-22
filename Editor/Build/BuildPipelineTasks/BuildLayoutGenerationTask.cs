@@ -646,7 +646,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 var guid = rootAsset.Guid;
                 if (guid.IsPath) continue; // builtin assets (e.g. MonoScript)
-                var entry = catalog.GetEntryByGUID((AssetGUID) guid);
+                var entry = catalog.GetEntry((AssetGUID) guid);
                 ApplyAddressablesInformationToExplicitAsset(rootAsset, entry);
             }
             return;

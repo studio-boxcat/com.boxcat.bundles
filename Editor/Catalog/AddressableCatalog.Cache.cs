@@ -32,7 +32,7 @@ namespace UnityEditor.AddressableAssets
                 : GetGroup(bundleId).Key;
         }
 
-        public bool TryGetEntryByGUID(AssetGUID guid, out AssetEntry entry)
+        public bool TryGetEntry(AssetGUID guid, out AssetEntry entry)
         {
             ref var cache = ref _cachedAssetGUIDToEntryMap;
             if (cache is null)
@@ -47,13 +47,13 @@ namespace UnityEditor.AddressableAssets
             return cache.TryGetValue(guid.Value, out entry);
         }
 
-        public AssetEntry GetEntryByGUID(AssetGUID guid)
+        public AssetEntry GetEntry(AssetGUID guid)
         {
-            return TryGetEntryByGUID(guid, out var entry) ? entry
+            return TryGetEntry(guid, out var entry) ? entry
                 : throw new KeyNotFoundException($"Entry with GUID '{guid}' not found.");
         }
 
-        public bool TryGetEntryByAddress(Address address, out AssetEntry entry)
+        public bool TryGetEntry(Address address, out AssetEntry entry)
         {
             ref var cache = ref _cachedAddressToEntryMap;
             if (cache is null)
@@ -71,11 +71,14 @@ namespace UnityEditor.AddressableAssets
             return cache.TryGetValue(address, out entry);
         }
 
-        public AssetEntry GetEntryByAddress(Address address)
+        public AssetEntry GetEntry(Address address)
         {
-            return TryGetEntryByAddress(address, out var entry) ? entry
+            return TryGetEntry(address, out var entry) ? entry
                 : throw new KeyNotFoundException($"Entry with address '{address}' not found.");
         }
+
+        public bool ContainsEntry(Address address) => TryGetEntry(address, out _);
+        public bool ContainsEntry(string address) => TryGetEntry(AddressUtils.Hash(address), out _);
 
         public List<string> GetAddressList()
         {

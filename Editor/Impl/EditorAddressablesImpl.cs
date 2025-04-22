@@ -29,10 +29,21 @@ namespace UnityEditor.AddressableAssets
         public IAssetOp<Scene> LoadSceneAsync(Address address) =>
             new EditorSceneOp(GetEntryByAddress(address).GUID);
 
-        private AssetEntry GetEntryByAddress(Address address) => _catalog.GetEntryByAddress(address);
+        private AssetEntry GetEntryByAddress(Address address) => _catalog.GetEntry(address);
         private AssetEntry GetEntryByLocation(AssetLocation loc) => _catalog.GetGroup(loc.BundleId)[loc.AssetIndex];
 
-        private static IAssetOp<TObject> CreateAssetOp<TObject>(AssetEntry entry) where TObject : Object =>
-            new EditorAssetOp<TObject>(entry.ResolveAssetPath());
+        private static IAssetOp<TObject> CreateAssetOp<TObject>(AssetEntry entry) where TObject : Object
+        {
+            return new EditorAssetOp<TObject>(entry.ResolveAssetPath(), SimulateDelay());
+
+            static float SimulateDelay()
+            {
+                if (EditorConfig.NoAssetDatabaseDelaySimulation) return 0f;
+                var noDelay = Random.value < 0.05f; // 5% chance of no delay.
+                if (noDelay) return 0f;
+                var loadDelay = Random.Range(0.05f, 0.15f); // 0.05s - 0.15s delay.
+                return loadDelay;
+            }
+        }
     }
 }
