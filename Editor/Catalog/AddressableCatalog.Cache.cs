@@ -11,7 +11,7 @@ namespace UnityEditor.AddressableAssets
         private Dictionary<AssetBundleId, AssetGroup> _cachedBundleIdToGroupMap;
         private Dictionary<Address, AssetEntry> _cachedAddressToEntryMap;
         private Dictionary<string, AssetEntry> _cachedAssetGUIDToEntryMap;
-        [NonSerialized] private List<string> _cachedAddressList;
+        [NonSerialized] private string[] _cachedAddressList;
 
         public bool TryGetGroup(GroupKey groupKey, out AssetGroup group)
         {
@@ -80,23 +80,21 @@ namespace UnityEditor.AddressableAssets
         public bool ContainsEntry(Address address) => TryGetEntry(address, out _);
         public bool ContainsEntry(string address) => TryGetEntry(AddressUtils.Hash(address), out _);
 
-        public List<string> GetAddressList()
+        public string[] GetAddressList()
         {
-            ref var cache = ref _cachedAddressList;
-            if (cache is not null)
-                return cache;
+            if (_cachedAddressList is not null)
+                return _cachedAddressList;
 
-            cache = new List<string>(Groups.Length * 64);
-            foreach (var assetGroup in Groups.Where(x => x.BundleId.AddressAccess()))
-            foreach (var assetEntry in assetGroup.Entries)
+            var cache = new List<string>(Groups.Length * 64);
+            foreach (var group in Groups.Where(x => x.BundleId.AddressAccess()))
+            foreach (var entry in group.Entries)
             {
-                var address = assetEntry.Address;
+                var address = entry.Address;
                 if (!string.IsNullOrEmpty(address))
                     cache.Add(address);
             }
-            cache.TrimExcess();
             cache.Sort();
-            return cache;
+            return _cachedAddressList = cache.ToArray();
         }
 
         private void ClearCache()
