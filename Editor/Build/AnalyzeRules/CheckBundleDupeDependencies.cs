@@ -24,14 +24,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             public GUID DuplicatedGroupGuid;
         }
 
-        /// <summary>
-        /// Results for duplicate results inverted check
-        /// </summary>
-        protected internal struct ExtraCheckBundleDupeData
-        {
-            public bool ResultsInverted;
-        }
-
         /// <inheritdoc />
         public override string ruleName => "Check Duplicate Bundle Dependencies";
 
@@ -74,8 +66,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
         private void RefreshDisplay()
         {
-            var savedData = AnalyzeSystem.GetDataForRule<ExtraCheckBundleDupeData>(this);
-            if (!savedData.ResultsInverted)
             {
                 m_Results = (from issueGroup in m_AllIssues
                     from item in issueGroup.Value
@@ -85,65 +75,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                         severity = MessageType.Warning
                     }).ToList();
             }
-            else
-            {
-                m_Results = (from issueGroup in m_AllIssues
-                    from item in issueGroup.Value
-                    select new AnalyzeResult
-                    {
-                        resultName = item + kDelimiter + issueGroup.Key,
-                        severity = MessageType.Warning
-                    }).ToList();
-            }
 
             if (m_Results.Count == 0)
                 m_Results.Add(noErrors);
-        }
-
-        internal override IList<CustomContextMenu> GetCustomContextMenuItems()
-        {
-            IList<CustomContextMenu> customItems = new List<CustomContextMenu>();
-            customItems.Add(new CustomContextMenu("Organize by Asset",
-                () => InvertDisplay(),
-                AnalyzeSystem.AnalyzeData.Data[ruleName].Any(),
-                AnalyzeSystem.GetDataForRule<ExtraCheckBundleDupeData>(this).ResultsInverted));
-            return customItems;
-        }
-
-        private void InvertDisplay()
-        {
-            List<AnalyzeResult> updatedResults = new List<AnalyzeResult>();
-            foreach (var result in AnalyzeSystem.AnalyzeData.Data[ruleName])
-            {
-                updatedResults.Add(new AnalyzeResult()
-                {
-                    //start at index 1 because the first result is going to be the rule name which we want to remain where it is.
-                    resultName = ReverseStringFromIndex(result.resultName, 1, kDelimiter),
-                    severity = result.severity
-                });
-            }
-
-            AnalyzeSystem.ReplaceAnalyzeData(this, updatedResults);
-            var savedData = AnalyzeSystem.GetDataForRule<ExtraCheckBundleDupeData>(this);
-            savedData.ResultsInverted = !savedData.ResultsInverted;
-            AnalyzeSystem.SaveDataForRule(this, savedData);
-            AnalyzeSystem.SerializeData();
-            AnalyzeSystem.ReloadUI();
-        }
-
-        private static string ReverseStringFromIndex(string data, int startingIndex, char delimiter)
-        {
-            string[] splitData = data.Split(delimiter);
-            int i = startingIndex;
-            int k = splitData.Length - 1;
-            while (i < k)
-            {
-                (splitData[i], splitData[k]) = (splitData[k], splitData[i]);
-                i++;
-                k--;
-            }
-
-            return string.Join(kDelimiter.ToString(), splitData);
         }
 
         /// <summary>

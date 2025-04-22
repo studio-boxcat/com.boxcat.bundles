@@ -11,22 +11,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
     [Serializable]
     internal class AnalyzeRule
     {
-        internal struct CustomContextMenu
-        {
-            public string MenuName;
-            public Action MenuAction;
-            public bool MenuEnabled;
-            public bool ToggledOn;
-
-            public CustomContextMenu(string name, Action action, bool enabled, bool toggledOn)
-            {
-                MenuName = name;
-                MenuAction = action;
-                MenuEnabled = enabled;
-                ToggledOn = toggledOn;
-            }
-        }
-
         [SerializeField]
         internal List<AnalyzeResult> m_Results = new List<AnalyzeResult>();
 
@@ -106,11 +90,6 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         public virtual void ClearAnalysis()
         {
             m_Results.Clear();
-        }
-
-        internal virtual IList<CustomContextMenu> GetCustomContextMenuItems()
-        {
-            return new List<CustomContextMenu>();
         }
     }
 }

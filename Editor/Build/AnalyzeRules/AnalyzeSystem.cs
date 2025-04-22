@@ -114,32 +114,6 @@ namespace UnityEditor.AddressableAssets.Build
             ReloadUI();
         }
 
-        internal static void SaveDataForRule(AnalyzeRule rule, object data)
-        {
-            string jsonData = JsonUtility.ToJson(data);
-            string path = $"{AnalyzeRuleDataFolder}/{rule.ruleName}Data.json";
-            File.WriteAllText(path, jsonData);
-        }
-
-        internal static T GetDataForRule<T>(AnalyzeRule rule)
-        {
-            string path = $"{AnalyzeRuleDataFolder}/{rule.ruleName}Data.json";
-            if (!File.Exists(path))
-                return default;
-            string fileRead = File.ReadAllText(path);
-            return JsonUtility.FromJson<T>(fileRead);
-        }
-
-        internal static void ReplaceAnalyzeData(AnalyzeRule rule, List<AnalyzeRule.AnalyzeResult> results)
-        {
-            m_AnalyzeData.Data[rule.ruleName] = results;
-        }
-
-        internal static List<AnalyzeRule.AnalyzeResult> RefreshAnalysis<TRule>() where TRule : AnalyzeRule
-        {
-            return RefreshAnalysis(FindRule<TRule>());
-        }
-
         internal static List<AnalyzeRule.AnalyzeResult> RefreshAnalysis(AnalyzeRule rule)
         {
             if (rule == null)
@@ -153,11 +127,6 @@ namespace UnityEditor.AddressableAssets.Build
             return AnalyzeData.Data[rule.ruleName];
         }
 
-        internal static void ClearAnalysis<TRule>() where TRule : AnalyzeRule
-        {
-            ClearAnalysis(FindRule<TRule>());
-        }
-
         internal static void ClearAnalysis(AnalyzeRule rule)
         {
             if (rule == null)
@@ -169,15 +138,6 @@ namespace UnityEditor.AddressableAssets.Build
             rule.ClearAnalysis();
             ;
             AnalyzeData.Data[rule.ruleName].Clear();
-        }
-
-        private static AnalyzeRule FindRule<TRule>() where TRule : AnalyzeRule
-        {
-            var rule = Rules.FirstOrDefault(r => r.GetType().IsAssignableFrom(typeof(TRule)));
-            if (rule == null)
-                throw new ArgumentException($"No rule found corresponding to type {typeof(TRule)}");
-
-            return rule;
         }
     }
 }
