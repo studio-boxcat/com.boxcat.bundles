@@ -3,9 +3,6 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets
 {
-    /// <summary>
-    /// Entry point for Addressable API, this provides a simpler interface than using ResourceManager directly as it assumes string address type.
-    /// </summary>
     public static class Addressables
     {
         [CanBeNull]
@@ -13,7 +10,7 @@ namespace UnityEngine.AddressableAssets
         private static IAddressablesImpl _impl => _implCache ??= new AddressablesImpl(PathConfig.CatalogUri);
 
         [MustUseReturnValue]
-        public static IAssetOp<TObject> LoadAssetAsync<TObject>(string key) where TObject : Object
+        public static IAssetOp<TObject> LoadAssetAsync<TObject>(Address key) where TObject : Object
         {
             L.I($"[Addressables] Load Start: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             var op = _impl.LoadAssetAsync<TObject>(key);
@@ -24,7 +21,7 @@ namespace UnityEngine.AddressableAssets
         }
 
         [MustUseReturnValue]
-        public static TObject LoadAsset<TObject>(string key) where TObject : Object
+        public static TObject LoadAsset<TObject>(Address key) where TObject : Object
         {
             L.I($"[Addressables] Load: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             return _impl.LoadAsset<TObject>(key);
@@ -49,7 +46,7 @@ namespace UnityEngine.AddressableAssets
             return _impl.LoadAsset<TObject>(key);
         }
 
-        public static IAssetOp<Scene> LoadSceneAsync(string key)
+        public static IAssetOp<Scene> LoadSceneAsync(Address key)
         {
             L.I($"[Addressables] Load Start: {key} (Scene) ~ {_impl.GetType().Name}");
             var op = _impl.LoadSceneAsync(key);

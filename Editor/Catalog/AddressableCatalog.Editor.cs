@@ -83,6 +83,12 @@ namespace UnityEditor.AddressableAssets
         }
 
         [Button("Generate"), ButtonGroup]
+        private void GenerateGroupsAndCodes()
+        {
+            GenerateGroups();
+            AddressablesCodeGenerator.GenerateCode(this, AssetDatabase.GUIDToAssetPath("73dee367a1284cea987dd7ac55b7b5e9"));
+        }
+
         private void GenerateGroups()
         {
             var groups = Groups.Where(x => !x.IsGenerated).ToList(); // keep normal groups

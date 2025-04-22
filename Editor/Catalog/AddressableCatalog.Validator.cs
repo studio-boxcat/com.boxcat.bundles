@@ -47,7 +47,7 @@ namespace UnityEditor.AddressableAssets
                 var hash = AddressUtils.Hash(entry.Address);
                 if (addressHashToStr.TryGetValue(hash, out var orgStr))
                 {
-                    result.AddError($"Duplicate address: {orgStr} and {entry.Address} have the same hash: {hash.Name()}");
+                    result.AddError($"Duplicate address: {orgStr} and {entry.Address} have the same hash: {hash.Hex()}");
                 }
                 else
                 {

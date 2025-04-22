@@ -14,10 +14,10 @@ namespace UnityEditor.AddressableAssets
             _catalog = catalog;
         }
 
-        public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object =>
+        public IAssetOp<TObject> LoadAssetAsync<TObject>(Address address) where TObject : Object =>
             CreateAssetOp<TObject>(GetEntryByAddress(address));
 
-        public TObject LoadAsset<TObject>(string address) where TObject : Object =>
+        public TObject LoadAsset<TObject>(Address address) where TObject : Object =>
             GetEntryByAddress(address).LoadAssetWithType<TObject>();
 
         public IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object =>
@@ -26,10 +26,10 @@ namespace UnityEditor.AddressableAssets
         public TObject LoadAsset<TObject>(AssetLocation loc) where TObject : Object =>
             GetEntryByLocation(loc).LoadAssetWithType<TObject>();
 
-        public IAssetOp<Scene> LoadSceneAsync(string address) =>
+        public IAssetOp<Scene> LoadSceneAsync(Address address) =>
             new EditorSceneOp(GetEntryByAddress(address).GUID);
 
-        private AssetEntry GetEntryByAddress(string address) => _catalog.GetEntryByAddress(address);
+        private AssetEntry GetEntryByAddress(Address address) => _catalog.GetEntryByAddress(address);
         private AssetEntry GetEntryByLocation(AssetLocation loc) => _catalog.GetGroup(loc.BundleId)[loc.AssetIndex];
 
         private static IAssetOp<TObject> CreateAssetOp<TObject>(AssetEntry entry) where TObject : Object =>

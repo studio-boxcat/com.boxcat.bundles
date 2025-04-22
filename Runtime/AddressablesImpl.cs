@@ -22,17 +22,16 @@ namespace UnityEngine.AddressableAssets
             _loader.LoadMonoScriptBundle(); // load mono script bundle immediately
         }
 
-        public IAssetOp<TObject> LoadAssetAsync<TObject>(string address) where TObject : Object
+        public IAssetOp<TObject> LoadAssetAsync<TObject>(Address address) where TObject : Object
         {
             var b = GetOpBlock(address, _bundledAssetProvider);
             return new AssetOp<TObject>(b);
         }
 
-        public TObject LoadAsset<TObject>(string address) where TObject : Object
+        public TObject LoadAsset<TObject>(Address address) where TObject : Object
         {
-            var addressHash = AddressUtils.Hash(address);
-            var bundleIndex = _catalog.GetContainingBundle(addressHash);
-            return LoadAsset<TObject>(bundleIndex, addressHash.Name());
+            var bundleIndex = _catalog.GetContainingBundle(address);
+            return LoadAsset<TObject>(bundleIndex, address.Hex());
         }
 
         public IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object
@@ -47,7 +46,7 @@ namespace UnityEngine.AddressableAssets
             return LoadAsset<TObject>(bundleIndex, loc.AssetIndex.Name());
         }
 
-        public IAssetOp<Scene> LoadSceneAsync(string address)
+        public IAssetOp<Scene> LoadSceneAsync(Address address)
         {
             var b = GetOpBlock(address, _sceneProvider);
             return new AssetOp<Scene>(b);
@@ -85,11 +84,10 @@ namespace UnityEngine.AddressableAssets
             return b;
         }
 
-        private AssetOpBlock GetOpBlock(string address, IResourceProvider provider)
+        private AssetOpBlock GetOpBlock(Address address, IResourceProvider provider)
         {
-            var addressHash = AddressUtils.Hash(address);
-            var bundleIndex = _catalog.GetContainingBundle(addressHash);
-            return GetOpBlock(bundleIndex, addressHash.Name(), provider);
+            var bundleIndex = _catalog.GetContainingBundle(address);
+            return GetOpBlock(bundleIndex, address.Hex(), provider);
         }
 
         private AssetOpBlock GetOpBlock(AssetLocation loc, IResourceProvider provider)
