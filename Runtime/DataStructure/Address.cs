@@ -1,11 +1,24 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.AddressableAssets
 {
     public enum Address : uint { }
+
+    [Serializable, InlineProperty]
+    public struct AddressWrap
+    {
+        [HideLabel]
+        public Address Value;
+        public AddressWrap(Address value) => Value = value;
+        public override string ToString() => Value.ReadableString();
+        public static implicit operator Address(AddressWrap value) => value.Value;
+        public static implicit operator AddressWrap(Address value) => new(value);
+    }
 
     public static class AddressUtils
     {
