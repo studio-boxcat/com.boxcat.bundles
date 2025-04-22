@@ -159,19 +159,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 return EditorGUIUtility.FindTexture(path);
         }
 
-        public static void SwitchClasses(this VisualElement element, string classToAdd, string classToRemove)
-        {
-            if (!element.ClassListContains(classToAdd))
-                element.AddToClassList(classToAdd);
-            element.RemoveFromClassList(classToRemove);
-        }
-
-        public static void SwitchVisibility(VisualElement first, VisualElement second, bool showFirst = true)
-        {
-            SetVisibility(first, showFirst);
-            SetVisibility(second, !showFirst);
-        }
-
         public static void SetVisibility(VisualElement element, bool visible)
         {
             SetElementDisplay(element, visible);
@@ -197,59 +184,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return ret;
         }
 
-        public static string GetIconClassName(BuildTarget target)
-        {
-            string iconClassName;
-            switch (target)
-            {
-                case BuildTarget.Android:
-                    iconClassName = BuildTarget.Android.ToString();
-                    break;
-                case BuildTarget.StandaloneOSX:
-                    iconClassName = BuildTarget.StandaloneOSX.ToString();
-                    break;
-                case BuildTarget.StandaloneWindows:
-                case BuildTarget.StandaloneWindows64:
-                    iconClassName = BuildTarget.StandaloneWindows.ToString();
-                    break;
-                case BuildTarget.iOS:
-                    iconClassName = BuildTarget.iOS.ToString();
-                    break;
-                case BuildTarget.StandaloneLinux64:
-                    iconClassName = BuildTarget.StandaloneLinux64.ToString();
-                    break;
-                case BuildTarget.WebGL:
-                    iconClassName = BuildTarget.WebGL.ToString();
-                    break;
-                case BuildTarget.WSAPlayer:
-                    iconClassName = BuildTarget.WSAPlayer.ToString();
-                    break;
-                case BuildTarget.PS4:
-                case BuildTarget.PS5:
-                    iconClassName = BuildTarget.PS4.ToString();
-                    break;
-                case BuildTarget.XboxOne:
-                case BuildTarget.GameCoreXboxOne:
-                case BuildTarget.GameCoreXboxSeries:
-                    iconClassName = BuildTarget.XboxOne.ToString();
-                    break;
-                case BuildTarget.tvOS:
-                    iconClassName = BuildTarget.tvOS.ToString();
-                    break;
-                case BuildTarget.Switch:
-                    iconClassName = BuildTarget.Switch.ToString();
-                    break;
-#if !UNITY_2022_2_OR_NEWER
-                case BuildTarget.Lumin:
-                    iconClassName = BuildTarget.Lumin.ToString();
-                    break;
-# endif
-                default:
-                    iconClassName = "NoIcon";
-                    break;
-            }
-            return iconClassName;
-        }
         public static string GetDenominatedBytesString(ulong bytes)
         {
             if (bytes < 1024)
@@ -272,18 +206,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             ulong gbytes = mbytes / 1024;
             dec = Mathf.FloorToInt(((mbytes % 1024) / 1024f) * 100);
             return $"{gbytes}.{Mathf.FloorToInt(dec)} GB";
-        }
-
-        internal static string GetDeliminatedList(char delimChar, List<string> lst)
-        {
-            string itemsStr = string.Empty;
-            for (int i = 0; i < lst.Count; i++)
-            {
-                if (i > 0)
-                    itemsStr += $"{delimChar} ";
-                itemsStr += lst[i];
-            }
-            return itemsStr;
         }
 
         internal static class TimeAgo
