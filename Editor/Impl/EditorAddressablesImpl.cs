@@ -38,6 +38,7 @@ namespace UnityEditor.AddressableAssets
 
             static float SimulateDelay()
             {
+                if (Application.isPlaying is false) return 0f;
                 if (EditorConfig.NoAssetDatabaseDelaySimulation) return 0f;
                 var noDelay = Random.value < 0.05f; // 5% chance of no delay.
                 if (noDelay) return 0f;
