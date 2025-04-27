@@ -13,8 +13,11 @@ namespace UnityEditor.AddressableAssets
             using (b.Public_Static_Class("Addresses"))
             {
                 var addressList = catalog.GetAddressList();
-                foreach (var address in addressList)
-                    b.Public_Const_Field("Address", address, $"(Address) {AddressUtils.Hash(address)}u");
+                foreach (var addressName in addressList)
+                {
+                    var address = AddressUtils.Hash(addressName);
+                    b.Public_Const_Field("Address", addressName, $"(Address) {(uint) address}u", comment: address.Hex());
+                }
             }
 
             b.WriteTo(path);
