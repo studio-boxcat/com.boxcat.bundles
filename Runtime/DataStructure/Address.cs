@@ -42,7 +42,7 @@ namespace UnityEngine.AddressableAssets
             return (Address) hash;
         }
 
-        public static string Hex(this Address address)
+        internal static string Hex(this Address address)
         {
             return Util.Hex.To8(address.Value());
         }
