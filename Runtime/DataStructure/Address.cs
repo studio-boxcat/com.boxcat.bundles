@@ -47,20 +47,15 @@ namespace UnityEngine.AddressableAssets
             return Util.Hex.To8(address.Value());
         }
 
-#if DEBUG
         private static Dictionary<Address, string> _addressToString;
-#endif
 
         public static string ReadableString(this Address address)
         {
-#if DEBUG
             _addressToString ??= typeof(Addresses).GetFields().ToDictionary(
                 field => (Address) field.GetValue(null),
                 field => field.Name);
-            if (_addressToString.TryGetValue(address, out var name))
-                return name;
-#endif
-            return Hex(address);
+            return _addressToString.TryGetValue(address, out var name)
+                ? name : Hex(address);
         }
     }
 }
