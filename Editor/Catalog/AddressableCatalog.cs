@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -62,6 +63,21 @@ namespace UnityEditor.AddressableAssets
             group.Internal_AddEntries(guids);
             EditorUtility.SetDirty(this);
             ClearCache();
+        }
+
+        public IEnumerable<AssetEntry> TraverseEntries_AddressAccess()
+        {
+            foreach (var group in Groups)
+            {
+                if (group.BundleId.AddressAccess() is false)
+                    continue;
+
+                foreach (var entry in group.Entries)
+                {
+                    if (string.IsNullOrEmpty(entry.Address) is false)
+                        yield return entry;
+                }
+            }
         }
 
         internal AssetBundleBuild[] GenerateBundleBuilds()

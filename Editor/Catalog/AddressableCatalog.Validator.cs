@@ -38,12 +38,8 @@ namespace UnityEditor.AddressableAssets
 
             // Check for duplicate addresses
             var addressHashToStr = new Dictionary<Address, string>(); // hash address to string address
-            foreach (var group in Groups.Where(x => x.BundleId.AddressAccess())) // check only bundles with address access.
-            foreach (var entry in group.Entries)
+            foreach (var entry in TraverseEntries_AddressAccess()) // check only bundles with address access.
             {
-                if (string.IsNullOrEmpty(entry.Address))
-                    continue;
-
                 var hash = AddressUtils.Hash(entry.Address);
                 if (addressHashToStr.TryGetValue(hash, out var orgStr))
                 {

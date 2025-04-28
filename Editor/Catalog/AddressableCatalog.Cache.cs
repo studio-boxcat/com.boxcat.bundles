@@ -59,12 +59,8 @@ namespace UnityEditor.AddressableAssets
             if (cache is null)
             {
                 cache = new Dictionary<Address, AssetEntry>(Groups.Length * 64, AddressComparer.Instance);
-                foreach (var g in Groups.Where(x => x.BundleId.AddressAccess()))
-                foreach (var e in g.Entries)
-                {
-                    if (!string.IsNullOrEmpty(e.Address))
-                        cache.Add(AddressUtils.Hash(e.Address), e);
-                }
+                foreach (var e in TraverseEntries_AddressAccess())
+                    cache.Add(AddressUtils.Hash(e.Address), e);
                 cache.TrimExcess();
             }
 
@@ -85,16 +81,9 @@ namespace UnityEditor.AddressableAssets
             if (_cachedAddressList is not null)
                 return _cachedAddressList;
 
-            var cache = new List<string>(Groups.Length * 64);
-            foreach (var group in Groups.Where(x => x.BundleId.AddressAccess()))
-            foreach (var entry in group.Entries)
-            {
-                var address = entry.Address;
-                if (!string.IsNullOrEmpty(address))
-                    cache.Add(address);
-            }
-            cache.Sort();
-            return _cachedAddressList = cache.ToArray();
+            var cache = TraverseEntries_AddressAccess().Select(x => x.Address).ToArray();
+            Array.Sort(cache, StringComparer.Ordinal);
+            return _cachedAddressList = cache;
         }
 
         private void ClearCache()
