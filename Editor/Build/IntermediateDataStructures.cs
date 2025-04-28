@@ -54,7 +54,7 @@ namespace UnityEditor.AddressableAssets
                 var name = System.IO.Path.GetFileName(AssetDatabase.GUIDToAssetPath(GUID.Value));
                 return $"{name}  ({GUID}) > {Bundle}";
             }
-            return $"{Address.Value.ReadableString()} ({GUID}) > {Bundle}";
+            return $"{Address.Value.Name()} ({GUID}) > {Bundle}";
         }
     }
 }

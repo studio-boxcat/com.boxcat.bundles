@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets
             var catalog = AddressableCatalog.Default;
             if (catalog.ContainsEntry(value) is false)
             {
-                result.AddError($"Given Address is not registered: {value.ReadableString()}");
+                result.AddError($"Given Address is not registered: {value.Name()}");
                 return;
             }
         }

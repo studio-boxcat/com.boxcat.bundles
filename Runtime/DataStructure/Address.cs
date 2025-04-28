@@ -15,7 +15,7 @@ namespace UnityEngine.AddressableAssets
         [HideLabel]
         public Address Value;
         public AddressWrap(Address value) => Value = value;
-        public override string ToString() => Value.ReadableString();
+        public override string ToString() => Value.Name();
         public static implicit operator Address(AddressWrap value) => value.Value;
         public static implicit operator AddressWrap(Address value) => new(value);
     }
@@ -47,14 +47,21 @@ namespace UnityEngine.AddressableAssets
             return Util.Hex.To8(address.Value());
         }
 
-        private static Dictionary<Address, string> _addressToString;
+        private static Dictionary<Address, string> _addressNames;
 
-        public static string ReadableString(this Address address)
+        public static Dictionary<Address, string> AddressNames
         {
-            _addressToString ??= typeof(Addresses).GetFields().ToDictionary(
-                field => (Address) field.GetValue(null),
-                field => field.Name);
-            return _addressToString.TryGetValue(address, out var name)
+            get
+            {
+                return _addressNames ??= typeof(Addresses).GetFields().ToDictionary(
+                    field => (Address) field.GetValue(null),
+                    field => field.Name);
+            }
+        }
+
+        public static string Name(this Address address)
+        {
+            return AddressNames.TryGetValue(address, out var name)
                 ? name : Hex(address);
         }
     }

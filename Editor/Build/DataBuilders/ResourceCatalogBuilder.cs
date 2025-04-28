@@ -71,7 +71,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             Assert.AreEqual(bundleCount, spanData.Length, "Invalid span data length.");
 
             L.I("[ResourceCatalogBuilder] All addresses: " + string.Join(", ",
-                assets.Select(x => x.Address.ReadableString())));
+                assets.Select(x => x.Address.Name())));
             Assert.AreEqual(assets.Length, assets.Select(x => x.Address).Distinct().Count(),
                 "Duplicate address found.");
 

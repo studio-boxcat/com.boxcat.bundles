@@ -74,7 +74,7 @@ namespace UnityEditor.AddressableAssets
         public AssetEntry GetEntry(Address address)
         {
             return TryGetEntry(address, out var entry) ? entry
-                : throw new KeyNotFoundException($"Entry with address '{address.ReadableString()}' not found.");
+                : throw new KeyNotFoundException($"Entry with address '{address.Name()}' not found.");
         }
 
         public bool ContainsEntry(Address address) => TryGetEntry(address, out _);

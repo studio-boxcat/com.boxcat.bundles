@@ -141,7 +141,7 @@ namespace UnityEngine.AddressableAssets
                 }
             }
 
-            throw new KeyNotFoundException("Address not found in ResourceCatalog: " + address.ReadableString());
+            throw new KeyNotFoundException("Address not found in ResourceCatalog: " + address.Name());
         }
 
         /// <summary>
