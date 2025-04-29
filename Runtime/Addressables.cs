@@ -12,10 +12,10 @@ namespace UnityEngine.AddressableAssets
         [MustUseReturnValue]
         public static IAssetOp<TObject> LoadAssetAsync<TObject>(Address key) where TObject : Object
         {
-            L.I($"[Addressables] Load Start: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            L.I($"[Addressables] Load Start: {key.Name()} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             var op = _impl.LoadAssetAsync<TObject>(key);
 #if DEBUG
-            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key);
+            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key.Name());
 #endif
             return op;
         }
@@ -23,7 +23,7 @@ namespace UnityEngine.AddressableAssets
         [MustUseReturnValue]
         public static TObject LoadAsset<TObject>(Address key) where TObject : Object
         {
-            L.I($"[Addressables] Load: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
+            L.I($"[Addressables] Load: {key.Name()} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             return _impl.LoadAsset<TObject>(key);
         }
 
@@ -48,10 +48,10 @@ namespace UnityEngine.AddressableAssets
 
         public static IAssetOp<Scene> LoadSceneAsync(Address key)
         {
-            L.I($"[Addressables] Load Start: {key} (Scene) ~ {_impl.GetType().Name}");
+            L.I($"[Addressables] Load Start: {key.Name()} (Scene) ~ {_impl.GetType().Name}");
             var op = _impl.LoadSceneAsync(key);
 #if DEBUG
-            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key);
+            op.AddOnComplete(static (o, payload) => L.I($"[Addressables] Load Done: {payload} - {o.name}"), key.Name());
 #endif
             return op;
         }
