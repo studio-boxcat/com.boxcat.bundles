@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Threading.Tasks;
 using UnityEngine.AddressableAssets;
@@ -108,5 +107,3 @@ namespace UnityEditor.AddressableAssets
             => AddOnComplete(obj => onComplete(this, obj, payload));
     }
 }
-
-#endif
