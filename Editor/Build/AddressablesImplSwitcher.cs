@@ -29,7 +29,7 @@ namespace UnityEditor.AddressableAssets.Build
                 L.I("[Addressables] Entered Edit Mode, use AssetDatabase");
                 useCatalog = false; // use AssetDatabase on editor mode
             }
-            else
+            else // ExitingEditMode
             {
                 useCatalog = SessionState.GetInt(_useCatalogKey, 0) is 1; // default: use AssetDatabase
                 L.I("[Addressables] Exiting Edit Mode, use " + (useCatalog ? "Catalog" : "AssetDatabase"));
