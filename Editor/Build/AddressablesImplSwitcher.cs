@@ -38,7 +38,7 @@ namespace UnityEditor.AddressableAssets.Build
             Addressables.ForceSetImpl(useCatalog ? null : _impl);
         }
 
-        private const string _useCatalogKey = "it08jspS";
+        private const string _useCatalogKey = "lTMyCwCl";
         [Shortcut("Addressables/Use AssetDatabase for Play Mode")]
         public static void UseAssetDatabaseForPlayMode() => SessionState.SetInt(_useCatalogKey, 0);
         [Shortcut("Addressables/Use Catalog for Play Mode")]
