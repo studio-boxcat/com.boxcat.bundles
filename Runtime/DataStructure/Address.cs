@@ -44,7 +44,7 @@ namespace UnityEngine.AddressableAssets
 
         internal static string Hex(this Address address)
         {
-            return Util.Hex.To8(address.Value());
+            return global::Hex.To8(address.Value());
         }
 
         private static Dictionary<Address, string> _addressNames;
