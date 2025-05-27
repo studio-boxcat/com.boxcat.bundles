@@ -53,7 +53,7 @@ namespace UnityEditor.AddressableAssets
                 if (i < count)
                 {
                     var e = Entries[i];
-                    if (e.Address == i.ToStringSmallNumber())
+                    if (e.Address == i.StrSmall())
                         return e;
                 }
 
@@ -64,7 +64,7 @@ namespace UnityEditor.AddressableAssets
                 {
                     var m = (l + r) / 2;
                     var e = Entries[m];
-                    if (e.Address == i.ToStringSmallNumber()) return e;
+                    if (e.Address == i.StrSmall()) return e;
                     if (i < int.Parse(e.Address)) r = m - 1;
                     else l = m + 1;
                 }

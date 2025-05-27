@@ -21,9 +21,9 @@ namespace UnityEngine.AddressableAssets
 
     public static class AssetIndexUtils
     {
-        public static uint Value(this AssetIndex index) => (uint) index;
+        public static uint Val(this AssetIndex index) => (uint) index;
 
-        public static string Name(this AssetIndex index) => ((int) index).ToStringSmallNumber();
+        public static string Name(this AssetIndex index) => ((int) index).StrSmall();
 
         public static AssetLocation Locate(this AssetBundleMajor major, byte minor, byte index)
         {
