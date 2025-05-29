@@ -57,6 +57,33 @@ namespace Bundles
             return op;
         }
 
+        // helpers
+        public static IAssetOp<Object> Load(Address key) => Load<Object>(key);
+        public static IAssetOp<Object> Load(AssetLocation key) => Load<Object>(key);
+        public static Object LoadSync(Address key) => LoadSync<Object>(key);
+        public static Object LoadSync(AssetLocation key) => LoadSync<Object>(key);
+        public static IAssetOp<GameObject> LoadPrefab(Address key) => Load<GameObject>(key);
+        public static IAssetOp<GameObject> LoadPrefab(AssetLocation key) => Load<GameObject>(key);
+        public static GameObject LoadPrefabSync(Address key) => LoadSync<GameObject>(key);
+        public static GameObject LoadPrefabSync(AssetLocation key) => LoadSync<GameObject>(key);
+        public static IAssetOp<Texture2D> LoadTexture(Address key) => Load<Texture2D>(key);
+        public static IAssetOp<Texture2D> LoadTexture(AssetLocation key) => Load<Texture2D>(key);
+        public static Texture2D LoadTextureSync(Address key) => LoadSync<Texture2D>(key);
+        public static Texture2D LoadTextureSync(AssetLocation key) => LoadSync<Texture2D>(key);
+        public static IAssetOp<Sprite> LoadSprite(Address key) => Load<Sprite>(key);
+        public static IAssetOp<Sprite> LoadSprite(AssetLocation key) => Load<Sprite>(key);
+        public static Sprite LoadSpriteSync(Address key) => LoadSync<Sprite>(key);
+        public static Sprite LoadSpriteSync(AssetLocation key) => LoadSync<Sprite>(key);
+        public static IAssetOp<Mesh> LoadMesh(Address key) => Load<Mesh>(key);
+        public static IAssetOp<Mesh> LoadMesh(AssetLocation key) => Load<Mesh>(key);
+        public static Mesh LoadMeshSync(Address key) => LoadSync<Mesh>(key);
+        public static Mesh LoadMeshSync(AssetLocation key) => LoadSync<Mesh>(key);
+        public static IAssetOp<Material> LoadMaterial(Address key) => Load<Material>(key);
+        public static IAssetOp<Material> LoadMaterial(AssetLocation key) => Load<Material>(key);
+        public static Material LoadMaterialSync(Address key) => LoadSync<Material>(key);
+        public static Material LoadMaterialSync(AssetLocation key) => LoadSync<Material>(key);
+
+
 #if UNITY_EDITOR
         internal static void ForceSetImpl(IBundlesImpl impl)
         {
