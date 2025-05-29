@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/UIToolKitAssets/StyleSheets/ReportListItem.uss?fileID=7433441132597879392&amp;guid=7649e3e161c83ce45aab9de9bd6c8625&amp;type=3#ReportListItem" />
+    <Style src="project://database/Packages/com.boxcat.bundles/Editor/BuildReportVisualizer/UIToolKitAssets/StyleSheets/ReportListItem.uss?fileID=7433441132597879392&amp;guid=7649e3e161c83ce45aab9de9bd6c8625&amp;type=3#ReportListItem" />
     <ui:VisualElement class="ReportsListItemContainer">
         <ui:VisualElement name="ReportsListItemContainerLefthandElements" class="ReportsListItemContainerLefthandElements">
             <ui:Image name="ReportsListItemBuildStatus" class="ReportsListItemBuildStatus" />

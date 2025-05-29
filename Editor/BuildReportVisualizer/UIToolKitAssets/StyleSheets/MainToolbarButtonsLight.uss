@@ -1,11 +1,11 @@
 .MainToolbarCollapseLeftPaneButtonIcon{
     width: 16px;
     height: 16px;
-    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_LightTheme.png');
+    background-image: resource('Packages/com.boxcat.bundles/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_LeftPanel_LightTheme.png');
 }
 
 .MainToolbarCollapseRightPaneButtonIcon{
     width: 16px;
     height: 16px;
-    background-image: resource('Packages/com.boxcat.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_RightPanel_LightTheme.png');
+    background-image: resource('Packages/com.boxcat.bundles/Editor/BuildReportVisualizer/BuildReport Resources/Icons/Button_RightPanel_LightTheme.png');
 }

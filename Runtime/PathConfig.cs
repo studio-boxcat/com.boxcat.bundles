@@ -46,9 +46,9 @@ namespace UnityEngine.AddressableAssets
         }
 
 #if UNITY_EDITOR
-        public const string LibraryPath = "Library/com.boxcat.addressables/";
-        public const string BuildReportPath = "Library/com.boxcat.addressables/BuildReports/";
-        public const string TempPath = "Library/com.boxcat.addressables/Temp/";
+        public const string LibraryPath = "Library/com.boxcat.bundles/";
+        public const string BuildReportPath = "Library/com.boxcat.bundles/BuildReports/";
+        public const string TempPath = "Library/com.boxcat.bundles/Temp/";
 
         private static string _buildPath;
         public static string GetBuildPath(UnityEditor.BuildTarget buildTarget) => $"{LibraryPath}{buildTarget}";

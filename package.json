@@ -1,5 +1,5 @@
 {
-  "name": "com.boxcat.addressables",
+  "name": "com.boxcat.bundles",
   "version": "1.21.12",
   "dependencies": {
     "com.unity.scriptablebuildpipeline": "1.21.22"
