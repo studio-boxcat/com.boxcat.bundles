@@ -51,13 +51,13 @@ namespace Bundles.Editor
 
         private static string GetLayoutFilePathForFormat()
         {
-            return $"{PathConfig.LibraryPath}buildlayout.txt";
+            return $"{Paths.LibraryPath}buildlayout.txt";
         }
 
         private static string TimeStampedReportPath(DateTime now)
         {
             var timestamp = $"{now.Year:D4}.{now.Month:D2}.{now.Day:D2}.{now.Hour:D2}.{now.Minute:D2}.{now.Second:D2}";
-            return $"{PathConfig.BuildReportPath}buildlayout_{timestamp}.json";
+            return $"{Paths.BuildReportPath}buildlayout_{timestamp}.json";
         }
 
         private static AssetBucket GetOrCreate(Dictionary<AssetId, AssetBucket> buckets, AssetId asset)
@@ -539,7 +539,7 @@ namespace Bundles.Editor
                 if (b.Id is AssetBundleId.MonoScript)
                     layout.BuiltInBundles.Add(b);
 
-                var filePath = PathConfig.GetAssetBundleLoadPath(b.Id);
+                var filePath = Paths.GetAssetBundleLoadPath(b.Id);
                 b.FileSize = GetFileSizeFromPath(filePath, out bool success);
                 if (!success)
                     L.W($"AssetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");

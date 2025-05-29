@@ -125,7 +125,7 @@ namespace Bundles.Editor
                     BuildTarget.iOS => "/Data/Raw/",
                     _ => throw new ArgumentOutOfRangeException(nameof(buildTarget), buildTarget, null)
                 };
-                return projDir + subDirs + PathConfig.AA;
+                return projDir + subDirs + Paths.AA;
             }
         }
     }

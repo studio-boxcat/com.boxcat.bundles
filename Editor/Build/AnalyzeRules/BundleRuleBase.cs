@@ -58,7 +58,7 @@ namespace Bundles.Editor
         protected internal ReturnCode RefreshBuild(BundlesBuildContext buildContext)
         {
             var buildParams = Builder.GetBuildParameter(
-                EditorUserBuildSettings.activeBuildTarget, PathConfig.TempPath);
+                EditorUserBuildSettings.activeBuildTarget, Paths.TempPath);
             var buildTasks = RuntimeDataBuildTasks();
             m_ExtractData = new ExtractDataTask();
             buildTasks.Add(m_ExtractData);

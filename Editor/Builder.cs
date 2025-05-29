@@ -47,7 +47,7 @@ namespace Bundles.Editor
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            var buildPath = PathConfig.GetBuildPath(target);
+            var buildPath = Paths.GetBuildPath(target);
             var error = DoBuild(catalog, target, buildPath,
                 generateReport: generateReport, skipCompilePlayerScripts: false);
             var result = error is null;

@@ -11,7 +11,7 @@ namespace Bundles.Editor
     [Serializable]
     internal static class AnalyzeSystem
     {
-        internal const string AnalyzeRuleDataFolder = PathConfig.LibraryPath + "/AnalyzeData";
+        internal const string AnalyzeRuleDataFolder = Paths.LibraryPath + "/AnalyzeData";
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
         internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 

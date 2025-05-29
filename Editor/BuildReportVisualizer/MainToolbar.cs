@@ -72,12 +72,12 @@ namespace Bundles.Editor
             var mainToolbarAddReportButton = rootVisualElement.Q<ToolbarMenu>(BuildReportUtility.MainToolbarAddReportButton);
             mainToolbarAddReportButton.menu.AppendAction("Add Report...", x =>
             {
-                var path = EditorUtility.OpenFilePanelWithFilters("Locate Build Report", PathConfig.BuildReportPath, new[] { "Build Report", "json" });
+                var path = EditorUtility.OpenFilePanelWithFilters("Locate Build Report", Paths.BuildReportPath, new[] { "Build Report", "json" });
                 m_ReportsList.AddReportFromFile(path);
             }, DropdownMenuAction.AlwaysEnabled);
             mainToolbarAddReportButton.menu.AppendAction("Add Reports from Folder...", x =>
             {
-                var path = EditorUtility.OpenFolderPanel("Locate folder with Build Reports", PathConfig.BuildReportPath, "");
+                var path = EditorUtility.OpenFolderPanel("Locate folder with Build Reports", Paths.BuildReportPath, "");
                 m_ReportsList.AddReportsFromFolder(path);
             }, DropdownMenuAction.AlwaysEnabled);
 

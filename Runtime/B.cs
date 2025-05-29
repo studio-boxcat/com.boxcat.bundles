@@ -8,7 +8,7 @@ namespace Bundles
     {
         [CanBeNull]
         private static IBundlesImpl _implCache;
-        private static IBundlesImpl _impl => _implCache ??= new BundlesImpl(PathConfig.CatalogUri);
+        private static IBundlesImpl _impl => _implCache ??= new BundlesImpl(Paths.CatalogUri);
 
         [MustUseReturnValue]
         public static IAssetOp<TObject> Load<TObject>(Address key) where TObject : Object

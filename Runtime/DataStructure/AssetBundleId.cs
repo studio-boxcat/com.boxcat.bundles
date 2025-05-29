@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine.Assertions;
 
 namespace Bundles
@@ -20,11 +21,6 @@ namespace Bundles
         public static ushort Value(this AssetBundleId id)
         {
             return (ushort) id;
-        }
-
-        public static void WriteHex4(this AssetBundleId id, char[] chars, int startIndex)
-        {
-            Hex.To4(id.Value(), chars, startIndex);
         }
 
         public static string Name(this AssetBundleId id)

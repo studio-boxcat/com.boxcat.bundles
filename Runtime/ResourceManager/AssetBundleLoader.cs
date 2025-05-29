@@ -345,7 +345,7 @@ namespace Bundles
         {
             EditorUnloadAlreadyLoadedAssetBundle(bundleId.Name());
 
-            var path = PathConfig.GetAssetBundleLoadPath(bundleId);
+            var path = Paths.GetAssetBundleLoadPath(bundleId);
             var bundle = AssetBundle.LoadFromFile(path);
             Assert.IsNotNull(bundle, "AssetBundle failed to load: " + bundleId.Name());
             L.I($"[AssetBundleLoader] ReadAssetBundle: {bundleId.Name()} ({bundle.name})\n" +
@@ -358,7 +358,7 @@ namespace Bundles
             EditorUnloadAlreadyLoadedAssetBundle(bundleId.Name());
 
             L.I($"[AssetBundleLoader] ReadAssetBundleAsync: {bundleId.Name()}");
-            var path = PathConfig.GetAssetBundleLoadPath(bundleId);
+            var path = Paths.GetAssetBundleLoadPath(bundleId);
             var op = AssetBundle.LoadFromFileAsync(path);
             Assert.IsNotNull(op, "AssetBundleCreateRequest not found");
 #if DEBUG
