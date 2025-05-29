@@ -92,7 +92,7 @@ namespace Bundles.Editor
             attr.AddSize("Size from Objects", asset.SerializedSize);
             attr.AddSize("Size from Streamed Data", asset.StreamedSize);
             attr.Add("File Index", fileIndex.ToString());
-            attr.Add("Addressable Name", asset.AddressableName);
+            attr.Add("Address", asset.Address);
             using (writer.IndentScope($"{asset.AssetPath} {attr}"))
             {
                 if (asset.ExternallyReferencedAssets.Count > 0)
@@ -248,7 +248,7 @@ namespace Bundles.Editor
 
             using (writer.IndentScope("Summary"))
             {
-                writer.WriteLine($"Addressable Groups: {layout.Groups.Count}");
+                writer.WriteLine($"Asset Groups: {layout.Groups.Count}");
                 writer.WriteLine($"Explicit Assets Addressed: {ExplicitAssetCount}");
                 writer.WriteLine($"Total Bundle: {SceneBundleCount + AssetBundleCount} ({SceneBundleCount} Scene Bundles, {AssetBundleCount} Non-Scene Bundles)");
                 writer.WriteLine($"Total Build Size: {GetFriendlySize(TotalBuildSize)}");

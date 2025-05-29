@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Bundles.Editor
 {
-    public partial class AddressableCatalog
+    public partial class AssetCatalog
     {
         private Dictionary<GroupKey, AssetGroup> _cachedGroupKeyToGroupMap;
         private Dictionary<AssetBundleId, AssetGroup> _cachedBundleIdToGroupMap;
@@ -87,7 +87,7 @@ namespace Bundles.Editor
 
         private void ClearCache()
         {
-            L.I("[AddressableCatalog] ClearCache");
+            L.I("[AssetCatalog] ClearCache");
             _cachedGroupKeyToGroupMap = null;
             _cachedBundleIdToGroupMap = null;
             _cachedAddressToEntryMap = null;

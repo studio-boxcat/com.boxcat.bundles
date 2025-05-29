@@ -263,7 +263,7 @@ namespace Bundles.Editor
         private void ShowReferencesByForAsset(DetailsContents value, BuildLayout.ExplicitAsset asset, bool shouldCallDisplayContents)
         {
             if (shouldCallDisplayContents)
-                value = new DetailsContents(asset.AddressableName, asset.AssetPath);
+                value = new DetailsContents(asset.Address, asset.AssetPath);
             foreach (var refAsset in asset.ReferencingAssets)
             {
                 if (refAsset.Bundle == asset.Bundle)
@@ -373,7 +373,7 @@ namespace Bundles.Editor
 
         private DetailsContents GetContents(BuildLayout.ExplicitAsset asset, DetailsViewTab tab)
         {
-            DetailsContents value = new DetailsContents(asset.AddressableName, asset.AssetPath);
+            DetailsContents value = new DetailsContents(asset.Address, asset.AssetPath);
 
             switch (tab)
             {
@@ -440,7 +440,7 @@ namespace Bundles.Editor
             if(!string.IsNullOrEmpty(buttonIconPath))
             {
                 if (buttonIconPath == BuildReportUtility.GetHelpIconPath())
-                    button.tooltip = "Selects the asset(s) that pulled this non-addressable asset into the bundle";
+                    button.tooltip = "Selects the asset(s) that pulled this non-bundles asset into the bundle";
                 else
                     button.tooltip = null;
                 button.style.backgroundImage = new StyleBackground(BuildReportUtility.GetIcon(buttonIconPath) as Texture2D);

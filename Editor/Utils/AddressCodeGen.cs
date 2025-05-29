@@ -1,11 +1,11 @@
 namespace Bundles.Editor
 {
-    internal static class AddressablesCodeGenerator
+    internal static class AddressCodeGen
     {
-        public static void GenerateCode(AddressableCatalog catalog, string path)
+        public static void GenerateCode(AssetCatalog catalog, string path)
         {
             var b = new CodeBuilder();
-            b.Using("UnityEngine.AddressableAssets");
+            b.Using("Bundles");
             b.Blank();
 
             using (b.Public_Static_Class("Addresses"))

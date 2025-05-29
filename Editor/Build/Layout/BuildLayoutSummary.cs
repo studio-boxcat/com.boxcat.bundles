@@ -35,7 +35,7 @@ namespace Bundles.Editor
     }
 
     /// <summary>
-    /// Data store for Addressables build
+    /// Data store for Bundles build
     /// </summary>
     internal class BuildLayoutSummary
     {
@@ -55,7 +55,7 @@ namespace Bundles.Editor
         internal int TotalAssetCount = 0;
 
         /// <summary>
-        /// The total number of explicitly added Addressable assets that were included in a build
+        /// The total number of explicitly added assets that were included in a build
         /// </summary>
         internal int ExplicitAssetCount = 0;
 

@@ -18,10 +18,10 @@ using BuildCompression = UnityEngine.BuildCompression;
 namespace Bundles.Editor
 {
     [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
-    public class AddressablePreBuildCallbackAttribute : Attribute { }
+    public class BundlesPreBuildCallbackAttribute : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
-    public class AddressablePostBuildCallbackAttribute : Attribute
+    public class BundlesPostBuildCallbackAttribute : Attribute
     {
         [RequiredSignature, UsedImplicitly]
         private static void Signature(bool result, BuildTarget buildTarget, string buildPath) { }
@@ -30,21 +30,20 @@ namespace Bundles.Editor
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
-    public static class AddressableBuilder
+    public static class Builder
     {
         /// <summary>
         /// Runs the active player data build script to create runtime data.
-        /// See the [BuildPlayerContent](xref:addressables-api-build-player-content) documentation for more details.
         /// </summary>
         public static bool Build(
-            AddressableCatalog catalog, BuildTarget target,
+            AssetCatalog catalog, BuildTarget target,
             bool generateReport = false)
         {
-            L.I("[AddressableBuilder] Build start");
+            L.I("[Builder] Build start");
 
-            Assert.IsNotNull(catalog, "AddressableAssetSettings must not be null");
+            Assert.IsNotNull(catalog, "AssetCatalog must not be null");
 
-            AddressablesUtils.InvokeAllMethodsWithAttribute<AddressablePreBuildCallbackAttribute>();
+            BundlesUtils.InvokeAllMethodsWithAttribute<BundlesPreBuildCallbackAttribute>();
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -54,10 +53,10 @@ namespace Bundles.Editor
             var result = error is null;
 
             var resultCode = result ? "success" : "error";
-            L.I($"[AddressableBuilder] Build {resultCode} (duration : {sw.Elapsed:g})");
+            L.I($"[Builder] Build {resultCode} (duration : {sw.Elapsed:g})");
             if (!string.IsNullOrEmpty(error)) L.E(error);
 
-            AddressablesUtils.InvokeAllMethodsWithAttribute<AddressablePostBuildCallbackAttribute>(
+            BundlesUtils.InvokeAllMethodsWithAttribute<BundlesPostBuildCallbackAttribute>(
                 result, target, buildPath);
 
             if (!Application.isBatchMode && generateReport && result)
@@ -65,40 +64,40 @@ namespace Bundles.Editor
             return result;
         }
 
-        [Shortcut("Addressables/Build (No Report)")]
+        [Shortcut("Bundles/Build (No Report)")]
         private static void Build()
         {
             Build(
-                AddressableCatalog.Default,
+                AssetCatalog.Default,
                 EditorUserBuildSettings.activeBuildTarget,
                 generateReport: false);
         }
 
-        [Shortcut("Addressables/Build (With Report)")]
+        [Shortcut("Bundles/Build (With Report)")]
         private static void BuildWithReport()
         {
             Build(
-                AddressableCatalog.Default,
+                AssetCatalog.Default,
                 EditorUserBuildSettings.activeBuildTarget,
                 generateReport: true);
         }
 
         private static string DoBuild(
-            AddressableCatalog catalog, BuildTarget target, string buildPath,
+            AssetCatalog catalog, BuildTarget target, string buildPath,
             bool generateReport, bool skipCompilePlayerScripts)
         {
-            var ctx = new AddressableAssetsBuildContext(catalog);
-            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
+            var ctx = new BundlesBuildContext(catalog);
+            if (!BundlesUtils.CheckModifiedScenesAndAskToSave())
                 return "Unsaved scenes";
 
             // cleanup old build data
-            AddressablesUtils.DeleteDirectory(buildPath);
+            BundlesUtils.DeleteDirectory(buildPath);
             var buildParams = GetBuildParameter(target, buildPath);
             buildParams.WriteLinkXML = true; // See GenerateLinkXml.cs
 
             using (new SBPSettingsOverwriterScope(generateReport)) // build layout generation requires full SBP write results
             {
-                L.I("[AddressableBuilder] ContentPipeline.BuildAssetBundles");
+                L.I("[Builder] ContentPipeline.BuildAssetBundles");
                 var buildContent = new BundleBuildContent(catalog.GenerateBundleBuilds());
                 var buildTasks = PopulateBuildTasks(
                     generateBuildLayout: generateReport,
@@ -109,14 +108,14 @@ namespace Bundles.Editor
             }
 
             {
-                L.I("[AddressableBuilder] Copy link.xml");
+                L.I("[Builder] Copy link.xml");
                 var srcPath = buildPath + "/link.xml";
                 var dstPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(catalog))! + "/link.xml";
-                AddressablesUtils.ReplaceFile(srcPath, dstPath);
+                BundlesUtils.ReplaceFile(srcPath, dstPath);
             }
 
             {
-                L.I("[AddressableBuilder] Generate Binary Catalog");
+                L.I("[Builder] Generate Binary Catalog");
                 ResourceCatalogBuilder.Build(ctx, buildPath + "/catalog.bin");
             }
 
@@ -176,7 +175,7 @@ namespace Bundles.Editor
                 NonRecursiveDependencies = false,
                 // If set, packs assets in bundles contiguously based on the ordering of the source asset
                 // which results in improved asset loading times. Disable this if you've built bundles with
-                // a version of Addressables older than 1.12.1 and you want to minimize bundle changes.
+                // a version of Bundles older than 1.12.1 and you want to minimize bundle changes.
                 ContiguousBundles = true,
                 DisableVisibleSubAssetRepresentations = false, // To include main sprite in Texture.
                 // LZMA: This compression format is a stream of data representing the entire AssetBundle,

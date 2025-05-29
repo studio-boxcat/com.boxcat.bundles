@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Bundles.Editor
 {
     /// <summary>
-    /// Base class for creating rules to analyze Addressables data.  Use AnalyzeWindow.RegisterNewRule&lt;T&gt;() to register.
+    /// Base class for creating rules to analyze Bundles data.  Use AnalyzeWindow.RegisterNewRule&lt;T&gt;() to register.
     ///  a rule with the GUI window.
     /// </summary>
     [Serializable]
@@ -16,7 +16,7 @@ namespace Bundles.Editor
         internal List<AnalyzeResult> m_Results = new List<AnalyzeResult>();
 
         /// <summary>
-        /// Represents a state where no errors were found after analyzing Addressables data.
+        /// Represents a state where no errors were found after analyzing Bundles data.
         /// </summary>
         [NonSerialized]
         protected AnalyzeResult noErrors = new AnalyzeResult {resultName = "No issues found"};
@@ -80,7 +80,7 @@ namespace Bundles.Editor
         /// </summary>
         /// <param name="catalog">The catalog object to analyze</param>
         /// <returns>A list of resulting information (warnings, errors, or info)</returns>
-        public virtual List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
+        public virtual List<AnalyzeResult> RefreshAnalysis(AssetCatalog catalog)
         {
             return new List<AnalyzeResult>();
         }

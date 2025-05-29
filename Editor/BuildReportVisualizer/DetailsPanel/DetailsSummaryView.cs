@@ -72,10 +72,10 @@ namespace Bundles.Editor
                 })));
         }
 
-        public void DisplayExplicitAssetSummary(IAddressablesBuildReportAsset reportAsset)
+        public void DisplayExplicitAssetSummary(IBundlesBuildReportAsset reportAsset)
         {
             DetailsSummaryBuilder builder = new DetailsSummaryBuilder()
-                .With(BuildReportUtility.GetIcon(reportAsset.ExplicitAsset.AssetPath), reportAsset.ExplicitAsset.AddressableName)
+                .With(BuildReportUtility.GetIcon(reportAsset.ExplicitAsset.AssetPath), reportAsset.ExplicitAsset.Address)
                 .With("Asset Path", reportAsset.ExplicitAsset.AssetPath)
                 .With("Uncompressed", $"{BuildReportUtility.GetDenominatedBytesString(reportAsset.ExplicitAsset.File.UncompressedSize)}")
                 .With("Total Size (+ refs)", $"{BuildReportUtility.GetDenominatedBytesString(reportAsset.SizeWDependencies)}");
@@ -98,21 +98,21 @@ namespace Bundles.Editor
                 BuildReportUtility.CreateButton("Select in Group", () =>
                 {
                     m_Window.NavigateToView(BuildReportWindow.ContentViewType.GroupsView);
-                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(reportAsset.ExplicitAsset.AddressableName));
+                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(reportAsset.ExplicitAsset.Address));
                 }),
                 BuildReportUtility.CreateButton("Search in this view", () =>
                 {
-                    string newSearchValue = reportAsset.ExplicitAsset.AddressableName;
+                    string newSearchValue = reportAsset.ExplicitAsset.Address;
                     m_Window.m_ActiveContentView.m_SearchField.Q<TextField>().value = newSearchValue;
                 })));
             m_DetailsSummary.Add(CreateButtonRow(BuildReportUtility.CreateButton("Select in Bundle", () =>
                 {
                     m_Window.NavigateToView(BuildReportWindow.ContentViewType.BundleView);
-                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash((string) reportAsset.ExplicitAsset.Bundle.Name, reportAsset.ExplicitAsset.AddressableName));
+                    m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash((string) reportAsset.ExplicitAsset.Bundle.Name, reportAsset.ExplicitAsset.Address));
                 })));
         }
 
-        public void DisplayDataFromOtherAssetSummary(IAddressablesBuildReportAsset reportAsset)
+        public void DisplayDataFromOtherAssetSummary(IBundlesBuildReportAsset reportAsset)
         {
             DetailsSummaryBuilder builder = new DetailsSummaryBuilder()
                 .With(BuildReportUtility.GetIcon(reportAsset.DataFromOtherAsset.AssetPath), reportAsset.DataFromOtherAsset.AssetPath)
@@ -133,7 +133,7 @@ namespace Bundles.Editor
                 {
                     Selection.activeObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(reportAsset.DataFromOtherAsset.AssetPath);
                 })));
-            m_DetailsSummary.Add(CreateHelpTextBox("This asset was pulled into the AssetBundle because one or more Addressable assets have references to it."));
+            m_DetailsSummary.Add(CreateHelpTextBox("This asset was pulled into the AssetBundle because one or more Bundles assets have references to it."));
         }
 
         private static VisualElement CreateButtonRow(params Button[] buttons)

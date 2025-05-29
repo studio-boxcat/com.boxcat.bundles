@@ -134,7 +134,7 @@ namespace Bundles.Editor
             var addressableNames = Entries.Select(e => ResolveAddressString(this, e)).ToArray();
 
             L.I(string.Format(
-                $"[AddressableCatalog] Build {assetBundleName} ({_key}):\n"
+                $"[AssetGroup] Build {assetBundleName} ({_key}):\n"
                 + string.Join("\n", addressableNames.Select((x, i) => $"{x} -> {assetNames[i]}"))));
 
             return new AssetBundleBuild
@@ -157,7 +157,7 @@ namespace Bundles.Editor
             _cachedAddressToAssetMap = null;
         }
 
-        private static bool EditMode() => AddressableCatalog.EditMode;
+        private static bool EditMode() => AssetCatalog.EditMode;
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {

@@ -9,7 +9,7 @@ namespace Bundles
         {
 #if DEBUG
             var startTime = Time.unscaledTime;
-            L.I($"[Addressables] AssetBundle.LoadAssetAsync: name={assetName}, bundle={bundle.name}, startTime={startTime}");
+            L.I($"[B] AssetBundle.Load: name={assetName}, bundle={bundle.name}, startTime={startTime}");
 #endif
             Assert.IsTrue(bundle.Contains(assetName),
                 $"Bundle does not contain asset: bundle={bundle.name}, assetName={assetName}, allAssets={string.Join(", ", bundle.GetAllAssetNames())}");
@@ -19,7 +19,7 @@ namespace Bundles
             op.completed += op2 =>
             {
                 var deltaTime = Time.unscaledTime - startTime;
-                L.I("[Addressables] AssetBundle.LoadAssetAsync completed: " +
+                L.I("[B] AssetBundle.Load completed: " +
                     $"name={assetName}, asset={((AssetBundleRequest) op2).asset}, bundle={bundle.name}, time={deltaTime}");
             };
 #endif

@@ -15,7 +15,7 @@ namespace Bundles.Editor
         protected override void DrawPropertyLayout(GUIContent label)
         {
             var value = ValueEntry.SmartValue;
-            var catalog = AddressableCatalog.Default;
+            var catalog = AssetCatalog.Default;
             var list = catalog.GetAddressList();
             var index = catalog.TryGetEntry(value, out var entry)
                 ? Array.IndexOf(list, entry.Address) : -1;
@@ -34,7 +34,7 @@ namespace Bundles.Editor
                 return;
             }
 
-            var catalog = AddressableCatalog.Default;
+            var catalog = AssetCatalog.Default;
             if (catalog.ContainsEntry(value) is false)
             {
                 result.AddError($"Given Address is not registered: {value.Name()}");

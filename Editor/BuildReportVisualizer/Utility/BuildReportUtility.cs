@@ -3,12 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-[assembly: InternalsVisibleTo("Unity.Addressables.Editor.Tests")]
 namespace Bundles.Editor
 {
     internal static class BuildReportUtility
@@ -128,22 +126,22 @@ namespace Bundles.Editor
 
         internal static string GetAssetBundleIconPath()
         {
-            return EditorGUIUtility.isProSkin ? AddressableIconNames.AssetBundleIconDark : AddressableIconNames.AssetBundleIconLight;
+            return EditorGUIUtility.isProSkin ? BundlesIconNames.AssetBundleIconDark : BundlesIconNames.AssetBundleIconLight;
         }
 
         internal static string GetForwardIconPath()
         {
-            return EditorGUIUtility.isProSkin ? AddressableIconNames.ForwardIconDark : AddressableIconNames.ForwardIconLight;
+            return EditorGUIUtility.isProSkin ? BundlesIconNames.ForwardIconDark : BundlesIconNames.ForwardIconLight;
         }
 
         internal static string GetHelpIconPath()
         {
-            return AddressableIconNames.HelpIcon;
+            return BundlesIconNames.HelpIcon;
         }
 
         internal static string GetBackIconPath()
         {
-            return EditorGUIUtility.isProSkin ? AddressableIconNames.BackIconDark : AddressableIconNames.BackIconLight;
+            return EditorGUIUtility.isProSkin ? BundlesIconNames.BackIconDark : BundlesIconNames.BackIconLight;
         }
 
         internal static string GetDetailsViewStylesheetPath()
@@ -252,7 +250,7 @@ namespace Bundles.Editor
             var assetsOfDependentBundles = asset.Bundle.DependentBundles.SelectMany(b => b.DependentBundles).SelectMany(f => f.Files).SelectMany(a => a.Assets);
             foreach (var assetOfDependentBundle in assetsOfDependentBundles)
             {
-                if (assetOfDependentBundle.ExternallyReferencedAssets.Find(x => x.AddressableName == asset.AddressableName) != null)
+                if (assetOfDependentBundle.ExternallyReferencedAssets.Find(x => x.Address == asset.Address) != null)
                     dependenciesOfAsset.TryAdd(assetOfDependentBundle.Guid, assetOfDependentBundle);
             }
             return dependenciesOfAsset;

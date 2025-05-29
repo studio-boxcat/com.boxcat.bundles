@@ -28,7 +28,7 @@ namespace Bundles.Editor
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
-        private AddressableAssetsBuildContext m_AaBuildContext;
+        private BundlesBuildContext m_AaBuildContext;
 
         [InjectContext(ContextUsage.In)]
         private IBuildParameters m_Parameters;
@@ -131,7 +131,7 @@ namespace Bundles.Editor
             return GenerateBuildLayout(aaContext, lookup);
         }
 
-        private LayoutLookupTables GenerateLookupTables(AddressableAssetsBuildContext aaContext)
+        private LayoutLookupTables GenerateLookupTables(BundlesBuildContext aaContext)
         {
             var lookup = new LayoutLookupTables();
 
@@ -522,12 +522,12 @@ namespace Bundles.Editor
             }
         }
 
-        private BuildLayout GenerateBuildLayout(AddressableAssetsBuildContext aaContext, LayoutLookupTables lookup)
+        private BuildLayout GenerateBuildLayout(BundlesBuildContext aaContext, LayoutLookupTables lookup)
         {
             BuildLayout layout = new BuildLayout();
             layout.BuildStart = DateTime.Now;
 
-            AddressableCatalog aaCatalog = aaContext.Catalog;
+            AssetCatalog aaCatalog = aaContext.Catalog;
 
             L.I("Generate Basic Information");
             SetLayoutMetaData(layout);
@@ -545,8 +545,8 @@ namespace Bundles.Editor
                     L.W($"AssetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
             }
 
-            L.I("Apply Addressable info to layout data");
-            ApplyAddressablesInformationToExplicitAssets(layout, aaCatalog);
+            L.I("Apply Bundles info to layout data");
+            ApplyBundlesInformationToExplicitAssets(layout, aaCatalog);
             L.I("Process additional bundle data");
             PostProcessBundleData(lookup);
             L.I("Generating implicit inclusion data");
@@ -636,7 +636,7 @@ namespace Bundles.Editor
             }
         }
 
-        private static void ApplyAddressablesInformationToExplicitAssets(BuildLayout layout, AddressableCatalog catalog)
+        private static void ApplyBundlesInformationToExplicitAssets(BuildLayout layout, AssetCatalog catalog)
         {
             foreach (var bundle in BuildLayoutHelpers.EnumerateBundles(layout))
             foreach (var file in bundle.Files)
@@ -645,21 +645,21 @@ namespace Bundles.Editor
                 var guid = rootAsset.Guid;
                 if (guid.IsPath) continue; // builtin assets (e.g. MonoScript)
                 var entry = catalog.GetEntry((AssetGUID) guid);
-                ApplyAddressablesInformationToExplicitAsset(rootAsset, entry);
+                ApplyBundlesInformationToExplicitAsset(rootAsset, entry);
             }
             return;
 
-            static void ApplyAddressablesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AssetEntry rootEntry)
+            static void ApplyBundlesInformationToExplicitAsset(BuildLayout.ExplicitAsset rootAsset, AssetEntry rootEntry)
             {
-                rootAsset.AddressableName = rootEntry.Address;
+                rootAsset.Address = rootEntry.Address;
                 rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(
                     AssetDatabase.GetMainAssetTypeFromGUID((GUID) rootAsset.Guid));
 
-                Assert.IsNotNull(rootAsset.Bundle, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
+                Assert.IsNotNull(rootAsset.Bundle, $"Failed to get bundle information for AssetEntry: {rootEntry.GUID.Value}");
 
                 foreach (BuildLayout.ExplicitAsset referencedAsset in rootAsset.ExternallyReferencedAssets)
                 {
-                    Assert.IsNotNull(referencedAsset, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.GUID.Value}");
+                    Assert.IsNotNull(referencedAsset, $"Failed to get bundle information for AssetEntry: {rootEntry.GUID.Value}");
                     // Create the dependency between rootAssets bundle and referenced Assets bundle,
                     rootAsset.Bundle.UpdateBundleDependency(rootAsset, referencedAsset);
                 }

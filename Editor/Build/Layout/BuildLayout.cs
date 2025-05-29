@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 
 namespace Bundles.Editor
 {
@@ -64,7 +65,7 @@ namespace Bundles.Editor
     }
 
     /// <summary>
-    /// A storage class used to gather data about an Addressable build.
+    /// A storage class used to gather data about an Bundles build.
     /// </summary>
     [Serializable]
     internal class BuildLayout
@@ -72,12 +73,12 @@ namespace Bundles.Editor
         #region HeaderValues // Any values in here should also be in BuildLayoutHeader class
 
         /// <summary>
-        /// Build Platform Addressables build is targeting
+        /// Build Platform Bundles build is targeting
         /// </summary>
         public BuildTarget BuildTarget;
 
         /// <summary>
-        /// DateTime at the start of building Addressables
+        /// DateTime at the start of building Bundles
         /// </summary>
         public DateTime BuildStart
         {
@@ -103,7 +104,7 @@ namespace Bundles.Editor
         internal string BuildStartTime;
 
         /// <summary>
-        /// Time in seconds taken to build Addressables Content
+        /// Time in seconds taken to build Bundles Content
         /// </summary>
         public double Duration;
 
@@ -120,7 +121,7 @@ namespace Bundles.Editor
         public string UnityVersion;
 
         /// <summary>
-        /// The Addressable Groups that reference this data
+        /// The Groups that reference this data
         /// </summary>
         [SerializeReference]
         public List<Bundle> Groups = new List<Bundle>();
@@ -352,28 +353,6 @@ namespace Bundles.Editor
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// Values set for the AddressablesAssetSettings at the time of building
-        /// </summary>
-        [Serializable]
-        public class AddressablesEditorData
-        {
-            /// <summary>
-            /// Hash value of the catalog at the time of building
-            /// </summary>
-            public string CatalogHash;
-
-            /// <summary>
-            /// Addressables setting value set for if the build used non recursive dependency calculation
-            /// </summary>
-            public bool NonRecursiveBuilding;
-
-            /// <summary>
-            /// Addressables setting value set for if the build used contiguous bundle objects
-            /// </summary>
-            public bool ContiguousBundles;
         }
 
         /// <summary>
@@ -745,9 +724,9 @@ namespace Bundles.Editor
             public bool IsScene => AssetPath.EndsWith(".unity", StringComparison.Ordinal);
 
             /// <summary>
-            /// The Addressable address defined in the Addressable Group window for an Asset.
+            /// The address defined in the AssetCatalog for an Asset.
             /// </summary>
-            public string AddressableName;
+            public string Address;
 
             /// <summary>
             /// The size of the file on disk.
@@ -795,7 +774,7 @@ namespace Bundles.Editor
             [SerializeReference]
             internal List<ExplicitAsset> ReferencingAssets = new List<ExplicitAsset>();
 
-            public string GetName() => $"{AddressableName} ({AssetPath})";
+            public string GetName() => $"{Address} ({AssetPath})";
         }
 
         /// <summary>

@@ -105,14 +105,14 @@ namespace Bundles.Editor
             BuildLayoutGenerationTask.s_LayoutCompleteCallback = (path, layout) => m_ReportListView.AddReport(path, layout);
         }
 
-        [Shortcut("Addressables/Addressables Report")]
+        [Shortcut("Bundles/Bundles Report")]
         public static void ShowWindow()
         {
             // Opens the window, otherwise focuses it if it's already open.
             var window = GetWindow<BuildReportWindow>();
 
             // Adds a title to the window.
-            window.titleContent = new GUIContent("Addressables Report");
+            window.titleContent = new GUIContent("Bundles Report");
 
             // Sets a minimum size to the window.
             window.minSize = new Vector2(280, 50);
@@ -313,7 +313,7 @@ namespace Bundles.Editor
             OnViewDropDownChanged(newIndex);
         }
 
-        public IAddressablesBuildReportItem SelectItemInView(Hash128 hash, bool expand = false)
+        public IBundlesBuildReportItem SelectItemInView(Hash128 hash, bool expand = false)
         {
             ContentView.TreeDataReportItem item = m_ActiveContentView.DataHashtoReportItem[hash];
             m_ActiveContentView.ContentTreeView.SetSelectionById(item.Id);

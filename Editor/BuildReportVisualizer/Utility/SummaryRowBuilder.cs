@@ -15,7 +15,7 @@ namespace Bundles.Editor
             m_Container = new VisualElement();
             m_Container.style.width = m_Container.style.maxWidth = new Length(246f, LengthUnit.Pixel);
             m_Container.style.height = m_Container.style.maxHeight = new Length(140f, LengthUnit.Pixel);
-            m_Container.style.backgroundColor = AddressablesGUIUtility.HeaderNormalColor;
+            m_Container.style.backgroundColor = BundlesGUIUtility.HeaderNormalColor;
             m_Container.style.flexDirection = FlexDirection.Row;
 
             Image icon = new Image();

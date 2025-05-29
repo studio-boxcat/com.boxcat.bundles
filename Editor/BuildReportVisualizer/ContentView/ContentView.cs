@@ -19,14 +19,14 @@ namespace Bundles.Editor
         protected MultiColumnTreeView m_TreeView = null;
         public MultiColumnTreeView ContentTreeView => m_TreeView;
 
-        protected IList<IAddressablesBuildReportItem> m_TreeItems = null;
+        protected IList<IBundlesBuildReportItem> m_TreeItems = null;
 
         public struct TreeDataReportItem
         {
             public int Id;
-            public IAddressablesBuildReportItem ReportItem;
+            public IBundlesBuildReportItem ReportItem;
 
-            public TreeDataReportItem(int id, IAddressablesBuildReportItem reportItem)
+            public TreeDataReportItem(int id, IBundlesBuildReportItem reportItem)
             {
                 Id = id;
                 ReportItem = reportItem;
@@ -53,7 +53,7 @@ namespace Bundles.Editor
             {
                 // Clear removes the column header
                 // m_TreeView.Clear();
-                m_TreeView.SetRootItems(default(IList<TreeViewItemData<IAddressablesBuildReportItem>>));
+                m_TreeView.SetRootItems(default(IList<TreeViewItemData<IBundlesBuildReportItem>>));
                 m_TreeView.Rebuild();
             }
         }
@@ -71,18 +71,18 @@ namespace Bundles.Editor
             m_TreeViewNavigableItem = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(BuildReportUtility.TreeViewNavigableItemFilePath);
         }
 
-        public abstract IList<IAddressablesBuildReportItem> CreateTreeViewItems(BuildLayout report);
+        public abstract IList<IBundlesBuildReportItem> CreateTreeViewItems(BuildLayout report);
 
         // Expresses bundle data as a flat list of TreeViewItemData objects.
-        protected IList<TreeViewItemData<IAddressablesBuildReportItem>> CreateTreeRootsFlatList(IList<IAddressablesBuildReportItem> items, Dictionary<Hash128, TreeDataReportItem> dataHashToReportItem)
+        protected IList<TreeViewItemData<IBundlesBuildReportItem>> CreateTreeRootsFlatList(IList<IBundlesBuildReportItem> items, Dictionary<Hash128, TreeDataReportItem> dataHashToReportItem)
         {
             int id = 0;
-            var roots = new List<TreeViewItemData<IAddressablesBuildReportItem>>(items.Count);
+            var roots = new List<TreeViewItemData<IBundlesBuildReportItem>>(items.Count);
 
-            foreach (IAddressablesBuildReportItem item in items)
+            foreach (IBundlesBuildReportItem item in items)
             {
                 dataHashToReportItem.Add(BuildReportUtility.ComputeDataHash(item.Name, ""), new TreeDataReportItem(id, item));
-                roots.Add(new TreeViewItemData<IAddressablesBuildReportItem>(id++, item));
+                roots.Add(new TreeViewItemData<IBundlesBuildReportItem>(id++, item));
             }
             return roots;
         }
@@ -99,7 +99,7 @@ namespace Bundles.Editor
             }
         }
 
-        private IOrderedEnumerable<IAddressablesBuildReportItem> OrderByType(string columnName, Type t)
+        private IOrderedEnumerable<IBundlesBuildReportItem> OrderByType(string columnName, Type t)
         {
             if (t == typeof(int))
                 return m_TreeItems.OrderBy(item => int.Parse(item.GetSortContent(columnName)));
@@ -141,7 +141,7 @@ namespace Bundles.Editor
 
         public void CreateTreeViewCell(VisualElement element, int index, string colName, bool isNameColumn, Type type)
         {
-            IAddressablesBuildReportItem itemData = null;
+            IBundlesBuildReportItem itemData = null;
             if (type == typeof(AssetsContentView))
                itemData = ContentTreeView.GetItemDataForIndex<AssetsViewBuildReportItem>(index);
             if (type == typeof(BundlesContentView))
@@ -162,7 +162,7 @@ namespace Bundles.Editor
             }
         }
 
-        protected bool EntryAppearsInSearch(IAddressablesBuildReportItem item, string searchValue)
+        protected bool EntryAppearsInSearch(IBundlesBuildReportItem item, string searchValue)
         {
             if (string.IsNullOrEmpty(searchValue))
                 return true;
@@ -171,7 +171,7 @@ namespace Bundles.Editor
             return false;
         }
 
-        public void ShowEntryIcon(VisualElement element, IAddressablesBuildReportItem itemData, VisualTreeAsset baseItem, string colName)
+        public void ShowEntryIcon(VisualElement element, IBundlesBuildReportItem itemData, VisualTreeAsset baseItem, string colName)
         {
             (element as Label).text = string.Empty;
             element.Clear();
@@ -181,7 +181,7 @@ namespace Bundles.Editor
             var name = treeItem.Q<TextElement>(BuildReportUtility.TreeViewItemName);
             name.text = itemData.GetCellContent(colName);
 
-            if (itemData is IAddressablesBuildReportAsset asset)
+            if (itemData is IBundlesBuildReportAsset asset)
             {
                 string path = asset.ExplicitAsset == null ? asset.DataFromOtherAsset.AssetPath : asset.ExplicitAsset.AssetPath;
                 Texture iconTexture = AssetDatabase.GetCachedIcon(path);
@@ -199,7 +199,7 @@ namespace Bundles.Editor
                      itemData is BundlesViewBuildReportIndirectlyReferencedBundles ||
                      itemData is GroupsViewBuildReportIndirectlyReferencedBundles)
                 icon.image = EditorGUIUtility.IconContent("d_FolderOpened Icon").image as Texture2D;
-            else if (itemData is IAddressablesBuildReportBundle)
+            else if (itemData is IBundlesBuildReportBundle)
                 icon.image = EditorGUIUtility.IconContent("Package Manager").image as Texture2D;
             else
                 icon.AddToClassList(BuildReportUtility.TreeViewItemNoIcon);
@@ -221,9 +221,9 @@ namespace Bundles.Editor
             return this;
         }
 
-        internal List<IAddressablesBuildReportItem> SortByColumnDescription(SortColumnDescription col)
+        internal List<IBundlesBuildReportItem> SortByColumnDescription(SortColumnDescription col)
         {
-            IOrderedEnumerable<IAddressablesBuildReportItem> sortedTreeRootEnumerable;
+            IOrderedEnumerable<IBundlesBuildReportItem> sortedTreeRootEnumerable;
             if (m_NumericColumnNames.ContainsKey(col.columnName))
             {
                 Type t = m_NumericColumnNames[col.columnName];
@@ -234,7 +234,7 @@ namespace Bundles.Editor
                 sortedTreeRootEnumerable = m_TreeItems.OrderBy(item => item.GetSortContent(col.columnName));
             }
 
-            List<IAddressablesBuildReportItem> finalTreeRoots = new List<IAddressablesBuildReportItem>(m_TreeItems.Count);
+            List<IBundlesBuildReportItem> finalTreeRoots = new List<IBundlesBuildReportItem>(m_TreeItems.Count);
             foreach (var item in sortedTreeRootEnumerable)
                 finalTreeRoots.Add(item);
             if (col.direction == SortDirection.Ascending)
@@ -267,7 +267,7 @@ namespace Bundles.Editor
     }
 
     // Nested interface that can be either a bundle or asset.
-    public interface IAddressablesBuildReportItem
+    public interface IBundlesBuildReportItem
     {
         public string Name { get; }
 
@@ -279,12 +279,12 @@ namespace Bundles.Editor
 
     }
 
-    internal interface IAddressablesBuildReportBundle
+    internal interface IBundlesBuildReportBundle
     {
         public BuildLayout.Bundle Bundle { get; }
     }
 
-    internal interface IAddressablesBuildReportAsset
+    internal interface IBundlesBuildReportAsset
     {
         public BuildLayout.ExplicitAsset ExplicitAsset { get; }
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; }

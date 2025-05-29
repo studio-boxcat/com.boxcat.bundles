@@ -9,7 +9,7 @@ namespace Bundles.Editor
 {
     internal static partial class ResourceCatalogBuilder
     {
-        public static void Build(AddressableAssetsBuildContext ctx, string outputPath)
+        public static void Build(BundlesBuildContext ctx, string outputPath)
         {
             var bundles = ctx.entries.Values.SelectMany(x => x.Dependencies)
                 .ToHashSet().OrderBy(x => x).ToArray();

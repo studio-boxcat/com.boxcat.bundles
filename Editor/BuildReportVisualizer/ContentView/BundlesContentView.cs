@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 namespace Bundles.Editor
 {
     // Nested class that represents a generic item in the bundle view (can be an asset, header, or bundle).
-    internal class BundlesViewBuildReportItem : IAddressablesBuildReportItem
+    internal class BundlesViewBuildReportItem : IBundlesBuildReportItem
     {
         public string Name { get; protected set; }
 
@@ -77,7 +77,7 @@ namespace Bundles.Editor
     }
 
     // Nested class that represents an bundle.
-    internal class BundlesViewBuildReportBundle : BundlesViewBuildReportItem, IAddressablesBuildReportBundle
+    internal class BundlesViewBuildReportBundle : BundlesViewBuildReportItem, IBundlesBuildReportBundle
     {
         public BuildLayout.Bundle Bundle { get; set; }
         public List<BuildLayout.Bundle> Dependencies { get; set; }
@@ -111,7 +111,7 @@ namespace Bundles.Editor
         public List<BuildLayout.DataFromOtherAsset> ImplicitAssets { get; set; }
     }
 
-    internal class BundlesViewBuildReportAsset : BundlesViewBuildReportItem, IAddressablesBuildReportAsset
+    internal class BundlesViewBuildReportAsset : BundlesViewBuildReportItem, IBundlesBuildReportAsset
     {
         public BuildLayout.ExplicitAsset ExplicitAsset { get; }
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; }
@@ -121,18 +121,15 @@ namespace Bundles.Editor
 
         public ulong SizeWDependencies { get; set; }
 
-        public bool IsAddressable = false;
-
         public BundlesViewBuildReportAsset(BuildLayout.ExplicitAsset asset)
         {
             ExplicitAsset = asset;
             Bundles = new List<BuildLayout.Bundle>(){ asset.Bundle };
-            Name = asset.AddressableName;
+            Name = asset.Address;
             RefsTo = asset.InternalReferencedOtherAssets.Count + asset.ExternallyReferencedAssets.Count + asset.InternalReferencedExplicitAssets.Count;
             RefsBy = asset.ReferencingAssets != null ? asset.ReferencingAssets.Count : -1;
             FileSize = asset.SerializedSize + asset.StreamedSize;
             AssetPath = asset.AssetPath;
-            IsAddressable = true;
             FileSizeUncompressed = asset.SerializedSize + asset.StreamedSize;
             FileSizePlusRefs = FileSizeUncompressed;
             foreach (var r in asset.ExternallyReferencedAssets)
@@ -152,7 +149,6 @@ namespace Bundles.Editor
             AssetPath = asset.AssetPath;
             RefsBy = asset.ReferencingAssets.Count;
             RefsTo = -1;
-            IsAddressable = false;
             FileSizeUncompressed = asset.SerializedSize + asset.StreamedSize;
             FileSizePlusRefs = asset.SerializedSize + asset.StreamedSize;
             SizeWDependencies = FileSizePlusRefs;
@@ -237,9 +233,9 @@ namespace Bundles.Editor
         }
 
         // Data about bundles from our currently selected build report.
-        public override IList<IAddressablesBuildReportItem> CreateTreeViewItems(BuildLayout report)
+        public override IList<IBundlesBuildReportItem> CreateTreeViewItems(BuildLayout report)
         {
-            List<IAddressablesBuildReportItem> buildReportBundles = new List<IAddressablesBuildReportItem>();
+            List<IBundlesBuildReportItem> buildReportBundles = new List<IBundlesBuildReportItem>();
             if (report == null)
                 return buildReportBundles;
 
@@ -287,7 +283,7 @@ namespace Bundles.Editor
         {
             var columnList = m_TreeView.sortedColumns;
 
-            IList<IAddressablesBuildReportItem> sortedRootList = new List<IAddressablesBuildReportItem>();
+            IList<IBundlesBuildReportItem> sortedRootList = new List<IBundlesBuildReportItem>();
             foreach (var col in columnList)
             {
                 sortedRootList = SortByColumnDescription(col);
@@ -324,7 +320,7 @@ namespace Bundles.Editor
         }
 
         // Expresses bundle data as a hierarchal list of BuildReportBundleViewItem objects.
-        public IList<TreeViewItemData<BundlesViewBuildReportItem>> CreateTreeRootsNestedList(IList<IAddressablesBuildReportItem> items, Dictionary<Hash128, TreeDataReportItem> dataHashToReportItem)
+        public IList<TreeViewItemData<BundlesViewBuildReportItem>> CreateTreeRootsNestedList(IList<IBundlesBuildReportItem> items, Dictionary<Hash128, TreeDataReportItem> dataHashToReportItem)
         {
             int id = 0;
             var roots = new List<TreeViewItemData<BundlesViewBuildReportItem>>();
@@ -390,7 +386,7 @@ namespace Bundles.Editor
                 if (includeAsset || includeAllDependencies || childrenOfAsset.Count > 0)
                 {
                     var dataItem = new TreeViewItemData<BundlesViewBuildReportItem>(++id, reportAsset, childrenOfAsset);
-                    m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(bundle.Name, asset.AddressableName), new TreeDataReportItem(id, dataItem.data));
+                    m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(bundle.Name, asset.Address), new TreeDataReportItem(id, dataItem.data));
                     children.Add(dataItem);
                 }
             }

@@ -14,10 +14,10 @@ namespace Bundles.Editor
 
         private Rect displayAreaRect => new(0, 0, position.width, position.height);
 
-        [Shortcut("Addressables/Analyze")]
+        [Shortcut("Bundles/Analyze")]
         internal static void ShowWindow()
         {
-            GetWindow<AnalyzeWindow>("Addressables Analyze", desiredDockNextTo: typeof(SceneView)).Focus();
+            GetWindow<AnalyzeWindow>("Bundles Analyze", desiredDockNextTo: typeof(SceneView)).Focus();
         }
 
         private void OnEnable()

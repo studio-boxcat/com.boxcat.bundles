@@ -10,7 +10,7 @@ namespace Bundles
         {
 #if DEBUG
             var startTime = Time.unscaledTime;
-            L.I($"[Addressables] SceneManager.LoadSceneAsync: name={assetName}, bundle={bundle.name}, startTime={startTime}");
+            L.I($"[B] SceneManager.LoadScene: name={assetName}, bundle={bundle.name}, startTime={startTime}");
 #endif
             Assert.AreEqual(typeof(Scene), typeof(T));
             Assert.IsTrue(bundle.Contains(assetName), $"Bundle does not contain scene: {assetName}");
@@ -23,7 +23,7 @@ namespace Bundles
             op.completed += _ =>
             {
                 var deltaTime = Time.unscaledTime - startTime;
-                L.I("[Addressables] SceneManager.LoadAssetAsync completed: " +
+                L.I("[B] SceneManager.Load completed: " +
                     $"name={assetName}, bundle={bundle.name}, time={deltaTime}");
             };
 #endif

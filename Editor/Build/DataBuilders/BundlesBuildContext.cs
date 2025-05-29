@@ -4,14 +4,14 @@ using UnityEditor.Build.Pipeline.Interfaces;
 namespace Bundles.Editor
 {
     /// <summary>
-    /// Simple context object for passing data through SBP, between different sections of Addressables code.
+    /// Simple context object for passing data through SBP, between different sections of Bundles code.
     /// </summary>
-    internal class AddressableAssetsBuildContext : IContextObject
+    internal class BundlesBuildContext : IContextObject
     {
         /// <summary>
         /// The catalog object to use.
         /// </summary>
-        public readonly AddressableCatalog Catalog;
+        public readonly AssetCatalog Catalog;
 
         /// <summary>
         /// A mapping of Asset GUID's to resulting ResourceLocation entries.
@@ -29,7 +29,7 @@ namespace Bundles.Editor
         public Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleToExpandedBundleDependencies;
 
 
-        public AddressableAssetsBuildContext(AddressableCatalog catalog)
+        public BundlesBuildContext(AssetCatalog catalog)
         {
             Catalog = catalog;
         }

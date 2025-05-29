@@ -56,9 +56,9 @@ namespace Bundles.Editor
         /// <summary>
         /// Clear current analysis and rerun check for duplicates
         /// </summary>
-        /// <param name="catalog">The current Addressables catalog object</param>
+        /// <param name="catalog">The current Bundles catalog object</param>
         /// <returns>List of the analysis results</returns>
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
+        public override List<AnalyzeResult> RefreshAnalysis(AssetCatalog catalog)
         {
             ClearAnalysis();
             return CheckForDuplicateDependencies(catalog);
@@ -83,11 +83,11 @@ namespace Bundles.Editor
         /// <summary>
         /// Check for duplicates among the dependencies and build implicit duplicates
         /// </summary>
-        /// <param name="catalog">The current Addressables catalog object</param>
+        /// <param name="catalog">The current Bundles catalog object</param>
         /// <returns>List of results from analysis</returns>
-        protected List<AnalyzeResult> CheckForDuplicateDependencies(AddressableCatalog catalog)
+        protected List<AnalyzeResult> CheckForDuplicateDependencies(AssetCatalog catalog)
         {
-            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
+            if (!BundlesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 m_Results.Add(new AnalyzeResult {resultName = ruleName + "Cannot run Analyze with unsaved scenes"});
@@ -97,9 +97,9 @@ namespace Bundles.Editor
             CalculateInputDefinitions(catalog);
 
             Assert.IsTrue(AllBundleInputDefs.Length is not 0,
-                "No bundle input definitions found. Please check your Addressables settings.");
+                "No bundle input definitions found. Please check your Bundles settings.");
 
-            var context = new AddressableAssetsBuildContext(catalog);
+            var context = new BundlesBuildContext(catalog);
             ReturnCode exitCode = RefreshBuild(context);
             if (exitCode < ReturnCode.Success)
             {

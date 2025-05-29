@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 
 namespace Bundles.Editor
 {
-    internal class GroupsViewBuildReportItem : IAddressablesBuildReportItem
+    internal class GroupsViewBuildReportItem : IBundlesBuildReportItem
     {
         [CanBeNull]
         public BuildLayout.Bundle Group { get; set; }
@@ -95,7 +95,7 @@ namespace Bundles.Editor
         }
     }
 
-    internal class GroupsViewBuildReportAsset : GroupsViewBuildReportItem, IAddressablesBuildReportAsset
+    internal class GroupsViewBuildReportAsset : GroupsViewBuildReportItem, IBundlesBuildReportAsset
     {
         public List<BuildLayout.ExplicitAsset> InternallyReferencedAssets { get; }
 
@@ -113,7 +113,7 @@ namespace Bundles.Editor
         public GroupsViewBuildReportAsset(BuildLayout.ExplicitAsset asset)
         {
             ExplicitAsset = asset;
-            Name = asset.AddressableName;
+            Name = asset.Address;
             ExternallyReferencedAssets = asset.ExternallyReferencedAssets;
             InternallyReferencedAssets = asset.InternalReferencedExplicitAssets;
             ImplicitDependencies = asset.InternalReferencedOtherAssets;
@@ -140,7 +140,7 @@ namespace Bundles.Editor
         }
     }
 
-    internal class GroupsViewBuildReportBundle : GroupsViewBuildReportItem, IAddressablesBuildReportBundle
+    internal class GroupsViewBuildReportBundle : GroupsViewBuildReportItem, IBundlesBuildReportBundle
     {
         public GroupsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
@@ -231,9 +231,9 @@ namespace Bundles.Editor
             }
         }
 
-        public override IList<IAddressablesBuildReportItem> CreateTreeViewItems(BuildLayout report)
+        public override IList<IBundlesBuildReportItem> CreateTreeViewItems(BuildLayout report)
         {
-            List<IAddressablesBuildReportItem> buildReportGroups = new List<IAddressablesBuildReportItem>();
+            List<IBundlesBuildReportItem> buildReportGroups = new List<IBundlesBuildReportItem>();
             if (report == null)
                 return buildReportGroups;
 
@@ -249,7 +249,7 @@ namespace Bundles.Editor
             return buildReportGroups;
         }
 
-        internal IList<TreeViewItemData<GroupsViewBuildReportItem>> CreateTreeRootsNestedList(IList<IAddressablesBuildReportItem> items)
+        internal IList<TreeViewItemData<GroupsViewBuildReportItem>> CreateTreeRootsNestedList(IList<IBundlesBuildReportItem> items)
         {
             int id = 0;
             var roots = new List<TreeViewItemData<GroupsViewBuildReportItem>>();
@@ -307,7 +307,7 @@ namespace Bundles.Editor
                 if (assetAppearsInSearch || childrenOfAsset.Count > 0)
                 {
                     var assetItem = new TreeViewItemData<GroupsViewBuildReportItem>(++id, reportAssetItem, childrenOfAsset);
-                    m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(asset.AddressableName), new TreeDataReportItem(id, assetItem.data));
+                    m_DataHashtoReportItem.TryAdd(BuildReportUtility.ComputeDataHash(asset.Address), new TreeDataReportItem(id, assetItem.data));
                     children.Add(assetItem);
                 }
             }
@@ -431,7 +431,7 @@ namespace Bundles.Editor
         {
             var columnList = m_TreeView.sortedColumns;
 
-            IList<IAddressablesBuildReportItem> sortedRootList = new List<IAddressablesBuildReportItem>();
+            IList<IBundlesBuildReportItem> sortedRootList = new List<IBundlesBuildReportItem>();
             foreach (var col in columnList)
             {
                 sortedRootList = SortByColumnDescription(col);

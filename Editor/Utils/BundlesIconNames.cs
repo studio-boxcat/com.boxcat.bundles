@@ -1,6 +1,6 @@
 namespace Bundles.Editor
 {
-    internal static class AddressableIconNames
+    internal static class BundlesIconNames
     {
         public static readonly string AssetBundleIconDark = "d_Package Manager@2x";
         public static readonly string ForwardIconDark = "d_tab_next@2x";

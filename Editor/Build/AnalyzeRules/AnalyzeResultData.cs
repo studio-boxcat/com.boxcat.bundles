@@ -5,10 +5,10 @@ using UnityEngine;
 namespace Bundles.Editor
 {
     /// <summary>
-    /// Represents the data acquired after analyzing Addressable assets.
+    /// Represents the data acquired after analyzing Bundles assets.
     /// </summary>
     [Serializable]
-    internal class AddressablesAnalyzeResultData : ISerializationCallbackReceiver
+    internal class BundlesAnalyzeResultData : ISerializationCallbackReceiver
     {
         [Serializable]
         private class RuleToResults

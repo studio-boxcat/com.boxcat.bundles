@@ -31,11 +31,11 @@ namespace Bundles.Editor
             => m_ResultData ??= BuildResult(AllBundleInputDefs, ExtractData.WriteData);
 
         /// <inheritdoc />
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
+        public override List<AnalyzeResult> RefreshAnalysis(AssetCatalog catalog)
         {
             ClearAnalysis();
 
-            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
+            if (!BundlesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 m_Results.Add(new AnalyzeResult(ruleName + "Cannot run Analyze with unsaved scenes"));
@@ -43,7 +43,7 @@ namespace Bundles.Editor
             }
 
             CalculateInputDefinitions(catalog);
-            var context = new AddressableAssetsBuildContext(catalog);
+            var context = new BundlesBuildContext(catalog);
             RefreshBuild(context);
             foreach (var resultData in BuildBundleLayoutResults)
             {

@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace Bundles.Editor
 {
-    internal class DuplicatedAssetsViewBuildReportItem : IAddressablesBuildReportItem
+    internal class DuplicatedAssetsViewBuildReportItem : IBundlesBuildReportItem
     {
         public string Name { get; set; }
 
@@ -67,7 +67,7 @@ namespace Bundles.Editor
         }
     }
 
-    internal class DuplicatedAssetsViewBuildReportDuplicatedAsset : DuplicatedAssetsViewBuildReportItem, IAddressablesBuildReportAsset
+    internal class DuplicatedAssetsViewBuildReportDuplicatedAsset : DuplicatedAssetsViewBuildReportItem, IBundlesBuildReportAsset
     {
         public new string GetCellContent(string colName)
         {
@@ -110,13 +110,13 @@ namespace Bundles.Editor
         }
     }
 
-    internal class DuplicatedAssetsViewBuildReportAsset : DuplicatedAssetsViewBuildReportItem, IAddressablesBuildReportAsset
+    internal class DuplicatedAssetsViewBuildReportAsset : DuplicatedAssetsViewBuildReportItem, IBundlesBuildReportAsset
     {
         public string UsedByString { get; set; }
         public DuplicatedAssetsViewBuildReportAsset(BuildLayout.ExplicitAsset asset, BuildLayout.DataFromOtherAsset implicitAsset)
         {
             ExplicitAsset = asset;
-            Name = asset.AddressableName;
+            Name = asset.Address;
             Size = asset.SerializedSize + asset.StreamedSize;
             UsedByString = $"Uses {implicitAsset.AssetPath}";
             DuplicationCount = -1;
@@ -135,7 +135,7 @@ namespace Bundles.Editor
         }
     }
 
-    internal class DuplicatedAssetsViewBuildReportBundle : DuplicatedAssetsViewBuildReportItem, IAddressablesBuildReportBundle
+    internal class DuplicatedAssetsViewBuildReportBundle : DuplicatedAssetsViewBuildReportItem, IBundlesBuildReportBundle
     {
         public DuplicatedAssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
@@ -168,9 +168,9 @@ namespace Bundles.Editor
         }
      }
 
-        public override IList<IAddressablesBuildReportItem> CreateTreeViewItems(BuildLayout report)
+        public override IList<IBundlesBuildReportItem> CreateTreeViewItems(BuildLayout report)
         {
-            List<IAddressablesBuildReportItem> buildReportAssets = new List<IAddressablesBuildReportItem>();
+            List<IBundlesBuildReportItem> buildReportAssets = new List<IBundlesBuildReportItem>();
             if (report == null)
                 return buildReportAssets;
 
@@ -182,7 +182,7 @@ namespace Bundles.Editor
             return buildReportAssets;
         }
 
-        internal IList<TreeViewItemData<DuplicatedAssetsViewBuildReportItem>> CreateTreeRootsNestedList(IList<IAddressablesBuildReportItem> items)
+        internal IList<TreeViewItemData<DuplicatedAssetsViewBuildReportItem>> CreateTreeRootsNestedList(IList<IBundlesBuildReportItem> items)
         {
             int id = 0;
             var roots = new List<TreeViewItemData<DuplicatedAssetsViewBuildReportItem>>();
@@ -263,7 +263,7 @@ namespace Bundles.Editor
         {
             var columnList = m_TreeView.sortedColumns;
 
-            IList<IAddressablesBuildReportItem> sortedRootList = new List<IAddressablesBuildReportItem>();
+            IList<IBundlesBuildReportItem> sortedRootList = new List<IBundlesBuildReportItem>();
             foreach (var col in columnList)
             {
                 sortedRootList = SortByColumnDescription(col);

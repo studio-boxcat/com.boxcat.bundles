@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace Bundles.Editor
 {
-    public partial class AddressableCatalog
+    public partial class AssetCatalog
     {
         [ShowInInspector, OnValueChanged("_searchPattern_OnValueChanged")]
         private static string _searchPattern;
@@ -79,14 +79,14 @@ namespace Bundles.Editor
         [Button("Build"), ButtonGroup(order: -1)]
         private void Build()
         {
-            AddressableBuilder.Build(this, EditorUserBuildSettings.activeBuildTarget);
+            Builder.Build(this, EditorUserBuildSettings.activeBuildTarget);
         }
 
         [Button("Generate"), ButtonGroup]
         private void GenerateGroupsAndCodes()
         {
             GenerateGroups();
-            AddressablesCodeGenerator.GenerateCode(this, AssetDatabase.GUIDToAssetPath("73dee367a1284cea987dd7ac55b7b5e9"));
+            AddressCodeGen.GenerateCode(this, AssetDatabase.GUIDToAssetPath("73dee367a1284cea987dd7ac55b7b5e9"));
         }
 
         private void GenerateGroups()
@@ -98,13 +98,13 @@ namespace Bundles.Editor
             foreach (var method in methods)
             {
                 var generatorName = method.Name;
-                L.I($"[AddressableCatalog] Generating groups from {generatorName}");
+                L.I($"[AssetCatalog] Generating groups from {generatorName}");
                 var meta = method.GetCustomAttribute<AssetGroupGeneratorAttribute>();
                 var defs = (IEnumerable<AssetGroupGenerationDef>) method.Invoke(null, null);
                 gen.AddRange(defs.Select(def => BuildAssetGroup(def, meta, generatorName)));
             }
 
-            L.I("[AddressableCatalog] Post-processing generated groups");
+            L.I("[AssetCatalog] Post-processing generated groups");
             gen.ForEach(x =>
             {
                 if (TryGetGroup(x.Key, out var orgGroup) is false)
@@ -113,7 +113,7 @@ namespace Bundles.Editor
                 // keep original bundle id, if bundle id is not set. (means no direct bundle access)
                 if (x.BundleId is 0)
                 {
-                    L.I($"[AddressableCatalog] Group {x.Key.Value} already exists. Using original bundle id {orgGroup.BundleId.Name()}");
+                    L.I($"[AssetCatalog] Group {x.Key.Value} already exists. Using original bundle id {orgGroup.BundleId.Name()}");
                     x.BundleId = orgGroup.BundleId;
                 }
 
@@ -150,12 +150,12 @@ namespace Bundles.Editor
                     $"BundleStart and BundleSubId must be set together - {generatorName}");
                 if (!def.BundleMinor.HasValue)
                 {
-                    L.I($"[AddressableCatalog] Group created: {groupName}");
+                    L.I($"[AssetCatalog] Group created: {groupName}");
                     return group;
                 }
 
                 group.BundleId = AssetBundleIdUtils.PackBundleId(meta.BundleMajor!.Value, def.BundleMinor.Value);
-                L.I($"[AddressableCatalog] Group created: {groupName}, {group.BundleId.Name()}");
+                L.I($"[AssetCatalog] Group created: {groupName}, {group.BundleId.Name()}");
                 return group;
             }
 

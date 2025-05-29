@@ -10,14 +10,14 @@ namespace Bundles.Editor
     internal class CheckSceneDupeDependencies : BundleRuleBase
     {
         /// <inheritdoc />
-        public override string ruleName => "Check Scene to Addressable Duplicate Dependencies";
+        public override string ruleName => "Check Scene to Bundles Duplicate Dependencies";
 
         /// <summary>
         /// Clear analysis and calculate built in resources and corresponding bundle dependencies for scenes
         /// </summary>
-        /// <param name="catalog">The current Addressables catalog object</param>
+        /// <param name="catalog">The current Bundles catalog object</param>
         /// <returns>List of results from analysis</returns>
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
+        public override List<AnalyzeResult> RefreshAnalysis(AssetCatalog catalog)
         {
             ClearAnalysis();
 

@@ -7,7 +7,7 @@ namespace Bundles
     /// <summary>
     /// Entry point for ResourceManager API
     /// </summary>
-    internal class AddressablesImpl : IAddressablesImpl
+    internal class BundlesImpl : IBundlesImpl
     {
         private readonly ResourceCatalog _catalog;
         private readonly AssetBundleLoader _loader;
@@ -16,38 +16,38 @@ namespace Bundles
         private readonly List<AssetOpBlock> _opBlockPool = new();
 
 
-        public AddressablesImpl(string catalogUri)
+        public BundlesImpl(string catalogUri)
         {
             _catalog = ResourceCatalog.Load(catalogUri);
             _loader = new AssetBundleLoader(_catalog.GetBundleCount(), _catalog.IndexToId);
             _loader.LoadMonoScriptBundle(); // load mono script bundle immediately
         }
 
-        public IAssetOp<TObject> LoadAssetAsync<TObject>(Address address) where TObject : Object
+        public IAssetOp<TObject> Load<TObject>(Address address) where TObject : Object
         {
             var b = GetOpBlock(address, _bundledAssetProvider);
             return new AssetOp<TObject>(b);
         }
 
-        public TObject LoadAsset<TObject>(Address address) where TObject : Object
+        public TObject LoadSync<TObject>(Address address) where TObject : Object
         {
             var bundleIndex = _catalog.GetContainingBundle(address);
             return LoadAsset<TObject>(bundleIndex, address.Hex());
         }
 
-        public IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object
+        public IAssetOp<TObject> Load<TObject>(AssetLocation loc) where TObject : Object
         {
             var b = GetOpBlock(loc, _bundledAssetProvider);
             return new AssetOp<TObject>(b);
         }
 
-        public TObject LoadAsset<TObject>(AssetLocation loc) where TObject : Object
+        public TObject LoadSync<TObject>(AssetLocation loc) where TObject : Object
         {
             var bundleIndex = _catalog.GetBundleIndex(loc.BundleId);
             return LoadAsset<TObject>(bundleIndex, loc.AssetIndex.Name());
         }
 
-        public IAssetOp<Scene> LoadSceneAsync(Address address)
+        public IAssetOp<Scene> LoadScene(Address address)
         {
             var b = GetOpBlock(address, _sceneProvider);
             return new AssetOp<Scene>(b);
@@ -94,7 +94,7 @@ namespace Bundles
         private AssetOpBlock GetOpBlock(AssetLocation loc, IResourceProvider provider)
         {
             var bundleIndex = _catalog.GetBundleIndex(loc.BundleId);
-            // L.I($"[Addressables] GetOpBlock: bundleId={loc.BundleId.Name()}, bundleIndex={bundleIndex.DebugString()}, assetName={loc.AssetIndex.Name()}");
+            // L.I($"[B] GetOpBlock: bundleId={loc.BundleId.Name()}, bundleIndex={bundleIndex.DebugString()}, assetName={loc.AssetIndex.Name()}");
             return GetOpBlock(bundleIndex, loc.AssetIndex.Name(), provider);
         }
 

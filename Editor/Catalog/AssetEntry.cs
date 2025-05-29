@@ -84,7 +84,7 @@ namespace Bundles.Editor
 
             var path = AssetDatabase.GetAssetPath(asset);
             if (!IsPathValidForEntry(path))
-                result.AddError($"The asset '{path}' is not valid for Addressable Asset Group '{Address}'.");
+                result.AddError($"The asset '{path}' is not valid for Asset Group '{Address}'.");
         }
 
         private static readonly string[] _excludedExtensions = { ".cs", ".dll", ".meta", ".preset", ".asmdef", ".asmref" };

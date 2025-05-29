@@ -11,7 +11,7 @@ using SearchOption = System.IO.SearchOption;
 
 namespace Bundles.Editor
 {
-    public static class AddressablesUtils
+    public static class BundlesUtils
     {
         internal static T Load<T>(AssetGUID guid) where T : Object
         {
@@ -49,15 +49,15 @@ namespace Bundles.Editor
             var methods = TypeCache.GetMethodsWithAttribute<T>();
             foreach (var method in methods)
             {
-                L.I("[AddressablesUtils] InvokeAllMethodsWithAttribute: " + method.Name);
+                L.I("[BundlesUtils] InvokeAllMethodsWithAttribute: " + method.Name);
                 method.Invoke(null, parameters);
             }
         }
 
-        [MenuItem("Assets/Addressables/Register Selection")]
+        [MenuItem("Assets/Bundles/Register Selection")]
         private static void ShowDialog()
         {
-            var catalog = AddressableCatalog.Default;
+            var catalog = AssetCatalog.Default;
             var groups = catalog.Groups.Where(x => !x.IsGenerated).ToArray();
             var options = groups.Select(x => x.Key.Value).ToArray();
             var assetGUIDs = Selection.assetGUIDs.Distinct().Select(x => (AssetGUID) x).ToArray();
@@ -94,7 +94,7 @@ namespace Bundles.Editor
 
         public static void TryCopyToPlatformProject(BuildTarget buildTarget, string buildPath, string projDir)
         {
-            L.I("[AddressablesUtils] TryCopyToPlatformProject");
+            L.I("[BundlesUtils] TryCopyToPlatformProject");
 
             var dstDir = ResolveDstDir(projDir, buildTarget);
             CleanUpDirectory(dstDir);
@@ -114,7 +114,7 @@ namespace Bundles.Editor
                 File.Copy(file, Path.Combine(dstDir, fileName));
             }
 
-            L.I($"[AddressablesUtils] Copy {files.Length} files to {dstDir}");
+            L.I($"[BundlesUtils] Copy {files.Length} files to {dstDir}");
             return;
 
             static string ResolveDstDir(string projDir, BuildTarget buildTarget)

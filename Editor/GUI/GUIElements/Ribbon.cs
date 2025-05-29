@@ -5,7 +5,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-[assembly: UxmlNamespacePrefix("Bundles.Editor.GUIElements", "AddressablesGUI")]
+[assembly: UxmlNamespacePrefix("Bundles.Editor.GUIElements", "BundlesGUI")]
 namespace Bundles.Editor
 {
     internal class Ribbon : VisualElement

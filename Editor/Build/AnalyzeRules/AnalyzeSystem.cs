@@ -15,7 +15,7 @@ namespace Bundles.Editor
         internal const string AnalyzeRuleDataName = "AnalyzeRuleData.json";
         internal const string AnalyzeRuleDataPath = AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
-        internal static AddressableCatalog Catalog => AddressableCatalog.Default;
+        internal static AssetCatalog Catalog => AssetCatalog.Default;
 
         private static AnalyzeRule[] m_Rules;
         internal static AnalyzeRule[] Rules
@@ -34,11 +34,11 @@ namespace Bundles.Editor
         }
 
         [SerializeField]
-        private static AddressablesAnalyzeResultData m_AnalyzeData;
+        private static BundlesAnalyzeResultData m_AnalyzeData;
 
         internal static AssetSettingsAnalyzeTreeView TreeView { get; set; }
 
-        internal static AddressablesAnalyzeResultData AnalyzeData
+        internal static BundlesAnalyzeResultData AnalyzeData
         {
             get
             {
@@ -84,9 +84,9 @@ namespace Bundles.Editor
         public static void DeserializeData(string path)
         {
             if (!File.Exists(path))
-                File.WriteAllText(path, JsonUtility.ToJson(new AddressablesAnalyzeResultData()));
+                File.WriteAllText(path, JsonUtility.ToJson(new BundlesAnalyzeResultData()));
 
-            m_AnalyzeData = JsonUtility.FromJson<AddressablesAnalyzeResultData>(File.ReadAllText(path));
+            m_AnalyzeData = JsonUtility.FromJson<BundlesAnalyzeResultData>(File.ReadAllText(path));
             if (m_AnalyzeData == null)
                 L.W($"Unable to load Analyze Result Data at {path}.");
             else

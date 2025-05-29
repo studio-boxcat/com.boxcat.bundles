@@ -8,7 +8,7 @@ using UnityEngine.Serialization;
 
 namespace Bundles.Editor
 {
-    public partial class AddressableCatalog : ScriptableObject
+    public partial class AssetCatalog : ScriptableObject
     {
         [FormerlySerializedAs("AssetGroups")]
         [SerializeField, HideInInspector]

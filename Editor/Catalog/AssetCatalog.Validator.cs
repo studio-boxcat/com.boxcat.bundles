@@ -3,7 +3,7 @@ using Sirenix.OdinInspector;
 
 namespace Bundles.Editor
 {
-    public partial class AddressableCatalog : ISelfValidator
+    public partial class AssetCatalog : ISelfValidator
     {
         void ISelfValidator.Validate(SelfValidationResult result)
         {

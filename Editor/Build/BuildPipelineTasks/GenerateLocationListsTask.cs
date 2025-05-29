@@ -7,7 +7,7 @@ using UnityEditor.Build.Pipeline.Interfaces;
 namespace Bundles.Editor
 {
     /// <summary>
-    /// The BuildTask used to create location lists for Addressable assets.
+    /// The BuildTask used to create location lists for Bundles assets.
     /// </summary>
     public class GenerateLocationListsTask : IBuildTask
     {
@@ -18,7 +18,7 @@ namespace Bundles.Editor
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
-        private AddressableAssetsBuildContext m_AaBuildContext;
+        private BundlesBuildContext m_AaBuildContext;
 
         [InjectContext]
         private IBundleWriteData m_WriteData;
@@ -50,7 +50,7 @@ namespace Bundles.Editor
         /// </summary>
         /// <returns>An object that contains organized information about dependencies and catalog locations.</returns>
         private static void Process(
-            AddressableCatalog catalog,
+            AssetCatalog catalog,
             Dictionary<AssetGUID, List<AssetBundleId>> assetToFiles,
             out Dictionary<AssetGUID, EntryDef> entries,
             out Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleToImmediateBundleDependencies,

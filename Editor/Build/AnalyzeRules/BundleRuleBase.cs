@@ -55,9 +55,9 @@ namespace Bundles.Editor
         /// </summary>
         /// <param name="buildContext"> Context information for building</param>
         /// <returns> The return code of whether analyze build was successful, </returns>
-        protected internal ReturnCode RefreshBuild(AddressableAssetsBuildContext buildContext)
+        protected internal ReturnCode RefreshBuild(BundlesBuildContext buildContext)
         {
-            var buildParams = AddressableBuilder.GetBuildParameter(
+            var buildParams = Builder.GetBuildParameter(
                 EditorUserBuildSettings.activeBuildTarget, PathConfig.TempPath);
             var buildTasks = RuntimeDataBuildTasks();
             m_ExtractData = new ExtractDataTask();
@@ -111,7 +111,7 @@ namespace Bundles.Editor
             {
                 string path = resourcePaths[sceneIndex];
                 if (EditorUtility.DisplayCancelableProgressBar("Generating built-in resource dependency map",
-                        "Checking " + path + " for duplicates with Addressables content.",
+                        "Checking " + path + " for duplicates with Bundles content.",
                         (float) sceneIndex / resourcePaths.Length))
                 {
                     m_ResourcesToDependencies.Clear();
@@ -167,8 +167,8 @@ namespace Bundles.Editor
         /// <summary>
         /// Generate input definitions and entries for AssetBundleBuild
         /// </summary>
-        /// <param name="catalog">The current Addressables catalog object</param>
-        protected void CalculateInputDefinitions(AddressableCatalog catalog)
+        /// <param name="catalog">The current Bundles catalog object</param>
+        protected void CalculateInputDefinitions(AssetCatalog catalog)
         {
             m_AllBundleInputDefs = catalog.GenerateBundleBuilds();
         }
@@ -206,21 +206,21 @@ namespace Bundles.Editor
         /// <summary>
         /// Calculate built in resources and corresponding bundle dependencies
         /// </summary>
-        /// <param name="catalog">The current Addressables catalog object</param>
+        /// <param name="catalog">The current Bundles catalog object</param>
         /// <param name="builtInResourcesPaths">Array of resource paths</param>
         /// <returns>List of rule results after calculating resource and bundle dependency combined</returns>
-        protected List<AnalyzeResult> CalculateBuiltInResourceDependenciesToBundleDependecies(AddressableCatalog catalog, string[] builtInResourcesPaths)
+        protected List<AnalyzeResult> CalculateBuiltInResourceDependenciesToBundleDependecies(AssetCatalog catalog, string[] builtInResourcesPaths)
         {
             List<AnalyzeResult> results = new List<AnalyzeResult>();
 
-            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
+            if (!BundlesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });
                 return results;
             }
 
-            EditorUtility.DisplayProgressBar("Calculating Built-in dependencies", "Calculating dependencies between Built-in resources and Addressables", 0);
+            EditorUtility.DisplayProgressBar("Calculating Built-in dependencies", "Calculating dependencies between Built-in resources and Bundles", 0);
             try
             {
                 // bulk of work and progress bars displayed in these methods
@@ -268,10 +268,10 @@ namespace Bundles.Editor
         /// <summary>
         /// Calculates and gathers dependencies for built in data.
         /// </summary>
-        /// <param name="catalog">The AddressableAssetSettings to pull data from.</param>
+        /// <param name="catalog">The AssetCatalog to pull data from.</param>
         /// <param name="builtInResourcesPaths">The paths that lead to all the built in Resource locations</param>
         /// <returns>A ReturnCode indicating various levels of success or failure.</returns>
-        protected ReturnCode BuildAndGetResourceDependencies(AddressableCatalog catalog, string[] builtInResourcesPaths)
+        protected ReturnCode BuildAndGetResourceDependencies(AssetCatalog catalog, string[] builtInResourcesPaths)
         {
             BuiltInResourcesToDependenciesMap(builtInResourcesPaths);
             if (m_ResourcesToDependencies == null || m_ResourcesToDependencies.Count == 0)
@@ -282,10 +282,10 @@ namespace Bundles.Editor
                 return ReturnCode.SuccessNotRun;
 
             EditorUtility.DisplayProgressBar("Calculating Built-in dependencies",
-                "Calculating dependencies between Built-in resources and Addressables", 0.5f);
+                "Calculating dependencies between Built-in resources and Bundles", 0.5f);
 
             ReturnCode exitCode = ReturnCode.Error;
-            var context = new AddressableAssetsBuildContext(catalog);
+            var context = new BundlesBuildContext(catalog);
             exitCode = RefreshBuild(context);
             if (exitCode < ReturnCode.Success)
             {
@@ -294,7 +294,7 @@ namespace Bundles.Editor
             }
 
             EditorUtility.DisplayProgressBar("Calculating Built-in dependencies",
-                "Calculating dependencies between Built-in resources and Addressables", 0.9f);
+                "Calculating dependencies between Built-in resources and Bundles", 0.9f);
             IntersectResourcesDepedenciesWithBundleDependencies(GetAllBundleDependencies());
 
             return exitCode;
@@ -326,7 +326,7 @@ namespace Bundles.Editor
         private List<ResultData> m_ResultData = null;
 
         /// <summary>
-        /// Duplicate Results between Addressables and Player content.
+        /// Duplicate Results between Bundles and Player content.
         /// </summary>
         protected IEnumerable<ResultData> Results
         {
@@ -374,21 +374,21 @@ namespace Bundles.Editor
         /// <summary>
         /// Clear analysis and calculate built in content and corresponding bundle dependencies
         /// </summary>
-        /// <param name="catalog">The current Addressables catalog object</param>
+        /// <param name="catalog">The current Bundles catalog object</param>
         /// <returns>List of results from analysis</returns>
-        public override List<AnalyzeResult> RefreshAnalysis(AddressableCatalog catalog)
+        public override List<AnalyzeResult> RefreshAnalysis(AssetCatalog catalog)
         {
             ClearAnalysis();
             List<AnalyzeResult> results = new List<AnalyzeResult>();
 
-            if (!AddressablesUtils.CheckModifiedScenesAndAskToSave())
+            if (!BundlesUtils.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
                 results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });
                 return results;
             }
 
-            EditorUtility.DisplayProgressBar("Calculating Built-in dependencies", "Calculating dependencies between Resources and Addressables", 0);
+            EditorUtility.DisplayProgressBar("Calculating Built-in dependencies", "Calculating dependencies between Resources and Bundles", 0);
             try
             {
                 // bulk of work and progress bars displayed in these methods
@@ -428,7 +428,7 @@ namespace Bundles.Editor
         }
 
         /// <summary>
-        /// Gets an array of resource paths that are to be compared against the addressables build content
+        /// Gets an array of resource paths that are to be compared against the bundles build content
         /// </summary>
         /// <returns>Array of Resource paths to compare against</returns>
         internal protected virtual string[] GetResourcePaths() => Array.Empty<string>();

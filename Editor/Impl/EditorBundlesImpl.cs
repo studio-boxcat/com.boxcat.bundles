@@ -4,29 +4,29 @@ using Object = UnityEngine.Object;
 
 namespace Bundles.Editor
 {
-    internal class EditorAddressablesImpl : IAddressablesImpl
+    internal class EditorBundlesImpl : IBundlesImpl
     {
-        private readonly AddressableCatalog _catalog;
+        private readonly AssetCatalog _catalog;
 
 
-        public EditorAddressablesImpl(AddressableCatalog catalog)
+        public EditorBundlesImpl(AssetCatalog catalog)
         {
             _catalog = catalog;
         }
 
-        public IAssetOp<TObject> LoadAssetAsync<TObject>(Address address) where TObject : Object =>
+        public IAssetOp<TObject> Load<TObject>(Address address) where TObject : Object =>
             CreateAssetOp<TObject>(GetEntryByAddress(address));
 
-        public TObject LoadAsset<TObject>(Address address) where TObject : Object =>
+        public TObject LoadSync<TObject>(Address address) where TObject : Object =>
             GetEntryByAddress(address).LoadAssetWithType<TObject>();
 
-        public IAssetOp<TObject> LoadAssetAsync<TObject>(AssetLocation loc) where TObject : Object =>
+        public IAssetOp<TObject> Load<TObject>(AssetLocation loc) where TObject : Object =>
             CreateAssetOp<TObject>(GetEntryByLocation(loc));
 
-        public TObject LoadAsset<TObject>(AssetLocation loc) where TObject : Object =>
+        public TObject LoadSync<TObject>(AssetLocation loc) where TObject : Object =>
             GetEntryByLocation(loc).LoadAssetWithType<TObject>();
 
-        public IAssetOp<Scene> LoadSceneAsync(Address address) =>
+        public IAssetOp<Scene> LoadScene(Address address) =>
             new EditorSceneOp(GetEntryByAddress(address).GUID);
 
         private AssetEntry GetEntryByAddress(Address address) => _catalog.GetEntry(address);

@@ -76,7 +76,7 @@ namespace Bundles.Editor
                 {
                     // select to save dialog
                     var path = EditorUtility.SaveFilePanel("Export analysis results to json", "",
-                        "AddressablesAnalyseResults", "json");
+                        "BundlesAnalyseResults", "json");
                     AnalyzeSystem.SerializeData(path);
                 });
                 menu.AddItem(m_ImportJsonGUIContent, false, () => EditorApplication.delayCall += () =>

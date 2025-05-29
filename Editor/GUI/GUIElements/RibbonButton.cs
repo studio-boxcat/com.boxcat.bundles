@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-[assembly: UxmlNamespacePrefix("Bundles.Editor.GUIElements", "AddressablesGUI")]
+[assembly: UxmlNamespacePrefix("Bundles.Editor.GUIElements", "BundlesGUI")]
 namespace Bundles.Editor
 {
     internal class RibbonButton : Button

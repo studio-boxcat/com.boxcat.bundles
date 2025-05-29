@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Bundles.Editor
 {
-    internal class AddressablesGUIUtility
+    internal class BundlesGUIUtility
     {
         internal static Color HeaderNormalColor
         {

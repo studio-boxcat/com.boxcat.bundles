@@ -2,16 +2,16 @@ using Object = UnityEngine.Object;
 
 namespace Bundles.Editor
 {
-    public static class EditorAddressables
+    public static class EditorBundles
     {
         public static bool Contains(string address)
         {
-            return AddressableCatalog.Default.ContainsEntry(address);
+            return AssetCatalog.Default.ContainsEntry(address);
         }
 
         public static T LoadAsset<T>(Address address) where T : Object
         {
-            return AddressableCatalog.Default.GetEntry(address).LoadAssetWithType<T>();
+            return AssetCatalog.Default.GetEntry(address).LoadAssetWithType<T>();
         }
     }
 }

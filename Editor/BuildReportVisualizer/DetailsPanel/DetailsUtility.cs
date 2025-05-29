@@ -5,8 +5,8 @@ namespace Bundles.Editor
     {
         public static BuildLayout.ExplicitAsset GetAsset(object item)
         {
-            if (item is IAddressablesBuildReportAsset)
-                return (item as IAddressablesBuildReportAsset).ExplicitAsset;
+            if (item is IBundlesBuildReportAsset)
+                return (item as IBundlesBuildReportAsset).ExplicitAsset;
             else if (item is BuildLayout.ExplicitAsset)
                 return item as BuildLayout.ExplicitAsset;
             return null;
@@ -14,8 +14,8 @@ namespace Bundles.Editor
 
         public static BuildLayout.DataFromOtherAsset GetOtherAssetData(object item)
         {
-            if (item is IAddressablesBuildReportAsset)
-                return (item as IAddressablesBuildReportAsset).DataFromOtherAsset;
+            if (item is IBundlesBuildReportAsset)
+                return (item as IBundlesBuildReportAsset).DataFromOtherAsset;
             else if (item is BuildLayout.DataFromOtherAsset)
                 return item as BuildLayout.DataFromOtherAsset;
             return null;
@@ -23,7 +23,7 @@ namespace Bundles.Editor
 
         public static bool IsBundle(object item)
         {
-            if (item is IAddressablesBuildReportBundle || item is BuildLayout.Bundle)
+            if (item is IBundlesBuildReportBundle || item is BuildLayout.Bundle)
                 return true;
 
             return false;
@@ -33,8 +33,8 @@ namespace Bundles.Editor
         {
             BuildLayout.Bundle bundle = null;
 
-            if (item is IAddressablesBuildReportBundle)
-                bundle = (item as IAddressablesBuildReportBundle).Bundle;
+            if (item is IBundlesBuildReportBundle)
+                bundle = (item as IBundlesBuildReportBundle).Bundle;
             else if (item is BuildLayout.Bundle)
                 bundle = item as BuildLayout.Bundle;
 

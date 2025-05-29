@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Bundles.Editor
 {
     /// <summary>
-    /// The project configuration settings for addressables.
+    /// The project configuration settings for Bundles.
     /// </summary>
     internal static class ProjectConfigData
     {
