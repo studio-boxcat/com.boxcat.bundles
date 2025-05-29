@@ -1,12 +1,10 @@
 #if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using BuildLayout = UnityEditor.AddressableAssets.Build.Layout.BuildLayout;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     // Nested class that represents a generic item in the bundle view (can be an asset, header, or bundle).
     internal class BundlesViewBuildReportItem : IAddressablesBuildReportItem

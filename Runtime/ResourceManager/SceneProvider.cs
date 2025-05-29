@@ -1,8 +1,8 @@
-using UnityEngine.AddressableAssets.Util;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     internal class SceneProvider : IResourceProvider
     {

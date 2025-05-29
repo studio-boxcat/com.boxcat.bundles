@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.Layout;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     [Serializable]
     internal class BuildReportListView
@@ -63,7 +63,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
             m_ListView.makeItem = () =>
             {
-                var item = m_ReportListItemTreeAsset.Clone();
+                var item = GUIUtility.Clone(m_ReportListItemTreeAsset);
                 item.Q<VisualElement>(BuildReportUtility.ReportsListItemContainerLefthandElements).style.marginTop = new StyleLength(new Length(2f, LengthUnit.Pixel));
                 item.Q<VisualElement>(BuildReportUtility.ReportsListItemContainerRighthandElements).style.marginTop = new StyleLength(new Length(2f, LengthUnit.Pixel));
                 item.style.unityTextAlign = TextAnchor.MiddleCenter;

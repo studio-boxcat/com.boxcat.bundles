@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.AddressableAssets;
+using UnityEditor;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     [Serializable]
     public struct AssetGUID : IEquatable<AssetGUID>, IComparable<AssetGUID>

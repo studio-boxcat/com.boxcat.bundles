@@ -1,10 +1,10 @@
 #if UNITY_2022_2_OR_NEWER
 using System;
-using UnityEditor.AddressableAssets.GUI;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class PotentialIssuesCard
     {
@@ -138,7 +138,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 GenericMenu menu = new GenericMenu();
                 menu.AddItem(new GUIContent("Copy"), false, () =>
                 {
-                    GUIUtility.systemCopyBuffer = element.text;
+                    UnityEngine.GUIUtility.systemCopyBuffer = element.text;
                 });
 
                 menu.ShowAsContext();

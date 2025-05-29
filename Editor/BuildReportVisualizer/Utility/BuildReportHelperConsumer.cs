@@ -1,9 +1,8 @@
 #if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.Layout;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal abstract class BuildReportHelperAsset
     {

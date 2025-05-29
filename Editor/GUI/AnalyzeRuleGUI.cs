@@ -1,9 +1,9 @@
 using System;
-using UnityEditor.AddressableAssets.Build;
+using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.GUI
+namespace Bundles.Editor
 {
     [Serializable]
     internal class AnalyzeRuleGUI

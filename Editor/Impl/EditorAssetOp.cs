@@ -1,10 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Util;
+using UnityEditor;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     internal class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : UnityEngine.Object
     {

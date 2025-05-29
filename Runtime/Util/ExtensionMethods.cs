@@ -1,8 +1,9 @@
 using System;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
 
-namespace UnityEngine.AddressableAssets.Util
+namespace Bundles
 {
     internal static class ExtensionMethods
     {

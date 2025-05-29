@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public class AddressComparer : IEqualityComparer<Address>
     {

@@ -2,17 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.Build.Layout;
+using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
+namespace Bundles.Editor
 {
     /// <summary>
     /// The BuildTask used to generate the bundle layout.

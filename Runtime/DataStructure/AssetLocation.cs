@@ -1,4 +1,4 @@
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public enum AssetIndex : uint { }
 

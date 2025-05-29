@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     /// <summary>
     /// Base class for creating rules to analyze Addressables data.  Use AnalyzeWindow.RegisterNewRule&lt;T&gt;() to register.

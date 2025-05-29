@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace UnityEditor.AddressableAssets.Build.Layout
+namespace Bundles.Editor
 {
     internal class BuildLayoutPrinter
     {

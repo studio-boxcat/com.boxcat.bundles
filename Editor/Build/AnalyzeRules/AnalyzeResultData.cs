@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     /// <summary>
     /// Represents the data acquired after analyzing Addressable assets.

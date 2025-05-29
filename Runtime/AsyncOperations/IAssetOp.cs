@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public interface IAssetOp<TResult>
     {

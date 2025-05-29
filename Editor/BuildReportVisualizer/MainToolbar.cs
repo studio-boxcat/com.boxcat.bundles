@@ -1,10 +1,10 @@
 #if UNITY_2022_2_OR_NEWER
+using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class MainToolbar
     {

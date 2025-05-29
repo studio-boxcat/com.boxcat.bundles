@@ -1,7 +1,8 @@
+using UnityEditor;
 using UnityEngine;
 
 
-namespace UnityEditor.AddressableAssets.GUI
+namespace Bundles.Editor
 {
     internal class AddressablesGUIUtility
     {

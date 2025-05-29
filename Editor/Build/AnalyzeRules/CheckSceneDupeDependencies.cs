@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     /// <summary>
     /// Rule class to check scene dependencies for duplicates

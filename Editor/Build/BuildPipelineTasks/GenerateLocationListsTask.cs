@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
+namespace Bundles.Editor
 {
     /// <summary>
     /// The BuildTask used to create location lists for Addressable assets.

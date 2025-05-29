@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public partial class AddressableCatalog : ScriptableObject
     {

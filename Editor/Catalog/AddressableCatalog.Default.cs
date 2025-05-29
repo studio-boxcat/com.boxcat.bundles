@@ -1,6 +1,7 @@
+using UnityEditor;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public partial class AddressableCatalog
     {

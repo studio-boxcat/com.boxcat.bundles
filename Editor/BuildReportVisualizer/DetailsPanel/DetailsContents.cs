@@ -1,7 +1,7 @@
 #if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class DetailsContents
     {

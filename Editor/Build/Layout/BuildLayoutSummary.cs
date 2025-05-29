@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace UnityEditor.AddressableAssets.Build.Layout
+namespace Bundles.Editor
 {
     /// <summary>
     /// Data store for summary data about build content

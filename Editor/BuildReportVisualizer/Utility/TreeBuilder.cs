@@ -1,9 +1,10 @@
 #if UNITY_2022_2_OR_NEWER
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class TreeBuilder
     {

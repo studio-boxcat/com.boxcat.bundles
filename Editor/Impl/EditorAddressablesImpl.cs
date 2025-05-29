@@ -1,8 +1,8 @@
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     internal class EditorAddressablesImpl : IAddressablesImpl
     {

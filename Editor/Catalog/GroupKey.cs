@@ -1,6 +1,6 @@
 using System;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     [Serializable]
     public struct GroupKey : IEquatable<GroupKey>, IComparable<GroupKey>

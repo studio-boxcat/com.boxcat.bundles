@@ -5,13 +5,13 @@ using System.Linq;
 using System.Reflection;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using FuzzySearch = Sirenix.Utilities.Editor.FuzzySearch;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public partial class AddressableCatalog
     {

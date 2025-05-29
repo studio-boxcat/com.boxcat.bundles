@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor;
 using UnityEditor.Build.Pipeline;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     /// <summary>
     /// Rule class to check for duplicate bundle dependencies

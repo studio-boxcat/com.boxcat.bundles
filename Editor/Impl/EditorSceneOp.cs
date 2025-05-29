@@ -1,11 +1,11 @@
 using System;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.SceneManagement;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     internal class EditorSceneOp : IAssetOp<Scene>
     {
@@ -16,7 +16,7 @@ namespace UnityEditor.AddressableAssets
         public EditorSceneOp(AssetGUID guid)
         {
             var path = AssetDatabase.GUIDToAssetPath(guid.ToString());
-            _op = SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
+            _op = EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
             _op.completed += OnComplete;
             var scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             AsyncOpPayloads.SetScene(_op, scene);

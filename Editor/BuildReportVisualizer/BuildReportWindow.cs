@@ -1,14 +1,11 @@
 #if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
-using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEditor.AddressableAssets.GUIElements;
+using UnityEditor;
 using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEditor.AddressableAssets.BuildReportVisualizer.ContentView;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class BuildReportWindow : EditorWindow, IBuildReportConsumer
     {
@@ -318,7 +315,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public IAddressablesBuildReportItem SelectItemInView(Hash128 hash, bool expand = false)
         {
-            TreeDataReportItem item = m_ActiveContentView.DataHashtoReportItem[hash];
+            ContentView.TreeDataReportItem item = m_ActiveContentView.DataHashtoReportItem[hash];
             m_ActiveContentView.ContentTreeView.SetSelectionById(item.Id);
             m_ActiveContentView.ContentTreeView.ScrollToItemById(item.Id);
             if (expand)

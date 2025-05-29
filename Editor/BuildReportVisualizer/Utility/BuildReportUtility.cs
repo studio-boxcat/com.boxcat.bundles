@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using UnityEditor.AddressableAssets.Build.Layout;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 [assembly: InternalsVisibleTo("Unity.Addressables.Editor.Tests")]
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal static class BuildReportUtility
     {

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.Build.Layout
+namespace Bundles.Editor
 {
     /// <summary>
     /// Helper methods for gathering data about a build layout.
@@ -76,7 +77,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
             if (ofType == typeof(SceneAsset))
                 return AssetType.Scene;
-            if (ofType == typeof(Animations.AnimatorController))
+            if (ofType == typeof(UnityEditor.Animations.AnimatorController))
                 return AssetType.AnimationController;
 
             if (typeof(ScriptableObject).IsAssignableFrom(ofType))

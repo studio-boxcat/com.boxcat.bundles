@@ -1,5 +1,5 @@
 #if UNITY_EDITOR
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public static class EditorConfig
     {

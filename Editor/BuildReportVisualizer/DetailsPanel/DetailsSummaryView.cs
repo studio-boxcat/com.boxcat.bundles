@@ -1,10 +1,9 @@
 #if UNITY_2022_2_OR_NEWER
-using UnityEditor.AddressableAssets.Build.Layout;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEditor.AddressableAssets.BuildReportVisualizer.BuildReportWindow;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class DetailsSummaryView
     {
@@ -68,7 +67,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 }),
                 BuildReportUtility.CreateButton("Select in Group", () =>
                 {
-                    m_Window.NavigateToView(ContentViewType.GroupsView);
+                    m_Window.NavigateToView(BuildReportWindow.ContentViewType.GroupsView);
                     m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(bundle.Name.Value), true);
                 })));
         }
@@ -98,7 +97,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 }),
                 BuildReportUtility.CreateButton("Select in Group", () =>
                 {
-                    m_Window.NavigateToView(ContentViewType.GroupsView);
+                    m_Window.NavigateToView(BuildReportWindow.ContentViewType.GroupsView);
                     m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash(reportAsset.ExplicitAsset.AddressableName));
                 }),
                 BuildReportUtility.CreateButton("Search in this view", () =>
@@ -108,7 +107,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 })));
             m_DetailsSummary.Add(CreateButtonRow(BuildReportUtility.CreateButton("Select in Bundle", () =>
                 {
-                    m_Window.NavigateToView(ContentViewType.BundleView);
+                    m_Window.NavigateToView(BuildReportWindow.ContentViewType.BundleView);
                     m_Window.SelectItemInView(BuildReportUtility.ComputeDataHash((string) reportAsset.ExplicitAsset.Bundle.Name, reportAsset.ExplicitAsset.AddressableName));
                 })));
         }

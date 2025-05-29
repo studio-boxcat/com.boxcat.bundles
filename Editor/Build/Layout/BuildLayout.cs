@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets.Build.Layout
+namespace Bundles.Editor
 {
     [Serializable]
     public struct AssetId : IEquatable<AssetId>, IComparable<AssetId>

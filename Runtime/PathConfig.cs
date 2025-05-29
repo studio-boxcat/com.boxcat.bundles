@@ -1,4 +1,6 @@
-namespace UnityEngine.AddressableAssets
+using UnityEngine;
+
+namespace Bundles
 {
     internal static class PathConfig
     {

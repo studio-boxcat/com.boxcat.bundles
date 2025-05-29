@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.AddressableAssets.Util;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     internal class AssetOpBlock
     {

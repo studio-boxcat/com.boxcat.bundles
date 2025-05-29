@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets.Build.DataBuilders
+namespace Bundles.Editor
 {
     /// <summary>
     /// Simple context object for passing data through SBP, between different sections of Addressables code.

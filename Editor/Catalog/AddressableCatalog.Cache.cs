@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public partial class AddressableCatalog
     {

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     internal class BuildBundleLayout : BundleRuleBase
     {

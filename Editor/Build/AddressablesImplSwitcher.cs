@@ -1,7 +1,7 @@
+using UnityEditor;
 using UnityEditor.ShortcutManagement;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets.Build
+namespace Bundles.Editor
 {
     internal static class AddressablesImplSwitcher
     {

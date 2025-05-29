@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     /// <summary>
     /// Rule class to check resource dependencies for duplicates

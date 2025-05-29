@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     internal readonly struct CompleteCallback
     {

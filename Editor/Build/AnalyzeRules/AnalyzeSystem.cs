@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using UnityEditor.AddressableAssets.Build.AnalyzeRules;
-using UnityEditor.AddressableAssets.GUI;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets.Build
+namespace Bundles.Editor
 {
     /// <summary>
     /// Static system to manage Analyze functionality.

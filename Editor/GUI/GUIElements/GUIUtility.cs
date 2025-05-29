@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.GUIElements
+namespace Bundles.Editor
 {
     internal static class GUIUtility
     {

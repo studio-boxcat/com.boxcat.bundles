@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class DetailsListItem
     {

@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Build.AnalyzeRules;
+using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets.GUI
+namespace Bundles.Editor
 {
     internal class AssetSettingsAnalyzeTreeView : TreeView
     {

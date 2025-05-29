@@ -1,6 +1,7 @@
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     internal interface IAddressablesImpl
     {

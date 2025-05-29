@@ -2,17 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.Utilities;
-using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
+namespace Bundles.Editor
 {
     /// <summary>
     /// Base class for handling analyzing bundle rules tasks and checking dependencies

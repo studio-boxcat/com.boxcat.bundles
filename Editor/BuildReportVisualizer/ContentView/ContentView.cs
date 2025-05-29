@@ -2,12 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.Layout;
+using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal abstract class ContentView : IBuildReportConsumer
     {
@@ -176,7 +176,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             (element as Label).text = string.Empty;
             element.Clear();
 
-            VisualElement treeItem = baseItem.Clone(element);
+            VisualElement treeItem = GUIUtility.Clone(baseItem);
             var icon = treeItem.Q<Image>(BuildReportUtility.TreeViewItemIcon);
             var name = treeItem.Q<TextElement>(BuildReportUtility.TreeViewItemName);
             name.text = itemData.GetCellContent(colName);

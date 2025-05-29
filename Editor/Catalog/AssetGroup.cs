@@ -4,13 +4,13 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     [Serializable]
     public class AssetGroup : ISelfValidator

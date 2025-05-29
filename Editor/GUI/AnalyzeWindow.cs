@@ -1,7 +1,8 @@
+using UnityEditor;
 using UnityEditor.ShortcutManagement;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.GUI
+namespace Bundles.Editor
 {
     /// <summary>
     /// Window used to execute AnalyzeRule sets.

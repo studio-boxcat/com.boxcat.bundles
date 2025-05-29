@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-[assembly: UxmlNamespacePrefix("UnityEditor.AddressableAssets.GUIElements", "AddressablesGUI")]
-namespace UnityEditor.AddressableAssets.GUIElements
+[assembly: UxmlNamespacePrefix("Bundles.Editor.GUIElements", "AddressablesGUI")]
+namespace Bundles.Editor
 {
     internal class Ribbon : VisualElement
     {
@@ -86,7 +87,7 @@ namespace UnityEditor.AddressableAssets.GUIElements
         {
             VisualTreeAsset ribbonViewTree = AssetDatabase.LoadAssetAtPath(GUIUtility.RibbonUxmlPath, typeof(VisualTreeAsset)) as VisualTreeAsset;
 
-            m_Root = ribbonViewTree.Clone();
+            m_Root = GUIUtility.Clone(ribbonViewTree);
 
             // clear out the style sheets defined in the template uxml file so they can be applied from here in the order of: 1. theming, 2. base
             m_Root.styleSheets.Clear();

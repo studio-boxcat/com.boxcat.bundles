@@ -1,9 +1,8 @@
 #if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.GUIElements;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal enum DetailsViewTab
     {

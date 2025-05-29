@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class GroupsViewBuildReportItem : IAddressablesBuildReportItem
     {

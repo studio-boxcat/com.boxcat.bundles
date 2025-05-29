@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEngine.AddressableAssets;
+using UnityEditor;
 using UnityEngine.Assertions;
 
-namespace UnityEditor.AddressableAssets.Build.DataBuilders
+namespace Bundles.Editor
 {
     internal static partial class ResourceCatalogBuilder
     {

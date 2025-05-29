@@ -1,6 +1,4 @@
-using UnityEngine.AddressableAssets;
-
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     internal static class AddressablesCodeGenerator
     {

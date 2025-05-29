@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
-using UnityEngine.AddressableAssets;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public partial class AddressableCatalog : ISelfValidator
     {

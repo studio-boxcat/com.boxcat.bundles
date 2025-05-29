@@ -2,7 +2,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     /// <summary>
     /// Represents a "view" over the portion of the catalog's dependency array

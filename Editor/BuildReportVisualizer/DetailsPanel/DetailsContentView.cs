@@ -1,12 +1,11 @@
 #if UNITY_2022_2_OR_NEWER
 using System;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEditor.AddressableAssets.GUIElements;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal class DetailsContentView
     {
@@ -411,7 +410,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         private VisualElement RefToMakeItem()
         {
-            var vta = m_DetailsContentDrillableListItem.Clone();
+            var vta = GUIUtility.Clone(m_DetailsContentDrillableListItem);
             m_ButtonCallBackTracker.Add(vta, new List<Action>());
             Button button = vta.Q<Button>(BuildReportUtility.DrillableListViewButton);
             BuildReportUtility.SetVisibility(button, false);

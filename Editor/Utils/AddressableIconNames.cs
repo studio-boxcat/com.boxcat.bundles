@@ -1,4 +1,4 @@
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     internal static class AddressableIconNames
     {

@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
 using Directory = System.IO.Directory;
 using Object = UnityEngine.Object;
 using SearchOption = System.IO.SearchOption;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public static class AddressablesUtils
     {

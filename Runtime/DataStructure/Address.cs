@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public enum Address : uint { }
 

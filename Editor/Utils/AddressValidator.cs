@@ -2,12 +2,12 @@ using System;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector.Editor.Validation;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
-[assembly: RegisterValidator(typeof(UnityEditor.AddressableAssets.AddressValidator))]
+[assembly: RegisterValidator(typeof(Bundles.Editor.AddressValidator))]
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     [UsedImplicitly]
     internal class AddressDrawer : OdinValueDrawer<Address>

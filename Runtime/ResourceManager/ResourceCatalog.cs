@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine.AddressableAssets.Util;
 using UnityEngine.Assertions;
 using UnityEngine.Networking;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     // AssetBundleCount: ushort
     // AssetCount: ushort

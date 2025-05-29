@@ -1,7 +1,6 @@
-using UnityEngine.AddressableAssets;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     public static class EditorAddressables
     {

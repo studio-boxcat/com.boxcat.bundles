@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public enum AssetBundleId : ushort
     {

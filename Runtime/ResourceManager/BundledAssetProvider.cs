@@ -1,6 +1,7 @@
+using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     internal class BundledAssetProvider : IResourceProvider
     {

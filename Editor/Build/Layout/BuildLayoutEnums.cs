@@ -1,4 +1,4 @@
-namespace UnityEditor.AddressableAssets.Build.Layout
+namespace Bundles.Editor
 {
     /// <summary>
     /// UnityEngine Object types found as Assets

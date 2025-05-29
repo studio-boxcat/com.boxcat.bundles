@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
-namespace UnityEngine.AddressableAssets.Util
+namespace Bundles
 {
     public static class AsyncOpPayloads
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public class CompletedOp<TResult> : IAssetOp<TResult>
     {

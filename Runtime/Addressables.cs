@@ -1,7 +1,8 @@
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public static class Addressables
     {

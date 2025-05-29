@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEditor;
+using Object = UnityEngine.Object;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public readonly struct AssetGroupGenerationDef
     {

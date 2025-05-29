@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     /// <summary>
     /// Entry point for ResourceManager API

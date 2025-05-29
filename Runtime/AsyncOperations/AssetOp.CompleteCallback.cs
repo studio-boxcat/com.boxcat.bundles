@@ -1,7 +1,7 @@
 using System;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.AddressableAssets
+namespace Bundles
 {
     public partial class AssetOp<TResult>
     {

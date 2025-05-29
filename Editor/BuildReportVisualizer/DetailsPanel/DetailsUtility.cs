@@ -1,7 +1,5 @@
 #if UNITY_2022_2_OR_NEWER
-using UnityEditor.AddressableAssets.Build.Layout;
-
-namespace UnityEditor.AddressableAssets.BuildReportVisualizer
+namespace Bundles.Editor
 {
     internal static class DetailsUtility
     {

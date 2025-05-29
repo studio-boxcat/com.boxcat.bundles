@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     /// <summary>
     /// The project configuration settings for addressables.

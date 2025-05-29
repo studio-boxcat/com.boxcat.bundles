@@ -4,10 +4,7 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.Utilities;
-using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
-using UnityEditor.AddressableAssets.BuildReportVisualizer;
+using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -15,11 +12,10 @@ using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.ShortcutManagement;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using BuildCompression = UnityEngine.BuildCompression;
 
-namespace UnityEditor.AddressableAssets
+namespace Bundles.Editor
 {
     [AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
     public class AddressablePreBuildCallbackAttribute : Attribute { }
