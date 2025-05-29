@@ -229,7 +229,7 @@ namespace Bundles.Editor
                 {
                     if (buildSuccess == ReturnCode.SuccessNotRun)
                     {
-                        results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
+                        results.Add(new AnalyzeResult { resultName = "No issues found." });
                         return results;
                     }
 
@@ -260,7 +260,7 @@ namespace Bundles.Editor
                 }).ToList();
 
             if (results.Count == 0)
-                results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
+                results.Add(new AnalyzeResult { resultName = "No issues found." });
 
             return results;
         }
@@ -397,7 +397,7 @@ namespace Bundles.Editor
                 var buildSuccess = BuildAndGetResourceDependencies(catalog, resourcePaths);
                 if (buildSuccess == ReturnCode.SuccessNotRun)
                 {
-                    results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
+                    results.Add(new AnalyzeResult { resultName = "No issues found." });
                     return results;
                 }
 
