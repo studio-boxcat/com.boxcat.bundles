@@ -72,8 +72,13 @@ namespace Bundles.Editor
                 : throw new KeyNotFoundException($"Entry with address '{address.Name()}' not found.");
         }
 
+        public AssetEntry GetEntry(AssetLocation loc)
+        {
+            var group = GetGroup(loc.BundleId);
+            return group[loc.AssetIndex];
+        }
+
         public bool ContainsEntry(Address address) => TryGetEntry(address, out _);
-        public bool ContainsEntry(string address) => TryGetEntry(AddressUtils.Hash(address), out _);
 
         public string[] GetAddressList()
         {
