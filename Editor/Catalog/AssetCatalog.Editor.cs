@@ -83,8 +83,9 @@ namespace Bundles.Editor
         }
 
         [Button("Generate"), ButtonGroup]
-        private void GenerateGroupsAndCodes()
+        internal void GenerateGroupsAndCode()
         {
+            L.I("[AssetCatalog] Generating groups and code");
             GenerateGroups();
             AddressCodeGen.GenerateCode(this, AssetDatabase.GUIDToAssetPath("73dee367a1284cea987dd7ac55b7b5e9"));
         }

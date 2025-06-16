@@ -82,6 +82,12 @@ namespace Bundles.Editor
                 generateReport: true);
         }
 
+        [Shortcut("Bundles/Catalog/Generate Groups and Code")]
+        private static void GenerateCatalogGroupsAndCode()
+        {
+            AssetCatalog.Default.GenerateGroupsAndCode();
+        }
+
         private static string DoBuild(
             AssetCatalog catalog, BuildTarget target, string buildPath,
             bool generateReport, bool skipCompilePlayerScripts)
