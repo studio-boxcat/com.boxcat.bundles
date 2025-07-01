@@ -35,9 +35,11 @@ namespace Bundles.Editor
                 {
                     var groupName = g.Key.Value;
                     var bundleId = g.BundleId.Name();
+                    var entries = g.Entries.Where(e => e.Address.NotEmpty()).ToArray();
+                    if (entries.Length is 0) continue;
 
                     b.Comment($"Group: {groupName}, BundleId: 0x{bundleId}");
-                    foreach (var e in g.Entries.Where(e => e.Address.NotEmpty()))
+                    foreach (var e in entries)
                     {
                         var addressName = e.Address;
                         var address = AddressUtils.Hash(addressName);

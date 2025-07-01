@@ -1,8 +1,8 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
@@ -29,11 +29,11 @@ namespace Bundles.Editor
         public AssetBundleId BundleId;
 
         [FormerlySerializedAs("GeneratorId")]
-        [SerializeField, HideInInspector] internal string GeneratorName;
+        [SerializeField, HideInInspector] internal string GeneratorName = null!;
         public bool IsGenerated => !string.IsNullOrEmpty(GeneratorName);
 
         [SerializeField, ShowIf("EditMode"), DisplayAsString]
-        internal string LastDependency;
+        internal string LastDependency = null!;
 
         public AssetGroup(string key, AssetEntry[] entries)
         {
@@ -73,7 +73,7 @@ namespace Bundles.Editor
             }
         }
 
-        private Dictionary<string, Object> _cachedAddressToAssetMap;
+        private Dictionary<string, Object>? _cachedAddressToAssetMap;
 
         public bool TryGetAssetByAddress(string address, out Object asset)
         {
@@ -176,8 +176,7 @@ namespace Bundles.Editor
             }
         }
 
-        [CanBeNull]
-        internal static string ResolveAddressString(AssetGroup g, AssetEntry e)
+        internal static string? ResolveAddressString(AssetGroup g, AssetEntry e)
         {
             if (string.IsNullOrEmpty(e.Address)) return null;
             return g.BundleId.AddressAccess()
@@ -185,7 +184,6 @@ namespace Bundles.Editor
                 : e.Address;
         }
 
-        [CanBeNull]
         internal static Address? ResolveAddressNumeric(AssetGroup g, AssetEntry e)
         {
             if (string.IsNullOrEmpty(e.Address)) return null;
