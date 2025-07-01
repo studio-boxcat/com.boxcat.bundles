@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Bundles.Editor
     {
         [FormerlySerializedAs("AssetGroups")]
         [SerializeField, HideInInspector]
-        public AssetGroup[] Groups;
+        public AssetGroup[] Groups = null!;
 
         private void AddNewGroup()
         {

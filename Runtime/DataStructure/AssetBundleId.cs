@@ -3,11 +3,6 @@ using UnityEngine.Assertions;
 
 namespace Bundles
 {
-    public enum AssetBundleId : ushort
-    {
-        MonoScript = 0, // reserved for MonoScript.
-    }
-
     // canonical index of AssetBundles in the ResourceCatalog
     internal enum AssetBundleIndex : ushort
     {
