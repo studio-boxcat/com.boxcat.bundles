@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 
@@ -5,7 +6,7 @@ namespace Bundles.Editor
 {
     internal static class AddressCodeGen
     {
-        public static void GenerateCode(AssetCatalog catalog, string path)
+        public static void GenerateCode(AssetCatalog catalog, string targetGUID)
         {
             var list = new List<(string Name, Address Value, string Comment)>();
             foreach (var g in catalog.Groups.Where(g => g.BundleId.AddressAccess()))
@@ -30,7 +31,7 @@ namespace Bundles.Editor
                     b.EnumValue(name, $"{(uint) value}u", comment: comment);
             }
 
-            b.WriteTo(path);
+            b.OverwriteFileWithGUID(targetGUID);
         }
     }
 }
