@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 
 namespace Bundles
 {
-    public enum Address : uint { }
-
     [Serializable, InlineProperty]
     public struct AddressWrap
     {
@@ -18,6 +15,13 @@ namespace Bundles
         public override string ToString() => Value.Name();
         public static implicit operator Address(AddressWrap value) => value.Value;
         public static implicit operator AddressWrap(Address value) => new(value);
+    }
+
+    public class AddressComparer : IEqualityComparer<Address>
+    {
+        public static readonly AddressComparer Instance = new();
+        public bool Equals(Address x, Address y) => x.Value() == y.Value();
+        public int GetHashCode(Address obj) => (int) obj.Value();
     }
 
     public static class AddressUtils
@@ -47,22 +51,9 @@ namespace Bundles
             return global::Hex.To8(address.Value());
         }
 
-        private static Dictionary<Address, string> _addressNames;
-
-        public static Dictionary<Address, string> AddressNames
-        {
-            get
-            {
-                return _addressNames ??= typeof(Addresses).GetFields().ToDictionary(
-                    field => (Address) field.GetValue(null),
-                    field => field.Name);
-            }
-        }
-
         public static string Name(this Address address)
         {
-            return AddressNames.TryGetValue(address, out var name)
-                ? name : Hex(address);
+            return address.ToString();
         }
     }
 }

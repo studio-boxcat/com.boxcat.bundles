@@ -8,7 +8,7 @@ namespace Bundles.Editor
             b.Using("Bundles");
             b.Blank();
 
-            using (b.Public_Static_Class("Addresses"))
+            using (b.Public_Static_Class("Address"))
             {
                 var addressList = catalog.GetAddressList();
                 foreach (var addressName in addressList)
