@@ -24,7 +24,9 @@ namespace Bundles.Editor
                     var groupName = g.Key.Value;
                     var bundleId = g.BundleId;
                     var bundleIdStr = bundleId.Name();
-                    b.EnumValue(NormalizeName(groupName), ((ushort) bundleId).ToString(), comment: $"0x{bundleIdStr}, group=\"{groupName}\"");
+                    var comment = $"0x{bundleIdStr}, group=\"{groupName}\"";
+                    if (g.GeneratorName.NotEmpty()) comment += $", generator={g.GeneratorName}";
+                    b.EnumValue(NormalizeName(groupName), ((ushort) bundleId).ToString(), comment: comment);
                 }
             }
             b.Blank();
