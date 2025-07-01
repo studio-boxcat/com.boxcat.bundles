@@ -87,6 +87,7 @@ namespace Bundles.Editor
         {
             L.I("[AssetCatalog] Generating groups and code");
             GenerateGroups();
+            EditorUtility.SetDirty(this);
             AddressCodeGen.GenerateCode(this, "73dee367a1284cea987dd7ac55b7b5e9");
         }
 
