@@ -193,12 +193,24 @@ namespace Bundles.Editor
         private static void ToggleEditMode() => EditMode = !EditMode;
         private static string ToggleEditMode_Label() => EditMode ? "Edit Done" : "Edit";
 
-        [ContextMenu("Reset Hint Name")]
+        [ContextMenu("Reset Hint Name _h")]
         private void ResetHintName()
         {
             foreach (var group in Groups)
             foreach (var entry in group.Entries)
                 entry.ResetHintName();
+        }
+
+        [ContextMenu("Prune Missing Entries _p")]
+        private void PruneMissingEntries()
+        {
+            Undo.RecordObject(this, "Prune Missing Entries");
+            foreach (var group in TraverseGroups_AddressAccess())
+                group.Internal_RemoveMissingEntries();
+            EditorUtility.SetDirty(this);
+
+            // no need to clear cache, as the address is not changed
+            // ClearCache();
         }
 
         [ShowInInspector]

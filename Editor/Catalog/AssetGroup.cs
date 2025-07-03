@@ -110,6 +110,17 @@ namespace Bundles.Editor
             _cachedAddressToAssetMap = null;
         }
 
+        public void Internal_RemoveMissingEntries()
+        {
+            Entries = Entries.Where(e =>
+            {
+                var missing = !e.MainAsset;
+                if (missing) L.W($"[AssetGroup] Remove missing entry: {e.GUID}, Address={e.Address}, HintName={e.HintName}");
+                return !missing;
+            }).ToArray();
+            _cachedAddressToAssetMap = null;
+        }
+
         internal void SortEntries()
         {
             Array.Sort(Entries, (a, b) =>

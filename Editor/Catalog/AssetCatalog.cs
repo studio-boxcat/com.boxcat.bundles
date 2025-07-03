@@ -66,6 +66,15 @@ namespace Bundles.Editor
             ClearCache();
         }
 
+        public IEnumerable<AssetGroup> TraverseGroups_AddressAccess()
+        {
+            foreach (var group in Groups)
+            {
+                if (group.BundleId.AddressAccess())
+                    yield return group;
+            }
+        }
+
         public IEnumerable<AssetEntry> TraverseEntries_AddressAccess()
         {
             foreach (var group in Groups)
