@@ -82,6 +82,10 @@ namespace Bundles
         public static IAssetOp<Material> LoadMaterial(AssetLocation key) => Load<Material>(key);
         public static Material LoadMaterialSync(Address key) => LoadSync<Material>(key);
         public static Material LoadMaterialSync(AssetLocation key) => LoadSync<Material>(key);
+        public static IAssetOp<Font> LoadFont(Address key) => Load<Font>(key);
+        public static IAssetOp<Font> LoadFont(AssetLocation key) => Load<Font>(key);
+        public static Font LoadFontSync(Address key) => LoadSync<Font>(key);
+        public static Font LoadFontSync(AssetLocation key) => LoadSync<Font>(key);
 
 
 #if UNITY_EDITOR
