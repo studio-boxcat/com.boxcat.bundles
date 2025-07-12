@@ -78,22 +78,16 @@ namespace Bundles.Editor
             onComplete?.Invoke(_scene);
         }
 
-        public void AddOnComplete(Action<Scene> onComplete)
+        public void AddOnComplete(Action<IAssetOp<Scene>, Scene, object, int> onComplete, object payloadObj, int payloadInt)
         {
             if (_op is null)
             {
                 Assert.IsTrue(_scene.IsValid() && _scene.isLoaded, "Scene is not loaded");
-                onComplete.SafeInvoke(_scene);
+                onComplete.SafeInvoke(this, _scene, payloadObj, payloadInt);
                 return;
             }
 
-            _onComplete += onComplete;
+            _onComplete += scene => onComplete.SafeInvoke(this, scene, payloadObj, payloadInt);
         }
-
-        public void AddOnComplete(Action<Scene, object> onComplete, object payload)
-            => AddOnComplete(obj => onComplete(obj, payload));
-
-        public void AddOnComplete(Action<IAssetOp<Scene>, Scene, object> onComplete, object payload)
-            => AddOnComplete(obj => onComplete(this, obj, payload));
     }
 }

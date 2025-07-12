@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -10,8 +11,8 @@ namespace Bundles.Editor
         private readonly string _path;
         private readonly DateTime _loadTime;
 
-        private TObject _result;
-        private Action<TObject> _onComplete;
+        private TObject? _result;
+        private Action<TObject>? _onComplete;
 
         public EditorAssetOp(string path, float loadDelay)
         {
@@ -32,7 +33,7 @@ namespace Bundles.Editor
                 this);
         }
 
-        public override string ToString() => $"EditorAssetOp:{_path} ({(_result != default ? "Loaded" : "Loading")})";
+        public override string ToString() => $"EditorAssetOp:{_path} ({(_result is not null ? "Loaded" : "Loading")})";
 
         public bool TryGetResult(out TObject result)
         {
@@ -47,11 +48,11 @@ namespace Bundles.Editor
             {
                 LoadImmediate();
                 Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
-                result = _result;
+                result = _result!;
                 return true;
             }
 
-            result = null;
+            result = null!; // never use this value.
             return false;
         }
 
@@ -61,7 +62,7 @@ namespace Bundles.Editor
                 return _result;
             LoadImmediate();
             Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
-            return _result;
+            return _result!;
         }
 
         private void LoadImmediate()
@@ -87,22 +88,16 @@ namespace Bundles.Editor
             onComplete?.Invoke(_result);
         }
 
-        public void AddOnComplete(Action<TObject> onComplete)
+        public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object, int> onComplete, object payloadObj, int payloadInt)
         {
             if (TryGetResult(out var result))
             {
                 Assert.IsNotNull(result, $"Failed to load asset: path={_path}");
-                onComplete.SafeInvoke(result);
+                onComplete.SafeInvoke(this, result, payloadObj, payloadInt);
                 return;
             }
 
-            _onComplete += onComplete;
+            _onComplete += obj => onComplete.SafeInvoke(this, obj, payloadObj, payloadInt);
         }
-
-        public void AddOnComplete(Action<TObject, object> onComplete, object payload)
-            => AddOnComplete(obj => onComplete(obj, payload));
-
-        public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object> onComplete, object payload)
-            => AddOnComplete(obj => onComplete(this, obj, payload));
     }
 }

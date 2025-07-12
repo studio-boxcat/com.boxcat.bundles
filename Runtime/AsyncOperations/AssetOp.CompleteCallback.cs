@@ -64,5 +64,29 @@ namespace Bundles
 
             ((AssetOpBlock) _data).OnComplete.Add(onComplete, true, payload);
         }
+
+        public void AddOnComplete(Action<IAssetOp<TResult>, TResult, int> onComplete, int payload)
+        {
+            if (_data is TResult result)
+            {
+                Assert.IsNull(_op, "Operation should be null when result is set");
+                onComplete(this, result, payload);
+                return;
+            }
+
+            ((AssetOpBlock) _data).OnComplete.Add(onComplete, true, payload);
+        }
+
+        public void AddOnComplete(Action<IAssetOp<TResult>, TResult, object, int> onComplete, object payloadObj, int payloadInt)
+        {
+            if (_data is TResult result)
+            {
+                Assert.IsNull(_op, "Operation should be null when result is set");
+                onComplete(this, result, payloadObj, payloadInt);
+                return;
+            }
+
+            ((AssetOpBlock) _data).OnComplete.Add(onComplete, true, payloadObj, payloadInt);
+        }
     }
 }

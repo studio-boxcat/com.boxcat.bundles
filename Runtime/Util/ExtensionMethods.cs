@@ -21,6 +21,21 @@ namespace Bundles
             }
         }
 
+        public static void SafeInvoke<TObject>(this Action<IAssetOp<TObject>, TObject, object, int> onComplete,
+            IAssetOp<TObject> op, TObject result, object payloadObj, int payloadInt)
+        {
+            Assert.IsNotNull(onComplete, "Callback is null");
+
+            try
+            {
+                onComplete.Invoke(op, result, payloadObj, payloadInt);
+            }
+            catch (Exception e)
+            {
+                L.E(e);
+            }
+        }
+
         public static void WaitForComplete(this UnityWebRequestAsyncOperation op)
         {
 #if DEBUG

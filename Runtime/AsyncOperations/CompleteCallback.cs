@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -49,6 +50,7 @@ namespace Bundles
         private readonly struct Callback
         {
             private readonly object _delegate;
+            // 2^3 = 8 conventions (optional: TAssetOp, object, int)
             // 0: Action<TResult>
             // 1: Action<TResult, object>
             // 2: Action<TResult, int>
@@ -58,7 +60,7 @@ namespace Bundles
             // 6: Action<IAssetOp<TResult>, TResult, int>
             // 7: Action<IAssetOp<TResult>, TResult, object, int>
             private readonly byte _convention;
-            private readonly object _payloadObj;
+            private readonly object? _payloadObj;
             private readonly int _payloadInt;
 
             public Callback(object @delegate, bool op) : this()
@@ -104,26 +106,26 @@ namespace Bundles
                         ((Action<TResult>) _delegate)(result);
                         break;
                     case 1:
-                        ((Action<TResult, object>) _delegate)(result, _payloadObj);
+                        ((Action<TResult, object?>) _delegate)(result, _payloadObj);
                         break;
                     case 2:
                         ((Action<TResult, int>) _delegate)(result, _payloadInt);
                         break;
                     case 3:
-                        ((Action<TResult, object, int>) _delegate)(result, _payloadObj, _payloadInt);
+                        ((Action<TResult, object?, int>) _delegate)(result, _payloadObj, _payloadInt);
                         break;
                     // with op
                     case 4:
                         ((Action<IAssetOp<TResult>, TResult>) _delegate)(op, result);
                         break;
                     case 5:
-                        ((Action<IAssetOp<TResult>, TResult, object>) _delegate)(op, result, _payloadObj);
+                        ((Action<IAssetOp<TResult>, TResult, object?>) _delegate)(op, result, _payloadObj);
                         break;
                     case 6:
                         ((Action<IAssetOp<TResult>, TResult, int>) _delegate)(op, result, _payloadInt);
                         break;
                     case 7:
-                        ((Action<IAssetOp<TResult>, TResult, object, int>) _delegate)(op, result, _payloadObj, _payloadInt);
+                        ((Action<IAssetOp<TResult>, TResult, object?, int>) _delegate)(op, result, _payloadObj, _payloadInt);
                         break;
                     default:
                         L.W($"Unknown callback convention: {_convention.StrSmall()}");
