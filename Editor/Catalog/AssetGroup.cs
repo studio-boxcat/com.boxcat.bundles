@@ -29,16 +29,18 @@ namespace Bundles.Editor
         public AssetBundleId BundleId;
 
         [FormerlySerializedAs("GeneratorId")]
-        [SerializeField, HideInInspector] internal string GeneratorName = null!;
+        [SerializeField, HideInInspector] internal string GeneratorName;
         public bool IsGenerated => !string.IsNullOrEmpty(GeneratorName);
 
         [SerializeField, ShowIf("EditMode"), DisplayAsString]
-        internal string LastDependency = null!;
+        internal string LastDependency;
 
         public AssetGroup(string key, AssetEntry[] entries)
         {
             _key = key;
             Entries = entries;
+            GeneratorName = "";
+            LastDependency = "";
         }
 
         public AssetEntry this[AssetIndex index]
@@ -90,7 +92,11 @@ namespace Bundles.Editor
             {
                 var guid = guids[index];
                 var path = AssetDatabase.GUIDToAssetPath(guid.Value);
-                entries[index] = new AssetEntry(guid) { HintName = Path.GetFileName(path) };
+                entries[index] = new AssetEntry(guid)
+                {
+                    Address = Path.GetFileNameWithoutExtension(path),
+                    HintName = Path.GetFileName(path)
+                };
             }
 
             Entries = Entries.CloneConcat(entries);
