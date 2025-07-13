@@ -37,11 +37,12 @@ namespace Bundles.Editor
                 Directory.Delete(path, true);
         }
 
-        private static void CleanUpDirectory(string path)
+        private static bool CleanUpDirectory(string path)
         {
-            if (!Directory.Exists(path)) return;
+            if (!Directory.Exists(path)) return false;
             Directory.Delete(path, true);
             Directory.CreateDirectory(path);
+            return true;
         }
 
         internal static void InvokeAllMethodsWithAttribute<T>(params object[] parameters) where T : Attribute
@@ -97,7 +98,11 @@ namespace Bundles.Editor
             L.I("[BundlesUtils] TryCopyToPlatformProject");
 
             var dstDir = ResolveDstDir(projDir, buildTarget);
-            CleanUpDirectory(dstDir);
+            if (!CleanUpDirectory(dstDir))
+            {
+                L.W("[BundlesUtils] Destination directory does not exist, skip copying files: " + dstDir);
+                return;
+            }
 
             var files = Directory.GetFiles(buildPath, "*", SearchOption.TopDirectoryOnly);
             foreach (var file in files)
