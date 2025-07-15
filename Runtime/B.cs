@@ -66,6 +66,10 @@ namespace Bundles
         public static IAssetOp<GameObject> LoadPrefab(AssetLocation key) => Load<GameObject>(key);
         public static GameObject LoadPrefabSync(Address key) => LoadSync<GameObject>(key);
         public static GameObject LoadPrefabSync(AssetLocation key) => LoadSync<GameObject>(key);
+        public static IAssetOp<ScriptableObject> LoadSO(Address key) => Load<ScriptableObject>(key);
+        public static IAssetOp<ScriptableObject> LoadSO(AssetLocation key) => Load<ScriptableObject>(key);
+        public static ScriptableObject LoadSOSync(Address key) => LoadSync<ScriptableObject>(key);
+        public static ScriptableObject LoadSOSync(AssetLocation key) => LoadSync<ScriptableObject>(key);
         public static IAssetOp<Texture2D> LoadTexture(Address key) => Load<Texture2D>(key);
         public static IAssetOp<Texture2D> LoadTexture(AssetLocation key) => Load<Texture2D>(key);
         public static Texture2D LoadTextureSync(Address key) => LoadSync<Texture2D>(key);
