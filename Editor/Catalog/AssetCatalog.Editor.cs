@@ -86,6 +86,7 @@ namespace Bundles.Editor
         internal void GenerateGroupsAndCode()
         {
             L.I("[AssetCatalog] Generating groups and code");
+            SortEntries();
             GenerateGroups();
             EditorUtility.SetDirty(this);
             AddressCodeGen.GenerateCode(this, "73dee367a1284cea987dd7ac55b7b5e9");
@@ -176,7 +177,6 @@ namespace Bundles.Editor
             }
         }
 
-        [Button("Sort"), ButtonGroup]
         private void SortEntries()
         {
             var normalGroups = Groups.Where(x => !x.IsGenerated).ToList();
