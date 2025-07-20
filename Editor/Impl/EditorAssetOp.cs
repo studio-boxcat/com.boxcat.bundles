@@ -112,11 +112,7 @@ namespace Bundles.Editor
         public static void Queue(IEditorAssetOp op, float loadTime)
         {
             if (_pending.IsEmpty())
-            {
                 EditorApplication.update += (_update ??= Update);
-                L.I("[EditorAssetLoadLoop] Started update loop");
-            }
-
             _pending.Add((op, loadTime));
         }
 
