@@ -1,15 +1,20 @@
 #nullable enable
 using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine.Assertions;
 
 namespace Bundles.Editor
 {
-    internal class EditorAssetOp<TObject> : IAssetOp<TObject> where TObject : UnityEngine.Object
+    internal interface IEditorAssetOp
+    {
+        void LoadImmediate();
+    }
+
+    internal class EditorAssetOp<TObject> : IAssetOp<TObject>, IEditorAssetOp where TObject : UnityEngine.Object
     {
         private readonly string _path;
-        private readonly DateTime _loadTime;
+        private readonly float _loadTime;
 
         private TObject? _result;
         private Action<TObject>? _onComplete;
@@ -26,11 +31,8 @@ namespace Bundles.Editor
                 return;
             }
 
-            // otherwise, schedule the load
-            _loadTime = DateTime.Now.AddSeconds(loadDelay);
-            Task.Delay((int) (loadDelay * 1000)).ContinueWith(
-                static (_, s) => EditorApplication.delayCall += ((EditorAssetOp<TObject>) s).LoadImmediate,
-                this);
+            var loadTime = EditorAssetLoadLoop.GetTime() + loadDelay;
+            EditorAssetLoadLoop.Queue(this, loadTime);
         }
 
         public override string ToString() => $"EditorAssetOp:{_path} ({(_result is not null ? "Loaded" : "Loading")})";
@@ -44,7 +46,7 @@ namespace Bundles.Editor
             }
 
             // Even if _result is null, we still want to return true if the load time has passed.
-            if (DateTime.Now >= _loadTime)
+            if (EditorAssetLoadLoop.GetTime() >= _loadTime)
             {
                 LoadImmediate();
                 Assert.IsNotNull(_result, $"Failed to load asset at path: {_path}");
@@ -65,7 +67,7 @@ namespace Bundles.Editor
             return _result!;
         }
 
-        private void LoadImmediate()
+        public void LoadImmediate()
         {
             // LoadImmediate will be called twice if the Result property is called before the task is complete.
             if (_result is not null)
@@ -98,6 +100,45 @@ namespace Bundles.Editor
             }
 
             _onComplete += obj => onComplete.SafeInvoke(this, obj, payloadObj, payloadInt);
+        }
+    }
+
+    internal static class EditorAssetLoadLoop
+    {
+        private static readonly List<(IEditorAssetOp, float)> _pending = new();
+
+        public static float GetTime() => (float) EditorApplication.timeSinceStartup;
+
+        public static void Queue(IEditorAssetOp op, float loadTime)
+        {
+            if (_pending.IsEmpty())
+            {
+                EditorApplication.update += (_update ??= Update);
+                L.I("[EditorAssetLoadLoop] Started update loop");
+            }
+
+            _pending.Add((op, loadTime));
+        }
+
+        private static EditorApplication.CallbackFunction? _update;
+
+        private static void Update()
+        {
+            var t = GetTime();
+
+            // reverse loop to mitigate re-entry issues
+            for (var i = _pending.Count - 1; i >= 0; i--)
+            {
+                var (op, loadTime) = _pending[i];
+                if (t >= loadTime)
+                {
+                    op.LoadImmediate();
+                    _pending.RemoveAt(i);
+                }
+            }
+
+            if (_pending.IsEmpty())
+                EditorApplication.update -= _update;
         }
     }
 }
