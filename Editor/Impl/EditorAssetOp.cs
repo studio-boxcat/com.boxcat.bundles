@@ -31,8 +31,8 @@ namespace Bundles.Editor
                 return;
             }
 
-            var loadTime = EditorAssetLoadLoop.GetTime() + loadDelay;
-            EditorAssetLoadLoop.Queue(this, loadTime);
+            _loadTime = EditorAssetLoadLoop.GetTime() + loadDelay;
+            EditorAssetLoadLoop.Queue(this, _loadTime);
         }
 
         public override string ToString() => $"EditorAssetOp:{_path} ({(_result is not null ? "Loaded" : "Loading")})";
