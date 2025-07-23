@@ -82,17 +82,17 @@ namespace Bundles.Editor
             Builder.Build(this, EditorUserBuildSettings.activeBuildTarget);
         }
 
-        [Button("Generate"), ButtonGroup]
-        internal void GenerateGroupsAndCode()
+        [Button("Bake"), ButtonGroup]
+        internal void BakeGroupsAndCode()
         {
-            L.I("[AssetCatalog] Generating groups and code");
+            L.I("[AssetCatalog] Baking groups and code");
             SortEntries();
-            GenerateGroups();
+            BakeGroups();
             EditorUtility.SetDirty(this);
             AddressCodeGen.GenerateCode(this, "73dee367a1284cea987dd7ac55b7b5e9");
         }
 
-        private void GenerateGroups()
+        private void BakeGroups()
         {
             var groups = Groups.Where(x => !x.IsGenerated).ToList(); // keep normal groups
 

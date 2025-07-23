@@ -52,6 +52,8 @@ namespace Bundles.Editor
 
         public void AddEntries(AssetGroup group, AssetGUID[] guids)
         {
+            L.I($"{"[AssetCatalog] AddEntries: " + group.Key}, count={guids.Length}, guids={string.Join(", ", guids.Select(g => g.Value))}");
+
             Assert.IsFalse(group.IsGenerated, "Cannot add entry to generated group.");
             Undo.RecordObject(this, "Add Entries");
 

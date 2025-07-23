@@ -82,10 +82,10 @@ namespace Bundles.Editor
                 generateReport: true);
         }
 
-        [Shortcut("Bundles/Catalog/Generate Groups and Code")]
-        private static void GenerateCatalogGroupsAndCode()
+        [Shortcut("Bundles/Catalog/Bake Groups and Code")]
+        private static void BakeGroupsAndCode()
         {
-            AssetCatalog.Default.GenerateGroupsAndCode();
+            AssetCatalog.Default.BakeGroupsAndCode();
         }
 
         private static string DoBuild(

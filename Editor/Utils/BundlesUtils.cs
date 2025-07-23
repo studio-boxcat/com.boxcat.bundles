@@ -55,15 +55,25 @@ namespace Bundles.Editor
             }
         }
 
-        [MenuItem("Assets/Bundles/Register Selection")]
-        private static void ShowDialog()
+        private static void Menu_RegisterSelect(bool bakeCode)
         {
             var catalog = AssetCatalog.Default;
             var groups = catalog.Groups.Where(x => !x.IsGenerated).ToArray();
             var options = groups.Select(x => x.Key.Value).ToArray();
             var assetGUIDs = Selection.assetGUIDs.Distinct().Select(x => (AssetGUID) x).ToArray();
-            SingleSelectionWindow.Show("Register Selection", options, index => catalog.AddEntries(groups[index], assetGUIDs));
+            SingleSelectionWindow.Prompt("Register Selection", options)
+                .ContinueWith(t =>
+                {
+                    if (t.Result.TryGetValue(out var selection) is false) return;
+                    catalog.AddEntries(groups[selection], assetGUIDs);
+                    if (bakeCode) AssetCatalog.Default.BakeGroupsAndCode();
+                });
         }
+
+        [MenuItem("Assets/Bundles/Register Selection")]
+        private static void Menu_RegisterSelect() => Menu_RegisterSelect(bakeCode: false);
+        [MenuItem("Assets/Bundles/Register Selection (With Baking)")]
+        private static void Menu_RegisterSelectWithGeneration() => Menu_RegisterSelect(bakeCode: true);
 
         /// <summary>
         /// Used during the build to check for unsaved scenes and provide a user popup if there are any.
