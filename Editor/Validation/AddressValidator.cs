@@ -1,28 +1,9 @@
-using System;
-using JetBrains.Annotations;
-using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector.Editor.Validation;
-using UnityEditor;
-using UnityEngine;
 
 [assembly: RegisterValidator(typeof(Bundles.Editor.AddressValidator))]
 
 namespace Bundles.Editor
 {
-    [UsedImplicitly]
-    internal class AddressDrawer : OdinValueDrawer<Address>
-    {
-        protected override void DrawPropertyLayout(GUIContent label)
-        {
-            var value = ValueEntry.SmartValue;
-            var catalog = AssetCatalog.Default;
-            var list = catalog.GetAddressList();
-            var index = catalog.TryGetEntry(value, out var entry)
-                ? Array.IndexOf(list, entry.Address) : -1;
-            EditorGUILayout.Popup(label, index, list);
-        }
-    }
-
     internal class AddressValidator : ValueValidator<Address>
     {
         protected override void Validate(Sirenix.OdinInspector.Editor.Validation.ValidationResult result)
