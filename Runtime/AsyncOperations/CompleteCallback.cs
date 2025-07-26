@@ -128,7 +128,7 @@ namespace Bundles
                         ((Action<IAssetOp<TResult>, TResult, object?, int>) _delegate)(op, result, _payloadObj, _payloadInt);
                         break;
                     default:
-                        L.W($"Unknown callback convention: {_convention.StrSmall()}");
+                        L.W($"Unknown callback convention: {_convention.Strm()}");
                         break;
                 }
             }

@@ -23,7 +23,7 @@ namespace Bundles
     {
         public static uint Val(this AssetIndex index) => (uint) index;
 
-        public static string Name(this AssetIndex index) => ((int) index).StrSmall();
+        public static string Name(this AssetIndex index) => ((int) index).Strm();
 
         public static AssetLocation Locate(this AssetBundleMajor major, byte minor, byte index)
         {
