@@ -1,8 +1,9 @@
 #nullable enable
 
+using Bundles.Editor;
 using UnityEngine;
 
-namespace Bundles.Editor
+namespace Bundles
 {
     public interface IPrefabProxyAssetLocationProvider : IPrefabProxyAssetProvider
     {
