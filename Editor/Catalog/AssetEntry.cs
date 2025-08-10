@@ -37,6 +37,7 @@ namespace Bundles.Editor
         [HideInInspector]
         public string HintName = "";
 
+        [NonSerialized]
         private Object? _mainAsset;
 
         [ShowInInspector, Required, AssetsOnly, OnValueChanged(nameof(MainAsset_OnValueChanged))]
