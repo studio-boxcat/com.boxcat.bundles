@@ -123,7 +123,7 @@ namespace Bundles
             // We read addresses as a uint[] starting at _addressesOffset
             var b = (byte*) _data.GetUnsafeReadOnlyPtr();
             var d = (uint*) (b + _addressesOffset);
-            var v = address.Value();
+            var v = address.Val();
 
             int l = 0;
             int r = _assetCount - 1;

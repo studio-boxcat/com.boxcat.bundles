@@ -45,7 +45,7 @@ namespace Bundles.Editor
                     {
                         var addressName = e.Address;
                         var address = AddressUtils.Hash(addressName);
-                        var comment = $"0x{address.Hex()}, guid={e.GUID.Value}, group={groupName}, bundleId={bundleId}, path=\"{e.ResolveAssetPath()}\"";
+                        var comment = $"0x{address.Hex()}, guid={e.GUID}, group={groupName}, bundleId={bundleId}, path=\"{e.ResolveAssetPath()}\"";
                         b.EnumValue(addressName, $"{(uint) address}u", comment: comment);
                     }
                     b.Blank();

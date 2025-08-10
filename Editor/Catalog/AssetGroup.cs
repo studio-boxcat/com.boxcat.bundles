@@ -75,9 +75,9 @@ namespace Bundles.Editor
             }
         }
 
-        private Dictionary<string, Object>? _cachedAddressToAssetMap;
+        private Dictionary<string, Object?>? _cachedAddressToAssetMap;
 
-        public bool TryGetAssetByAddress(string address, out Object asset)
+        public bool TryGetAssetByAddress(string address, out Object? asset)
         {
             _cachedAddressToAssetMap ??= Entries
                 .Where(e => !string.IsNullOrEmpty(e.Address))
@@ -85,16 +85,16 @@ namespace Bundles.Editor
             return _cachedAddressToAssetMap.TryGetValue(address, out asset);
         }
 
-        internal void Internal_AddEntries(AssetGUID[] guids)
+        internal void Internal_AddEntries(GUID[] guids)
         {
             var entries = new AssetEntry[guids.Length];
             for (var index = 0; index < guids.Length; index++)
             {
                 var guid = guids[index];
-                var path = AssetDatabase.GUIDToAssetPath(guid.Value);
-                entries[index] = new AssetEntry(guid)
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var address = Path.GetFileNameWithoutExtension(path);
+                entries[index] = new AssetEntry(guid, address)
                 {
-                    Address = Path.GetFileNameWithoutExtension(path),
                     HintName = Path.GetFileName(path)
                 };
             }
@@ -109,9 +109,9 @@ namespace Bundles.Editor
             _cachedAddressToAssetMap = null;
         }
 
-        public void Internal_RemoveEntries(AssetGUID[] guids)
+        public void Internal_RemoveEntries(GUID[] guids)
         {
-            var guidsSet = new HashSet<AssetGUID>(guids);
+            var guidsSet = new HashSet<GUID>(guids);
             Entries = Entries.Where(e => !guidsSet.Contains(e.GUID)).ToArray();
             _cachedAddressToAssetMap = null;
         }

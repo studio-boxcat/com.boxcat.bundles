@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using System.Linq;
@@ -14,51 +15,86 @@ namespace Bundles.Editor
     {
         [SerializeField, HideInInspector]
         private string _guid;
-        public AssetGUID GUID => (AssetGUID) _guid;
-        [Delayed, TableColumnWidth(200, false)]
-        public string Address = "";
-        [HideInInspector]
-        public string HintName;
-
-        private Object _assetCache;
-
-        [ShowInInspector, Required, AssetsOnly, OnValueChanged(nameof(Asset_OnValueChanged))]
-        public Object MainAsset
+        private GUID _guidCache;
+        public GUID GUID
         {
             get
             {
-                if (_assetCache) return _assetCache;
-                if (string.IsNullOrEmpty(_guid)) return null;
-                return _assetCache = AssetDatabase.LoadMainAssetAtGUID(new GUID(_guid));
+                if (_guidCache.Empty())
+                    _guidCache = new GUID(_guid);
+                return _guidCache;
+            }
+        }
+
+        [SerializeField, Delayed, TableColumnWidth(200, false), OnValueChanged(nameof(_address_OnValueChanged))]
+        private string _address = "";
+        public string Address => _address;
+
+        [SerializeField, HideInInspector]
+        private Address _hash;
+        public Address Hash => _hash;
+
+        [HideInInspector]
+        public string HintName = "";
+
+        private Object? _mainAsset;
+
+        [ShowInInspector, Required, AssetsOnly, OnValueChanged(nameof(MainAsset_OnValueChanged))]
+        public Object? MainAsset
+        {
+            get
+            {
+                if (_mainAsset is not null) // not null for most cases
+                    return _mainAsset;
+
+                var guid = GUID;
+                if (guid.Empty()) return null;
+                return _mainAsset = AssetDatabase.LoadMainAssetAtGUID(guid);
             }
             set
             {
-                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out _guid, out long _);
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out var guid, out long _);
+                SetGUID(guid);
                 ResetHintName();
-                _assetCache = value;
+                _mainAsset = value;
             }
         }
 
         // Used by Odin Inspector
         [UsedImplicitly]
-        public AssetEntry() { }
-
-        public AssetEntry(AssetGUID guid)
+        public AssetEntry()
         {
-            _guid = guid.Value;
+            _guid = "";
         }
 
-        public AssetEntry(AssetGUID guid, string address)
+        public AssetEntry(GUID guid, string address)
         {
-            _guid = guid.Value;
-            Address = address;
+            _guid = guid.ToString();
+            _address = address;
+            ResetHash(address);
         }
 
-        public Type ResolveAssetType() => AssetDatabase.GetMainAssetTypeFromGUID((GUID) GUID);
+        private void SetGUID(string guid)
+        {
+            _guid = guid;
+            _guidCache = default; // Reset cache
+        }
 
-        public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath((GUID) GUID);
+        public void SetAddress(string address)
+        {
+            _address = address;
+            ResetHash(address);
+        }
+
+        public Type ResolveAssetType() => AssetDatabase.GetMainAssetTypeFromGUID(GUID);
+
+        public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath(GUID);
 
         public void ResetHintName() => HintName = Path.GetFileName(ResolveAssetPath());
+
+        private void _address_OnValueChanged(string value) => ResetHash(value);
+
+        private void ResetHash(string value) => _hash = AddressUtils.Hash(value);
 
         public TAsset LoadAssetWithType<TAsset>() where TAsset : Object
         {
@@ -68,23 +104,27 @@ namespace Bundles.Editor
             return AssetDatabase.LoadAssetAtPath<TAsset>(path);
         }
 
-        private void Asset_OnValueChanged(Object asset)
+        private void MainAsset_OnValueChanged(Object asset)
         {
             _guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(MainAsset));
-            Address = asset.name;
+            SetAddress(asset.name);
         }
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
+            if (_hash != AddressUtils.Hash(_address))
+                result.AddError($"The address '{_address}' does not match the hash '{_hash.Val()}'. Please reset the address or reassign the asset.");
+
             var asset = MainAsset;
-            if (!asset) return;
+            if (asset)
+            {
+                if (!AssetDatabase.IsMainAsset(asset))
+                    result.AddError($"The asset '{asset!.name}' is not a main asset. Please assign a main asset.");
 
-            if (!AssetDatabase.IsMainAsset(asset))
-                result.AddError($"The asset '{asset.name}' is not a main asset. Please assign a main asset.");
-
-            var path = AssetDatabase.GetAssetPath(asset);
-            if (!IsPathValidForEntry(path))
-                result.AddError($"The asset '{path}' is not valid for Asset Group '{Address}'.");
+                var path = AssetDatabase.GetAssetPath(asset);
+                if (!IsPathValidForEntry(path))
+                    result.AddError($"The asset '{path}' is not valid for Asset Group '{Address}'.");
+            }
         }
 
         private static readonly string[] _excludedExtensions = { ".cs", ".dll", ".meta", ".preset", ".asmdef", ".asmref" };

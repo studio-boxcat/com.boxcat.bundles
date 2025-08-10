@@ -13,9 +13,9 @@ namespace Bundles.Editor
         private Scene _scene;
         private Action<Scene> _onComplete;
 
-        public EditorSceneOp(AssetGUID guid)
+        public EditorSceneOp(GUID guid)
         {
-            var path = AssetDatabase.GUIDToAssetPath(guid.ToString());
+            var path = AssetDatabase.GUIDToAssetPath(guid);
             _op = EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
             _op.completed += OnComplete;
             var scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using UnityEditor;
 
 namespace Bundles.Editor
 {
@@ -22,13 +23,13 @@ namespace Bundles.Editor
             }
 
             // Check for duplicate asset guids
-            var assetSet = new Dictionary<string, AssetGroup>(); // asset guid to string address
+            var assetSet = new Dictionary<GUID, AssetGroup>(); // asset guid to string address
             foreach (var group in Groups)
             foreach (var entry in group.Entries)
             {
-                var guid = entry.GUID.Value;
+                var guid = entry.GUID;
                 // empty guid will be reported by AssetEntry
-                if (string.IsNullOrEmpty(guid))
+                if (guid.Empty())
                     continue;
                 if (assetSet.TryAdd(guid, group) is false)
                     result.AddError($"Duplicate asset guid: {assetSet[guid].Key} and {group.Key} have the same asset: {entry.ResolveAssetPath()}");
@@ -38,7 +39,7 @@ namespace Bundles.Editor
             var addressHashToStr = new Dictionary<Address, string>(); // hash address to string address
             foreach (var entry in TraverseEntries_AddressAccess()) // check only bundles with address access.
             {
-                var hash = AddressUtils.Hash(entry.Address);
+                var hash = entry.Hash;
                 if (addressHashToStr.TryGetValue(hash, out var orgStr))
                 {
                     result.AddError($"Duplicate address: {orgStr} and {entry.Address} have the same hash: {hash.Hex()}");

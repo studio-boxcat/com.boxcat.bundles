@@ -50,9 +50,9 @@ namespace Bundles.Editor
             Groups = groups.ToArray();
         }
 
-        public void AddEntries(AssetGroup group, AssetGUID[] guids)
+        public void AddEntries(AssetGroup group, GUID[] guids)
         {
-            L.I($"{"[AssetCatalog] AddEntries: " + group.Key}, count={guids.Length}, guids={string.Join(", ", guids.Select(g => g.Value))}");
+            L.I($"{"[AssetCatalog] AddEntries: " + group.Key}, count={guids.Length}, guids={string.Join(", ", guids.Select(g => g.ToString()))}");
 
             Assert.IsFalse(group.IsGenerated, "Cannot add entry to generated group.");
             Undo.RecordObject(this, "Add Entries");

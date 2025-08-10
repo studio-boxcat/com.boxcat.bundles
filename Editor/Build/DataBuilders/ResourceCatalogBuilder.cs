@@ -46,7 +46,7 @@ namespace Bundles.Editor
             EditorUtility.SetDirty(ctx.Catalog);
         }
 
-        private static AssetInfo[] BuildAssetInfos(Dictionary<AssetGUID, EntryDef> entries, Dictionary<AssetBundleId, AssetBundleIndex> idToIndex)
+        private static AssetInfo[] BuildAssetInfos(Dictionary<GUID, EntryDef> entries, Dictionary<AssetBundleId, AssetBundleIndex> idToIndex)
         {
             // Gather addresses + the raw (old) bundle ID for each address
             return entries.Values
@@ -104,7 +104,7 @@ namespace Bundles.Editor
                 // Addresses (4 bytes each)
                 foreach (var addressInfo in assets)
                 {
-                    *(uint*) p = addressInfo.Address.Value();
+                    *(uint*) p = addressInfo.Address.Val();
                     p += 4;
                 }
 

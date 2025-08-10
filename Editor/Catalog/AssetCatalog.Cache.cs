@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 
 namespace Bundles.Editor
 {
@@ -9,7 +10,7 @@ namespace Bundles.Editor
         private Dictionary<GroupKey, AssetGroup> _cachedGroupKeyToGroupMap;
         private Dictionary<AssetBundleId, AssetGroup> _cachedBundleIdToGroupMap;
         private Dictionary<Address, AssetEntry> _cachedAddressToEntryMap;
-        private Dictionary<string, AssetEntry> _cachedAssetGUIDToEntryMap;
+        private Dictionary<GUID, AssetEntry> _cachedAssetGUIDToEntryMap;
         [NonSerialized] private string[] _cachedAddressList;
 
         public bool TryGetGroup(GroupKey groupKey, out AssetGroup group)
@@ -31,22 +32,22 @@ namespace Bundles.Editor
                 : GetGroup(bundleId).Key;
         }
 
-        public bool TryGetEntry(AssetGUID guid, out AssetEntry entry)
+        public bool TryGetEntry(GUID guid, out AssetEntry entry)
         {
             ref var cache = ref _cachedAssetGUIDToEntryMap;
             if (cache is null)
             {
-                cache = new Dictionary<string, AssetEntry>(Groups.Length * 64);
+                cache = new Dictionary<GUID, AssetEntry>(Groups.Length * 64);
                 foreach (var assetGroup in Groups)
                 foreach (var assetEntry in assetGroup.Entries)
-                    cache.Add(assetEntry.GUID.Value, assetEntry);
+                    cache.Add(assetEntry.GUID, assetEntry);
                 cache.TrimExcess();
             }
 
-            return cache.TryGetValue(guid.Value, out entry);
+            return cache.TryGetValue(guid, out entry);
         }
 
-        public AssetEntry GetEntry(AssetGUID guid)
+        public AssetEntry GetEntry(GUID guid)
         {
             return TryGetEntry(guid, out var entry) ? entry
                 : throw new KeyNotFoundException($"Entry with GUID '{guid}' not found.");
@@ -59,7 +60,7 @@ namespace Bundles.Editor
             {
                 cache = new Dictionary<Address, AssetEntry>(Groups.Length * 64, AddressComparer.Instance);
                 foreach (var e in TraverseEntries_AddressAccess())
-                    cache.Add(AddressUtils.Hash(e.Address), e);
+                    cache.Add(e.Hash, e);
                 cache.TrimExcess();
             }
 

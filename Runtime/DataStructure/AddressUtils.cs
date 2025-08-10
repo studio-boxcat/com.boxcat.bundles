@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
-using UnityEngine.Assertions;
 
 namespace Bundles
 {
@@ -20,14 +19,14 @@ namespace Bundles
     public class AddressComparer : IEqualityComparer<Address>
     {
         public static readonly AddressComparer Instance = new();
-        public bool Equals(Address x, Address y) => x.Value() == y.Value();
-        public int GetHashCode(Address obj) => (int) obj.Value();
+        public bool Equals(Address x, Address y) => x.Val() == y.Val();
+        public int GetHashCode(Address obj) => (int) obj.Val();
     }
 
     public static class AddressUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint Value(this Address address)
+        internal static uint Val(this Address address)
         {
             return (uint) address;
         }
@@ -40,7 +39,10 @@ namespace Bundles
             for (var i = 0; i < len; i++)
             {
                 var c = address[i];
-                Assert.IsTrue(c <= byte.MaxValue, $"Character is out of range: char={c} str={address}");
+#if DEBUG
+                if (c > byte.MaxValue)
+                    throw new Exception($"Character is out of range: char={c} str={address}");
+#endif
                 hash = ((hash << 5) + hash) + (byte) c;
             }
             return (Address) hash;
@@ -48,7 +50,7 @@ namespace Bundles
 
         internal static string Hex(this Address address)
         {
-            return global::Hex.To8(address.Value());
+            return global::Hex.To8(address.Val());
         }
 
         public static string Name(this Address address)

@@ -644,7 +644,7 @@ namespace Bundles.Editor
             {
                 var guid = rootAsset.Guid;
                 if (guid.IsPath) continue; // builtin assets (e.g. MonoScript)
-                var entry = catalog.GetEntry((AssetGUID) guid);
+                var entry = catalog.GetEntry((GUID) guid);
                 ApplyBundlesInformationToExplicitAsset(rootAsset, entry);
             }
             return;
@@ -655,12 +655,14 @@ namespace Bundles.Editor
                 rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(
                     AssetDatabase.GetMainAssetTypeFromGUID((GUID) rootAsset.Guid));
 
-                Assert.IsNotNull(rootAsset.Bundle, $"Failed to get bundle information for AssetEntry: {rootEntry.GUID.Value}");
+                if (rootAsset.Bundle is null)
+                    throw new InvalidOperationException($"Failed to get bundle information for AssetEntry: {rootEntry.GUID}");
 
                 foreach (BuildLayout.ExplicitAsset referencedAsset in rootAsset.ExternallyReferencedAssets)
                 {
-                    Assert.IsNotNull(referencedAsset, $"Failed to get bundle information for AssetEntry: {rootEntry.GUID.Value}");
-                    // Create the dependency between rootAssets bundle and referenced Assets bundle,
+                    if (referencedAsset is null)
+                        throw new InvalidOperationException($"Failed to get referenced Asset for AssetEntry: {rootEntry.GUID}");
+
                     rootAsset.Bundle.UpdateBundleDependency(rootAsset, referencedAsset);
                 }
             }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -32,7 +33,7 @@ namespace Bundles.Editor
         {
             // Build AssetGUID -> BundleKey dictionary.
             var assetToFiles = m_WriteData.AssetToFiles.ToDictionary(
-                x => (AssetGUID) x.Key,
+                x => x.Key,
                 x => x.Value.Select(y => AssetBundleIdUtils.Parse(m_WriteData.FileToBundle[y])).ToList());
 
             var ctx = m_AaBuildContext;
@@ -51,8 +52,8 @@ namespace Bundles.Editor
         /// <returns>An object that contains organized information about dependencies and catalog locations.</returns>
         private static void Process(
             AssetCatalog catalog,
-            Dictionary<AssetGUID, List<AssetBundleId>> assetToFiles,
-            out Dictionary<AssetGUID, EntryDef> entries,
+            Dictionary<GUID, List<AssetBundleId>> assetToFiles,
+            out Dictionary<GUID, EntryDef> entries,
             out Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleToImmediateBundleDependencies,
             out Dictionary<AssetBundleId, HashSet<AssetBundleId>> bundleToExpandedBundleDependencies)
         {

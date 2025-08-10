@@ -167,11 +167,11 @@ namespace Bundles.Editor
                 return def.Assets
                     .Select(x =>
                     {
-                        var guid = AssetDatabase.AssetPathToGUID(x.Path);
+                        var guid = new GUID(AssetDatabase.AssetPathToGUID(x.Path));
                         var fileName = Path.GetFileName(x.Path);
-                        Assert.IsFalse(string.IsNullOrEmpty(guid),
+                        Assert.IsFalse(guid.Empty(),
                             $"Asset not found: address={x.Address}, path={x.Path}");
-                        return new AssetEntry((AssetGUID) guid, x.Address) { HintName = fileName };
+                        return new AssetEntry(guid, x.Address) { HintName = fileName };
                     })
                     .ToArray();
             }
@@ -242,7 +242,7 @@ namespace Bundles.Editor
             public string Address
             {
                 get => AssetEntry.Address;
-                set => AssetEntry.Address = value;
+                set => AssetEntry.SetAddress(value);
             }
 
             [ShowInInspector, OnValueChanged("ClearGroupCache"), DisableIf(nameof(_isGenerated))]

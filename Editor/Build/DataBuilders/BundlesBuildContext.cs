@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.Build.Pipeline.Interfaces;
 
 namespace Bundles.Editor
@@ -16,7 +17,7 @@ namespace Bundles.Editor
         /// <summary>
         /// A mapping of Asset GUID's to resulting ResourceLocation entries.
         /// </summary>
-        internal Dictionary<AssetGUID, EntryDef> entries;
+        internal Dictionary<GUID, EntryDef> entries;
 
         /// <summary>
         /// Mapping of AssetBundle to the direct dependencies.

@@ -6,19 +6,12 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using Directory = System.IO.Directory;
-using Object = UnityEngine.Object;
 using SearchOption = System.IO.SearchOption;
 
 namespace Bundles.Editor
 {
     public static class BundlesUtils
     {
-        internal static T Load<T>(AssetGUID guid) where T : Object
-        {
-            var path = AssetDatabase.GUIDToAssetPath(guid.Value);
-            return AssetDatabase.LoadAssetAtPath<T>(path);
-        }
-
         internal static bool StartsWithOrdinal(this string str1, string str2)
         {
             return str1.StartsWith(str2, StringComparison.Ordinal);
@@ -60,7 +53,7 @@ namespace Bundles.Editor
             var catalog = AssetCatalog.Default;
             var groups = catalog.Groups.Where(x => !x.IsGenerated).ToArray();
             var options = groups.Select(x => x.Key.Value).ToArray();
-            var assetGUIDs = Selection.assetGUIDs.Distinct().Select(x => (AssetGUID) x).ToArray();
+            var assetGUIDs = Selection.assetGUIDs.Distinct().Select(x => new GUID(x)).ToArray();
             SingleSelectionWindow.Prompt("Register Selection", options)
                 .ContinueWith(t =>
                 {

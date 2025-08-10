@@ -90,7 +90,7 @@ namespace Bundles.Editor
             onComplete?.Invoke(_result);
         }
 
-        public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object, int> onComplete, object payloadObj, int payloadInt)
+        public void AddOnComplete(Action<IAssetOp<TObject>, TObject, object, int> onComplete, object? payloadObj, int payloadInt)
         {
             if (TryGetResult(out var result))
             {

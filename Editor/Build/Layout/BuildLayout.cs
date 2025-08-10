@@ -5,7 +5,6 @@ using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Serialization;
 
 namespace Bundles.Editor
 {
@@ -14,12 +13,6 @@ namespace Bundles.Editor
     {
         public string Value;
         public bool IsPath;
-
-        public AssetId(AssetGUID guid)
-        {
-            Value = guid.Value;
-            IsPath = false;
-        }
 
         public AssetId(GUID guid)
         {
@@ -33,17 +26,11 @@ namespace Bundles.Editor
             IsPath = true;
         }
 
-        public static AssetId FromPath(string path) => new AssetId(path);
+        public static AssetId FromPath(string path) => new(path);
 
         public override string ToString() => Value;
 
-        public static implicit operator AssetId(AssetGUID guid) => new(guid);
         public static implicit operator AssetId(GUID guid) => new(guid);
-        public static explicit operator AssetGUID(AssetId id)
-        {
-            Assert.IsFalse(id.IsPath, "Cannot convert AssetId to GUID when IsPath is true");
-            return new AssetGUID(id.Value);
-        }
         public static explicit operator GUID(AssetId id)
         {
             Assert.IsFalse(id.IsPath, "Cannot convert AssetId to GUID when IsPath is true");
