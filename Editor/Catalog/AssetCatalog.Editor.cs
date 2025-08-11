@@ -86,10 +86,14 @@ namespace Bundles.Editor
         internal void BakeGroupsAndCode()
         {
             L.I("[AssetCatalog] Baking groups and code");
+
             SortEntries();
             BakeGroups();
             EditorUtility.SetDirty(this);
             AddressCodeGen.GenerateCode(this, "73dee367a1284cea987dd7ac55b7b5e9");
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
         }
 
         private void BakeGroups()

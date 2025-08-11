@@ -87,16 +87,15 @@ namespace Bundles.Editor
 
         internal void Internal_AddEntries(GUID[] guids)
         {
+            L.I($"[AssetGroup] AddEntries: {_key}, count={guids.Length}, guids={string.Join(", ", guids.Select(g => g.ToString()))}");
+
             var entries = new AssetEntry[guids.Length];
             for (var index = 0; index < guids.Length; index++)
             {
                 var guid = guids[index];
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 var address = Path.GetFileNameWithoutExtension(path);
-                entries[index] = new AssetEntry(guid, address)
-                {
-                    HintName = Path.GetFileName(path)
-                };
+                entries[index] = new AssetEntry(guid, address) { HintName = Path.GetFileName(path) };
             }
 
             Entries = Entries.CloneConcat(entries);
