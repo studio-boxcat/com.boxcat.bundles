@@ -50,7 +50,7 @@ namespace Bundles.Editor
                 Assert.IsTrue(IsGenerated, "This group is not generated.");
 
                 // If the entry at the index has same address, return it
-                var i = (int) index;
+                var i = index.Val();
                 var count = Entries.Length;
                 if (i < count)
                 {
@@ -67,7 +67,7 @@ namespace Bundles.Editor
                     var m = (l + r) / 2;
                     var e = Entries[m];
                     if (e.Address == i.Strm()) return e;
-                    if (i < int.Parse(e.Address)) r = m - 1;
+                    if (i < uint.Parse(e.Address)) r = m - 1;
                     else l = m + 1;
                 }
 

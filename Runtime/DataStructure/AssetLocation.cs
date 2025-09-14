@@ -1,6 +1,6 @@
 namespace Bundles
 {
-    public enum AssetIndex : uint { }
+    public enum AssetIndex : ushort { }
 
     public readonly struct AssetLocation
     {
@@ -21,18 +21,12 @@ namespace Bundles
 
     public static class AssetIndexUtils
     {
-        public static uint Val(this AssetIndex index) => (uint) index;
+        public static ushort Val(this AssetIndex index) => (ushort) index;
+        public static string Name(this AssetIndex index) => index.Val().Strm();
 
-        public static string Name(this AssetIndex index) => ((int) index).Strm();
-
-        public static AssetLocation Locate(this AssetBundleMajor major, byte minor, byte index)
-        {
-            return new AssetLocation(major, minor, index);
-        }
-
-        public static AssetLocation Locate0(this AssetBundleMajor major, byte minor)
-        {
-            return new AssetLocation(major, minor, 0);
-        }
+        public static AssetLocation Locate(this AssetBundleMajor major, byte minor, byte index) =>
+            new(major, minor, index);
+        public static AssetLocation Locate0(this AssetBundleMajor major, byte minor) =>
+            new(major, minor, 0);
     }
 }
