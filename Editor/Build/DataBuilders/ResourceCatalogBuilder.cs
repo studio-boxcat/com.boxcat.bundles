@@ -129,7 +129,7 @@ namespace Bundles.Editor
                 // AssetBundleIds (2 bytes each), sorted ascending
                 foreach (var bundleId in bundles)
                 {
-                    *(ushort*) p = bundleId.Value();
+                    *(ushort*) p = bundleId.Val();
                     p += 2;
                 }
 

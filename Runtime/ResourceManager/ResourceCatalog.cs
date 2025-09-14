@@ -89,7 +89,7 @@ namespace Bundles
             // We read AssetBundleIds as a ushort[] starting at _assetBundleIdsOffset
             var b = (byte*) _data.GetUnsafeReadOnlyPtr();
             var d = (ushort*) (b + _assetBundleIdsOffset);
-            var v = id.Value();
+            var v = id.Val();
 
             int l = 0;
             int r = _bundleCount - 1;

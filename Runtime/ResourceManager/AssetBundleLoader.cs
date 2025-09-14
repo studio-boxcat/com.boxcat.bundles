@@ -26,13 +26,13 @@ namespace Bundles
 
         public void LoadMonoScriptBundle()
         {
-            _bundles[AssetBundleIndex.MonoScript.Value()]
+            _bundles[AssetBundleIndex.MonoScript.Val()]
                 = ReadAssetBundle(AssetBundleId.MonoScript);
         }
 
         public AssetBundle GetResolvedBundle(AssetBundleIndex index)
         {
-            var idx = index.Value();
+            var idx = index.Val();
             var bundle = _bundles[idx];
             Assert.IsNotNull(bundle, "AssetBundle not found");
             Assert.AreEqual(Job.Done, _jobs[idx], "AssetBundle not fully resolved");
@@ -41,7 +41,7 @@ namespace Bundles
 
         public bool TryGetResolvedBundle(AssetBundleIndex bundleIndex, out AssetBundle bundle)
         {
-            var idx = bundleIndex.Value();
+            var idx = bundleIndex.Val();
             var job = _jobs[idx];
 
             // Never resolved.
@@ -67,7 +67,7 @@ namespace Bundles
         public bool ResolveAsync(AssetBundleIndex bundleIndex, DepSpan deps, object payload, Action<AssetBundle, object> callback)
         {
             // When the asset bundle is currently resolving (rare-case)
-            var idx = bundleIndex.Value();
+            var idx = bundleIndex.Val();
             var job = _jobs[idx];
             if (job is not null)
             {
@@ -112,7 +112,7 @@ namespace Bundles
             {
                 Assert.AreNotEqual(Job.Done, job, "Invalid job");
 
-                var bundle = _bundles[bundleIndex.Value()];
+                var bundle = _bundles[bundleIndex.Val()];
 
                 // No need to load at all.
                 if (bundle is not null)
@@ -149,7 +149,7 @@ namespace Bundles
 
         public AssetBundle ResolveImmediate(AssetBundleIndex bundleIndex, DepSpan deps, IndexToId indexToId)
         {
-            var idx = bundleIndex.Value();
+            var idx = bundleIndex.Val();
             var job = _jobs[idx];
 
             // Fully resolved.
@@ -189,7 +189,7 @@ namespace Bundles
 
             AssetBundle LoadBundle(AssetBundleIndex bundleIndex)
             {
-                var idx = bundleIndex.Value();
+                var idx = bundleIndex.Val();
                 var bundle = _bundles[idx];
 
                 // No need to load at all.
@@ -221,7 +221,7 @@ namespace Bundles
 
         public void CompleteResolveImmediate(AssetBundleIndex bundleIndex)
         {
-            var idx = bundleIndex.Value();
+            var idx = bundleIndex.Val();
             var job = _jobs[idx];
             Assert.IsNotNull(job, "AssetBundle is not resolving");
 
@@ -277,7 +277,7 @@ namespace Bundles
             if (bundle is null)
                 throw new Exception($"AssetBundleCreateRequest failed: {bundleIndex.DebugString()}");
 
-            _bundles[bundleIndex.Value()] = bundle;
+            _bundles[bundleIndex.Val()] = bundle;
             L.I($"[AssetBundleLoader] OnLoaded: {bundleIndex.DebugString()} ({bundle.name} assets)");
 
             // Get requesters.
@@ -314,7 +314,7 @@ namespace Bundles
 
 
             // Mark as fully resolved before invoking callbacks to ensure reentrancy.
-            var idx = job.BundleIndex.Value();
+            var idx = job.BundleIndex.Val();
             _jobs[idx] = Job.Done;
 
             // Get the asset bundle.

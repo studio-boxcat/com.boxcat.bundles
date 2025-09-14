@@ -49,7 +49,7 @@ namespace Bundles
                 _bundlePathFormat.Append('/', repeatCount: "/XXXX".Length);
             }
 
-            _bundlePathFormat.Hex4(bundleId.Value(), startIndex: _loadPath.Length + 1 /* after last '/' */);
+            _bundlePathFormat.Hex4(bundleId.Val(), startIndex: _loadPath.Length + 1 /* after last '/' */);
             return _bundlePathFormat.ToString();
         }
 

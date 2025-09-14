@@ -20,12 +20,12 @@ namespace Bundles
             get
             {
                 Assert.IsTrue(_data.IsCreated, "Span not initialized");
-                Assert.IsTrue(index.Value() * 2 + _start < _data.Length,
-                    $"Index out of bounds: ({index.Value()} * 2 + {_start}) >= {_data.Length}");
+                Assert.IsTrue(index.Val() * 2 + _start < _data.Length,
+                    $"Index out of bounds: ({index.Val()} * 2 + {_start}) >= {_data.Length}");
 
                 var b = (byte*) _data.GetUnsafeReadOnlyPtr();
                 var d = (ushort*) (b + _start); // interpret entire _data as an array of ushorts
-                return (AssetBundleId) d[index.Value()]; // 2 bytes per AssetBundleId
+                return (AssetBundleId) d[index.Val()]; // 2 bytes per AssetBundleId
             }
         }
     }
