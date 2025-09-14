@@ -7,7 +7,7 @@ namespace Bundles
         public readonly AssetBundleId BundleId;
         public readonly AssetIndex AssetIndex;
 
-        public AssetLocation(AssetBundleMajor bundleMajor, byte bundleMinor, uint assetIndex)
+        public AssetLocation(AssetBundleMajor bundleMajor, byte bundleMinor, ushort assetIndex)
         {
             BundleId = AssetBundleIdUtils.PackBundleId(bundleMajor, bundleMinor);
             AssetIndex = (AssetIndex) assetIndex;
