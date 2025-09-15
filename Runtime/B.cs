@@ -62,6 +62,7 @@ namespace Bundles
         public static IAssetOp<Object> Load(AssetLocation key) => Load<Object>(key);
         public static Object LoadSync(Address key) => LoadSync<Object>(key);
         public static Object LoadSync(AssetLocation key) => LoadSync<Object>(key);
+        public static void Prewarm(AssetLocation key) => Load(key);
 
         public static IAssetOp<GameObject> Prefab(Address key) => Load<GameObject>(key);
         public static IAssetOp<GameObject> Prefab(AssetLocation key) => Load<GameObject>(key);

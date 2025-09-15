@@ -1,6 +1,6 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -8,9 +8,9 @@ namespace Bundles
 {
     internal class AssetOpBlock
     {
-        public string AssetName;
+        public string? AssetName;
         public AssetBundleIndex Bundle;
-        public IResourceProvider Provider;
+        public IResourceProvider? Provider;
 
         public readonly ResourceCatalog Catalog;
         public readonly AssetBundleLoader Loader;
@@ -44,11 +44,11 @@ namespace Bundles
     public partial class AssetOp<TResult> : IAssetOp<TResult>
     {
         // AssetOpBlock or TResult
-        [NotNull] private object _data;
+        private object _data;
         // null or AsyncOperation
         // null: asset bundle is loading or done
         // AsyncOperation: asset is loading
-        private object _op;
+        private object? _op;
 
 
         internal AssetOp(AssetOpBlock data)
@@ -91,7 +91,7 @@ namespace Bundles
             // If dep is not loaded, _op will be null.
             if (_op is not AsyncOperation op || op.isDone is false)
             {
-                result = default;
+                result = default!;
                 return false;
             }
 
@@ -124,7 +124,7 @@ namespace Bundles
             }
 
             // Immediately complete the operation.
-            b.Provider.GetResult((AsyncOperation) _op); // accessing asset before isDone is true will stall the loading process.
+            b.Provider!.GetResult((AsyncOperation) _op!); // accessing asset before isDone is true will stall the loading process.
             Assert.IsNull(_op, "Operation should be null after completion");
             Assert.IsTrue(_data is TResult, "Result should be set after completion");
 
@@ -138,7 +138,7 @@ namespace Bundles
             Assert.IsNull(_op, "Operation should be null before execution");
 
             var b = (AssetOpBlock) _data;
-            var op = b.Provider.LoadAsync<TResult>(bundle, b.AssetName);
+            var op = b.Provider!.LoadAsync<TResult>(bundle, b.AssetName);
             _op = op;
 
             if (op.isDone)
@@ -161,12 +161,12 @@ namespace Bundles
 
         private void OnComplete(AsyncOperation req)
         {
-            var op = (AsyncOperation) _op;
+            var op = (AsyncOperation) _op!;
             Assert.AreEqual(req, op, "Operation mismatch");
             Assert.IsTrue(op.isDone, "Operation is not done");
 
             var b = (AssetOpBlock) _data;
-            var result = (TResult) b.Provider.GetResult(op);
+            var result = (TResult) b.Provider!.GetResult(op);
             _data = result; // boxing could happen for Scene, but it's very rare operation.
             _op = null;
 
