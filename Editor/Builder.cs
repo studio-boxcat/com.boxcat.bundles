@@ -10,7 +10,6 @@ using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
-using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.Assertions;
 using BuildCompression = UnityEngine.BuildCompression;
@@ -64,7 +63,7 @@ namespace Bundles.Editor
             return result;
         }
 
-        [Shortcut("Bundles/Build (No Report)")]
+        [MenuItem(MenuPath.Commands + "Bundles/Build (No Report)")]
         private static void Build()
         {
             Build(
@@ -73,7 +72,7 @@ namespace Bundles.Editor
                 generateReport: false);
         }
 
-        [Shortcut("Bundles/Build (With Report)")]
+        [MenuItem(MenuPath.Commands + "Bundles/Build (With Report)")]
         private static void BuildWithReport()
         {
             Build(
@@ -82,7 +81,7 @@ namespace Bundles.Editor
                 generateReport: true);
         }
 
-        [Shortcut("Bundles/Catalog/Bake Groups and Code")]
+        [MenuItem(MenuPath.Commands + "Bundles/Catalog/Bake Groups and Code")]
         private static void BakeGroupsAndCode()
         {
             AssetCatalog.Default.BakeGroupsAndCode();
