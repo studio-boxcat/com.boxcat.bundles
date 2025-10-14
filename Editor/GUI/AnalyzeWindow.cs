@@ -17,8 +17,10 @@ namespace Bundles.Editor
         [Shortcut("Bundles/Analyze")]
         internal static void ShowWindow()
         {
-            GetWindow<AnalyzeWindow>("Bundles Analyze", desiredDockNextTo: typeof(SceneView)).Focus();
+            GetWindow<AnalyzeWindow>(desiredDockNextTo: typeof(SceneView));
         }
+
+        private void Awake() => this.UpdateWindowTitle("Bundles Analyze");
 
         private void OnEnable()
         {
