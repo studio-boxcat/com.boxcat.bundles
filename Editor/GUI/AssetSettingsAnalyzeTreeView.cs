@@ -57,7 +57,7 @@ namespace Bundles.Editor
                     .Select(x => FindItem(x, rootItem) as AnalyzeResultsTreeViewItem)
                     .Where(x => x != null)
                     .SelectMany(x => x.results)
-                    .Select(x => x.resultName.SplitLast(AnalyzeRule.kDelimiter))
+                    .Select(x => x.resultName.AfterLast(AnalyzeRule.kDelimiter))
                     .Distinct()
                     .Select(AssetDatabase.LoadMainAssetAtPath)
                     .Where(x => x)
