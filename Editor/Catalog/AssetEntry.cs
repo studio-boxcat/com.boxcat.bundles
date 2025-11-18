@@ -147,7 +147,7 @@ namespace Bundles.Editor
                 return false;
 
             // Exclude files with excluded extensions
-            if (_excludedExtensions.Any(path.EndsWithOrdinal))
+            if (_excludedExtensions.Any(path.EndsWithOrd))
                 return false;
 
             return true;
