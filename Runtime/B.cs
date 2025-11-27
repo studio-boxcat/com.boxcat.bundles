@@ -16,7 +16,11 @@ namespace Bundles
             L.I($"[B] Load Start: {key.Name()} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             var op = _impl.Load<TObject>(key);
 #if DEBUG
-            op.AddOnComplete(static (o, payload) => L.I($"[B] Load Done: {payload} - {o.name}"), key.Name());
+            op.AddOnComplete(static (o, payload) =>
+            {
+                if (!o) throw new System.Exception($"[B] Load Failed: {payload}");
+                L.I($"[B] Load Done: {payload} - {o.name}");
+            }, key.Name());
 #endif
             return op;
         }
@@ -34,7 +38,11 @@ namespace Bundles
             L.I($"[B] Load Start: {key} ({typeof(TObject).Name}) ~ {_impl.GetType().Name}");
             var op = _impl.Load<TObject>(key);
 #if DEBUG
-            op.AddOnComplete(static (o, payload) => L.I($"[B] Load Done: {payload} - {o.name}"), key);
+            op.AddOnComplete(static (o, payload) =>
+            {
+                if (!o) throw new System.Exception($"[B] Load Failed: {payload}");
+                L.I($"[B] Load Done: {payload} - {o.name}");
+            }, key);
 #endif
             return op;
         }
@@ -52,7 +60,11 @@ namespace Bundles
             L.I($"[B] Load Start: {key.Name()} (Scene) ~ {_impl.GetType().Name}");
             var op = _impl.LoadScene(key);
 #if DEBUG
-            op.AddOnComplete(static (o, payload) => L.I($"[B] Load Done: {payload} - {o.name}"), key.Name());
+            op.AddOnComplete(static (o, payload) =>
+            {
+                if (!o.IsValid()) throw new System.Exception($"[B] Load Failed: {payload}");
+                L.I($"[B] Load Done: {payload} - {o.name}");
+            }, key.Name());
 #endif
             return op;
         }
