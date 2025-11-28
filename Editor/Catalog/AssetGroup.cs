@@ -35,6 +35,8 @@ namespace Bundles.Editor
         [SerializeField, ShowIf("EditMode"), DisplayAsString]
         internal string LastDependency;
 
+        private static readonly DLog _log = new(nameof(AssetGroup));
+
         public AssetGroup(string key, AssetEntry[] entries)
         {
             _key = key;
@@ -87,7 +89,7 @@ namespace Bundles.Editor
 
         internal void Internal_AddEntries(GUID[] guids)
         {
-            L.I($"[AssetGroup] AddEntries: {_key}, count={guids.Length}, guids={string.Join(", ", guids.Select(g => g.ToString()))}");
+            _log.i($"AddEntries: {_key}, count={guids.Length}, guids={string.Join(", ", guids.Select(g => g.ToString()))}");
 
             var entries = new AssetEntry[guids.Length];
             for (var index = 0; index < guids.Length; index++)
@@ -120,7 +122,7 @@ namespace Bundles.Editor
             Entries = Entries.Where(e =>
             {
                 var missing = !e.MainAsset;
-                if (missing) L.W($"[AssetGroup] Remove missing entry: {e.GUID}, Address={e.Address}, HintName={e.HintName}");
+                if (missing) _log.w($"Remove missing entry: {e.GUID}, Address={e.Address}, HintName={e.HintName}");
                 return !missing;
             }).ToArray();
             _cachedAddressToAssetMap = null;
@@ -146,7 +148,9 @@ namespace Bundles.Editor
         internal AssetBundleBuild GenerateAssetBundleBuild()
         {
             var assetBundleName = BundleId.Name();
-            var assetNames = Entries.Select(e => e.ResolveAssetPath()).ToArray();
+            var assetNames = Entries
+                .Select(e => e.ResolveAssetPath()
+                             ?? throw new InvalidOperationException($"Entry has no valid asset path: GUID={e.GUID}, Address={e.Address}, HintName={e.HintName}")).ToArray();
             var addressableNames = Entries.Select(e => ResolveAddressString(this, e)).ToArray();
 
             L.I(string.Format(

@@ -93,7 +93,7 @@ namespace Bundles.Editor
 
         private void ClearCache()
         {
-            L.I("[AssetCatalog] ClearCache");
+            _log.i("ClearCache");
             _cachedGroupKeyToGroupMap = null;
             _cachedBundleIdToGroupMap = null;
             _cachedAddressToEntryMap = null;

@@ -89,9 +89,14 @@ namespace Bundles.Editor
 
         public Type ResolveAssetType() => AssetDatabase.GetMainAssetTypeFromGUID(GUID);
 
-        public string ResolveAssetPath() => AssetDatabase.GUIDToAssetPath(GUID);
+        public string? ResolveAssetPath()
+        {
+            if (GUID.Empty()) return null;
+            var path = AssetDatabase.GUIDToAssetPath(GUID);
+            return path.NotEmpty() ? path : null;
+        }
 
-        public void ResetHintName() => HintName = Path.GetFileName(ResolveAssetPath());
+        public void ResetHintName() => HintName = Path.GetFileName(ResolveAssetPath()) ?? "";
 
         private void _address_OnValueChanged(string value) => ResetHash(value);
 
@@ -120,7 +125,7 @@ namespace Bundles.Editor
             if (asset)
             {
                 if (!AssetDatabase.IsMainAsset(asset))
-                    result.AddError($"The asset '{asset!.name}' is not a main asset. Please assign a main asset.");
+                    result.AddError($"The asset '{asset.name}' is not a main asset. Please assign a main asset.");
 
                 var path = AssetDatabase.GetAssetPath(asset);
                 if (!IsPathValidForEntry(path))

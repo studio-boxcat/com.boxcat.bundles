@@ -43,6 +43,8 @@ namespace Bundles.Editor
         [OnCollectionChanged(Before = nameof(_searchedEntries_OnCollectionChanged_Before))]
         private List<SearchedEntry> _searchedEntries;
 
+        private static readonly DLog _log = new(nameof(AssetCatalog));
+
         private void _searchPattern_OnValueChanged()
         {
             _searchedEntries ??= new List<SearchedEntry>();
@@ -85,7 +87,7 @@ namespace Bundles.Editor
         [Button("Bake"), ButtonGroup]
         internal void BakeGroupsAndCode()
         {
-            L.I("[AssetCatalog] Baking groups and code");
+            _log.i("Baking groups and code");
 
             SortEntries();
             BakeGroups();
@@ -105,13 +107,13 @@ namespace Bundles.Editor
             foreach (var method in methods)
             {
                 var generatorName = method.Name;
-                L.I($"[AssetCatalog] Generating groups from {generatorName}");
+                _log.i($"Generating groups from {generatorName}");
                 var meta = method.GetCustomAttribute<AssetGroupGeneratorAttribute>();
                 var defs = (IEnumerable<AssetGroupGenerationDef>) method.Invoke(null, null);
                 gen.AddRange(defs.Select(def => BuildAssetGroup(def, meta, generatorName)));
             }
 
-            L.I("[AssetCatalog] Post-processing generated groups");
+            _log.i("Post-processing generated groups");
             gen.ForEach(x =>
             {
                 if (TryGetGroup(x.Key, out var orgGroup) is false)
@@ -120,7 +122,7 @@ namespace Bundles.Editor
                 // keep original bundle id, if bundle id is not set. (means no direct bundle access)
                 if (x.BundleId is 0)
                 {
-                    L.I($"[AssetCatalog] Group {x.Key.Value} already exists. Using original bundle id {orgGroup.BundleId.Name()}");
+                    _log.i($"Group {x.Key.Value} already exists. Using original bundle id {orgGroup.BundleId.Name()}");
                     x.BundleId = orgGroup.BundleId;
                 }
 
@@ -157,12 +159,12 @@ namespace Bundles.Editor
                     $"BundleStart and BundleSubId must be set together - {generatorName}");
                 if (!def.BundleMinor.HasValue)
                 {
-                    L.I($"[AssetCatalog] Group created: {groupName}");
+                    _log.i($"Group created: {groupName}");
                     return group;
                 }
 
                 group.BundleId = AssetBundleIdUtils.PackBundleId(meta.BundleMajor!.Value, def.BundleMinor.Value);
-                L.I($"[AssetCatalog] Group created: {groupName}, {group.BundleId.Name()}");
+                _log.i($"Group created: {groupName}, {group.BundleId.Name()}");
                 return group;
             }
 
@@ -173,8 +175,7 @@ namespace Bundles.Editor
                     {
                         var guid = new GUID(AssetDatabase.AssetPathToGUID(x.Path));
                         var fileName = Path.GetFileName(x.Path);
-                        Assert.IsFalse(guid.Empty(),
-                            $"Asset not found: address={x.Address}, path={x.Path}");
+                        if (guid.Empty()) _log.e($"Asset not found: address={x.Address}, path={x.Path}");
                         return new AssetEntry(guid, x.Address) { HintName = fileName };
                     })
                     .ToArray();
