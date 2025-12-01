@@ -96,7 +96,7 @@ namespace Bundles.Editor
             {
                 var guid = guids[index];
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                var address = Path.GetFileNameWithoutExtension(path);
+                var address = NormalizeAddress(Path.GetFileNameWithoutExtension(path));
                 entries[index] = new AssetEntry(guid, address) { HintName = Path.GetFileName(path) };
             }
 
@@ -210,6 +210,13 @@ namespace Bundles.Editor
             return g.BundleId.AddressAccess()
                 ? AddressUtils.Hash(e.Address)
                 : (Address) int.Parse(e.Address);
+        }
+
+        private static string NormalizeAddress(string address)
+        {
+            return address
+                .Replace(" ", "")
+                .Replace("-", "_");
         }
     }
 }
