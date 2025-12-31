@@ -185,7 +185,7 @@ namespace Bundles.Editor
         private void SortEntries()
         {
             var normalGroups = Groups.Where(x => !x.IsGenerated).ToList();
-            normalGroups.Sort((a, b) => a.Key.Value.CompareToOrdinal(b.Key.Value));
+            normalGroups.Sort((a, b) => a.Key.Value.CompareToOrd(b.Key.Value));
             foreach (var group in normalGroups)
                 group.SortEntries();
             Groups = normalGroups.Concat(Groups.Where(x => x.IsGenerated)).ToArray();

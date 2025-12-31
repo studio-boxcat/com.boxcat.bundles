@@ -146,9 +146,9 @@ namespace Bundles.Editor
                 return false;
 
             // Exclude Editor, Resources, and Gizmos folders
-            if (path.ContainsOrdinal("/Editor/")
-                || path.ContainsOrdinal("/Resources/")
-                || path.ContainsOrdinal("/Gizmos/"))
+            if (path.ContainsOrd("/Editor/")
+                || path.ContainsOrd("/Resources/")
+                || path.ContainsOrd("/Gizmos/"))
                 return false;
 
             // Exclude files with excluded extensions
